@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0B1026" />
   <meta name="color-scheme" content="dark" />
   <meta name="description" content="大きなライブミラーで自分の動きを確認しながら、カテゴリ専用のサッカー選手と競り合うフィジカルチャレンジ。" />
-  <title>PHYSICAL CHALLENGE v8 — Live Mirror Duel</title>
+  <title>PHYSICAL CHALLENGE v10 — Cinematic Match Progress</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=M+PLUS+1:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
@@ -103,6 +103,12 @@
           <div class="self-camera-message"><span class="camera-symbol">◎</span><div><b>YOUR BODY ON CAMERA</b><small>カメラ開始後は、キャラクターではなくあなたの全身をメイン画面に表示します。</small></div></div>
         </section>
 
+        <section class="detail-scene-panel hud-card">
+          <div class="detail-scene-head"><span class="section-kicker">SCENE PREVIEW</span><b id="detailSceneTitle">ゴール前のポジション争い</b></div>
+          <img id="detailSceneImage" class="detail-scene-image" src="assets/images/scene-lower.png" alt="カテゴリのサッカー場面イメージ" />
+          <p id="detailSceneNote" class="detail-scene-note">カテゴリの筋トレを進めることで、このサッカー場面を有利にしていく演出です。</p>
+        </section>
+
         <div class="detail-setting-grid">
           <section class="exercise-summary hud-card">
             <div class="exercise-title-line"><div><span id="detailEnglish" class="tag">SQUAT</span><h3 id="detailJapanese">スクワット</h3></div><button id="detailGuideButton" class="mini-button" type="button">▶ フォーム動画</button></div>
@@ -176,20 +182,39 @@
 
         <div class="duel-progress-panel"><div class="duel-labels"><span>YOU</span><b id="duelMessage">低い姿勢で押し返せ</b><span id="opponentShort">ANCHOR</span></div><div class="duel-track"><i id="duelProgress"></i><em></em></div></div>
 
-        <section class="workout-coach"><div class="workout-coach-top"><button id="workoutGuideButton" class="form-guide-button" type="button">▶ 見本</button><span id="trackingDetail">開始姿勢を確認しています</span></div><h2 id="workoutCue">腰を落として、床を押す</h2><p id="formFeedback">膝とつま先を同じ方向へ</p><blockquote id="workoutOpponentQuote" class="opponent-quote">「低い姿勢を最後まで保てるか。」</blockquote><div class="set-progress"><i id="setProgress"></i></div></section>
-
-        <section id="sceneProgressPanel" class="scene-progress-panel hud-card">
-          <div class="scene-progress-head">
-            <div><span class="section-kicker">SOCCER SCENE PROGRESS</span><h3 id="sceneProgressTitle">ゴール前のポジション争い</h3></div>
-            <span id="sceneProgressLabel" class="tag">PHASE 1 / 4</span>
+        <section id="matchStoryPanel" class="match-story-panel hud-card" data-kind="goal-box" data-phase="0">
+          <header class="match-story-head">
+            <div><span class="section-kicker">LIVE MATCH SCENE</span><h3 id="sceneTitle">ゴール前のポジション争い</h3></div>
+            <span id="scenePhaseBadge" class="tag">PHASE 1 / 4</span>
+          </header>
+          <div class="match-story-stage">
+            <img id="sceneStoryImage" class="match-story-image" src="assets/images/scene-lower.png" alt="サッカー場面の進捗画像" />
+            <div id="scenePhaseSpotlight" class="scene-phase-spotlight" aria-hidden="true"></div>
+            <img class="match-story-bg" src="assets/images/stadium.webp" alt="" aria-hidden="true" />
+            <div class="match-story-shade" aria-hidden="true"></div>
+            <div class="scene-goal" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <div id="sceneSelfCard" class="scene-self-card">
+              <video id="sceneSelfVideo" autoplay muted playsinline></video>
+              <div id="sceneSelfPlaceholder" class="scene-self-placeholder"><span>YOU</span><small>LIVE MIRROR</small></div>
+              <b>YOU</b>
+            </div>
+            <div id="sceneRivalCard" class="scene-rival-card">
+              <img id="sceneRivalImage" src="assets/images/rivals/rival-lower.webp" alt="対戦相手" />
+              <span id="sceneRivalName">THE ANCHOR</span>
+            </div>
+            <div id="sceneBall" class="scene-ball" aria-hidden="true">⚽</div>
+            <div class="scene-run-line" aria-hidden="true"></div>
+            <div id="sceneGoalFlash" class="scene-goal-flash" aria-hidden="true"><b id="sceneResultWord">GOAL!</b><span>SCENE COMPLETE</span></div>
+            <div class="scene-pressure-chip" id="sceneHeadline">押し込まれる</div>
           </div>
-          <div id="sceneIllustration" class="scene-illustration" aria-live="polite"></div>
-          <div class="scene-progress-copy">
-            <strong id="sceneCaptionTitle">まだ不利な状況</strong>
-            <p id="sceneCaptionText">筋トレの進捗に合わせて、サッカー場面が有利に変化します。</p>
+          <div class="match-story-copy">
+            <div><strong id="sceneDescription">DFに前へ入られ、ゴール前で不利な体勢。低い姿勢を作って押し返そう。</strong><small id="sceneProgressPercent">0%</small></div>
+            <div class="match-story-progress"><i id="sceneStoryProgressBar"></i></div>
           </div>
-          <div id="scenePhaseSteps" class="scene-phase-steps"></div>
+          <div id="sceneMilestones" class="scene-milestones"></div>
         </section>
+
+        <section class="workout-coach"><div class="workout-coach-top"><button id="workoutGuideButton" class="form-guide-button" type="button">▶ 見本</button><span id="trackingDetail">開始姿勢を確認しています</span></div><h2 id="workoutCue">腰を落として、床を押す</h2><p id="formFeedback">膝とつま先を同じ方向へ</p><blockquote id="workoutOpponentQuote" class="opponent-quote">「低い姿勢を最後まで保てるか。」</blockquote><div class="set-progress"><i id="setProgress"></i></div></section>
 
         <div id="demoControls" class="demo-controls is-hidden"><button id="demoRepButton" type="button"><b>＋1</b><span>正しいフォーム</span></button><button id="demoHoldButton" type="button"><b>長押し</b><span>姿勢をキープ</span></button><button id="demoMissButton" type="button"><b>!</b><span>フォーム修正</span></button></div>
         <div id="successFlash" class="success-flash"><span>GOOD REP!</span></div><div id="guideCountdown" class="guide-countdown"><span>3</span><small>GET READY</small></div>
