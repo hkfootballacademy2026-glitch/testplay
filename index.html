@@ -4,7 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#0A0E27" />
-  <title>パスチャレンジ — 実戦トラップ・パストレーニング</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>パスチャレンジ — スマホ・タブレット版</title>
   <style>
     :root {
       color-scheme: dark;
@@ -1378,6 +1381,264 @@
       .vcDifficultyCard small { display: none; }
     }
 
+  
+
+    /* v9: mobile/tablet-first landscape layout, based on Volley Shoot Challenge */
+    html, body, #app, #stage { height: 100%; height: 100dvh; }
+    body { background: #0A0E27; }
+    #stage { min-height: 100svh; }
+    #camera { object-fit: contain; background: #020617; }
+    #stage[data-background-mode="grass_day"] #camera,
+    #stage[data-background-mode="grass_night"] #camera { opacity: .16; }
+    #stage[data-background-mode="grass_day"] #videoShade,
+    #stage[data-background-mode="grass_night"] #videoShade { opacity: .72; }
+
+    .mobileOnlyMetric { display: block; }
+    #timeMetric .metricValue { color: #fff; }
+    #comboMetric .metricValue { color: var(--amber); }
+    #successMetric .metricValue { color: var(--lime); }
+
+    #quickStartButton {
+      display: none;
+      width: 100%;
+      min-height: 46px;
+      margin-top: 14px;
+      border-radius: 13px;
+      color: #031018;
+      background: linear-gradient(135deg, #a3ff12, #5fd100);
+      font-size: 13px;
+      font-weight: 1000;
+      box-shadow: 0 10px 30px rgba(86,210,0,.24);
+    }
+    #quickStartButton.isVisible { display: block; }
+    #assetReadyText {
+      margin-top: 8px;
+      color: #bfefff;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+
+    @media (pointer: coarse), (max-width: 1180px) {
+      .glass { backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+      #topHud {
+        top: max(6px, env(safe-area-inset-top));
+        left: max(7px, env(safe-area-inset-left));
+        right: max(7px, env(safe-area-inset-right));
+        gap: 6px;
+      }
+      .brand { min-width: 0; padding: 6px 8px; gap: 7px; border-radius: 10px; }
+      .brandMark { width: 28px; height: 28px; border-radius: 8px; font-size: 15px; }
+      .brandTitle { font-size: 12px; white-space: nowrap; }
+      .brandSub { display: none; }
+      #hudMetrics { max-width: 78%; gap: 5px; flex-wrap: nowrap; overflow: hidden; }
+      .metric { min-width: 62px; padding: 6px 7px; border-radius: 10px; }
+      .metricLabel { font-size: 7px; }
+      .metricValue { font-size: 15px; }
+      #phaseBadge { min-width: 78px; }
+      #phaseBadge .metricValue { font-size: 10px; }
+      .scenarioMetric, #scanMetric, #roundMetric, #trapMetric, #passMetric, #fpsMetric { display: none; }
+      #centerMessage { top: 20%; width: 82vw; }
+      #messageTitle { font-size: clamp(20px, 5vw, 34px); }
+      #messageBody { font-size: 10px; line-height: 1.35; }
+      #bottomHud {
+        left: max(7px, env(safe-area-inset-left));
+        right: max(7px, env(safe-area-inset-right));
+        bottom: max(6px, env(safe-area-inset-bottom));
+        gap: 6px;
+      }
+      #coachCard { max-width: 72vw; padding: 8px 10px; border-radius: 11px; }
+      #coachLabel { font-size: 7px; }
+      #coachText { font-size: 10px; line-height: 1.3; }
+      #trackingCard { padding: 7px 9px; border-radius: 11px; }
+      #trackingText { font-size: 8px; }
+      #controls {
+        right: max(7px, env(safe-area-inset-right));
+        bottom: max(54px, calc(env(safe-area-inset-bottom) + 48px));
+        gap: 6px;
+      }
+      .iconButton { width: 42px; height: 42px; border-radius: 12px; font-size: 15px; }
+      .panelBackdrop { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); overflow: auto; }
+      .panel { width: min(100%, 1040px); max-height: none; border-radius: 18px; }
+      .panelGrid { grid-template-columns: 1.05fr .95fr; }
+      .panelHero, .panelForm { padding: 16px; }
+      .heroTitle { font-size: clamp(34px, 7vw, 64px); line-height: .88; }
+      .heroLead { font-size: 10px; line-height: 1.4; margin-top: 10px; }
+      .flow { margin-top: 10px; gap: 6px; }
+      .flowStep { min-height: 66px; padding: 8px; border-radius: 11px; }
+      .stepNo { font-size: 7px; }
+      .stepTitle { font-size: 11px; margin-top: 3px; }
+      .stepText { display: none; }
+      .formTitle { font-size: 17px; }
+      .formLead { font-size: 10px; line-height: 1.4; }
+      .checkList { display: none; }
+      .heightField { margin: 8px 0 10px; padding: 8px 10px; }
+      #heightInput { height: 34px; width: 72px; font-size: 15px; }
+      .fieldLabel { margin-top: 9px; font-size: 9px; }
+      .difficultyRow { gap: 6px; }
+      .difficultyButton { min-height: 46px; padding: 7px; font-size: 11px; }
+      .backgroundFieldLabel { margin-top: 9px; }
+      .backgroundModeRow { gap: 6px; }
+      .backgroundModeButton { padding: 5px; }
+      .backgroundPreview { height: 30px; }
+      .backgroundModeButton strong { font-size: 9px; }
+      .backgroundModeButton small { display: none; }
+      .primaryButton { min-height: 44px; margin-top: 9px; border-radius: 12px; font-size: 12px; }
+      .statusBox { margin-top: 7px; padding: 7px 9px; font-size: 9px; }
+      .privacy { display: none; }
+      .calibrationCard { width: min(420px, 86vw); padding: 16px; }
+      .calibrationIcon { width: 42px; height: 42px; }
+      .calibrationTitle { font-size: 18px; }
+      .calibrationText { font-size: 11px; }
+      .resultHeader { padding: 14px; }
+      .resultGrid { grid-template-columns: repeat(4, minmax(86px,1fr)); gap: 6px; }
+      .resultStat { min-height: 64px; padding: 8px; }
+      .resultStatLabel { font-size: 8px; }
+      .resultStatValue { font-size: 18px; }
+      .resultActions { position: sticky; bottom: 0; padding-top: 8px; background: linear-gradient(transparent, rgba(2,8,23,.96) 25%); }
+    }
+
+    @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+      .eyebrow, .heroLead { display: none; }
+      .panelHero { display: flex; flex-direction: column; justify-content: center; }
+      .flow { grid-template-columns: repeat(3, 1fr); }
+      .flowStep { min-height: 54px; }
+      .heightField { margin: 4px 0 6px; }
+      .panelForm { padding-top: 10px; padding-bottom: 10px; }
+      #centerMessage { top: 18%; }
+    }
+
+    @media (orientation: portrait) and (max-width: 900px) {
+      #portraitNotice { display: grid; }
+    }
+
+  
+
+    /* v10: compact smartphone/tablet landscape home and uncluttered Volley-style HUD */
+    #timeMetric { order: 1; }
+    #scoreMetric { order: 2; }
+    #comboMetric { order: 3; }
+    #successMetric { order: 4; }
+
+    @media (pointer: coarse), (max-width: 1180px) {
+      #phaseBadge, #fpsMetric { display: none !important; }
+      #hudMetrics { max-width: calc(100% - 126px); overflow: visible; }
+      #timeMetric, #scoreMetric, #comboMetric, #successMetric {
+        display: block !important;
+        flex: 1 1 0;
+        min-width: 50px;
+        text-align: center;
+      }
+      #timeMetric .metricValue, #scoreMetric .metricValue,
+      #comboMetric .metricValue, #successMetric .metricValue { font-size: 15px; }
+      .vcStartBackdrop { overscroll-behavior-y: contain; }
+      .vcHome { width: 100%; }
+    }
+
+    @media (pointer: coarse) and (orientation: landscape) and (max-height: 540px) {
+      .vcHome {
+        min-height: 100%;
+        padding: max(5px, env(safe-area-inset-top)) max(7px, env(safe-area-inset-right))
+                 max(6px, env(safe-area-inset-bottom)) max(7px, env(safe-area-inset-left));
+      }
+      .vcHeader {
+        min-height: 52px;
+        padding: 6px 12px;
+        gap: 9px;
+        border-radius: 12px;
+      }
+      .vcHeaderIcon { font-size: 27px; }
+      .vcHeaderText h1 { font-size: 25px; letter-spacing: -.02em; }
+      .vcHeaderText p { margin-top: 3px; font-size: 7px; letter-spacing: .15em; }
+      .vcHomeBody { padding-top: 6px; }
+      .vcDescription { display: none; }
+      .vcContentGrid {
+        grid-template-columns: minmax(270px,.92fr) minmax(340px,1.08fr);
+        gap: 6px;
+      }
+      .vcSelectionColumn, .vcSetupCard {
+        padding: 7px;
+        border-radius: 12px;
+      }
+      .vcSectionTitle { margin-bottom: 5px; font-size: 11px; }
+      .vcDifficultyList { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+      .vcDifficultyCard {
+        min-height: 42px;
+        padding: 5px 7px;
+        border-radius: 10px;
+        flex-direction: row;
+        align-items: center;
+      }
+      .vcDifficultyCard span { gap: 1px; }
+      .vcDifficultyCard strong { font-size: 11px; }
+      .vcDifficultyCard small { display: block; font-size: 7px; white-space: nowrap; }
+      .vcDifficultyCard > b { display: none; }
+      .vcBackgroundTitle { margin-top: 7px; }
+      .vcBackgroundGrid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+      .backgroundModeButton { min-height: 45px; padding: 3px; border-radius: 9px; }
+      .backgroundPreview { height: 20px; border-radius: 6px; }
+      .backgroundModeButton strong { font-size: 7px; line-height: 1.1; }
+      .backgroundModeButton small { display: none; }
+      .vcSetupLead { display: none; }
+      .vcRuleList { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+      .vcRuleList > div {
+        display: block;
+        min-height: 38px;
+        padding: 4px 5px;
+        border-radius: 9px;
+      }
+      .vcRuleList > div > span {
+        float: left;
+        width: 17px;
+        height: 17px;
+        margin-right: 4px;
+        font-size: 8px;
+      }
+      .vcRuleList b { font-size: 8px; line-height: 1.15; }
+      .vcRuleList small { display: none; }
+      .vcHeightField {
+        min-height: 32px;
+        margin-top: 5px;
+        padding: 4px 7px;
+        border-radius: 9px;
+      }
+      .vcHeightField > span:first-child { font-size: 9px; }
+      #heightInput { width: 58px; height: 27px; font-size: 12px; }
+      .vcSafety { display: none; }
+      .vcStartButton, .primaryButton {
+        min-height: 37px;
+        margin-top: 4px;
+        border-radius: 10px;
+        font-size: 10px;
+      }
+      #startupStatus {
+        margin-top: 4px;
+        padding: 4px 6px;
+        min-height: 0;
+        border-radius: 8px;
+        font-size: 7px;
+        line-height: 1.2;
+      }
+      .privacy { display: none; }
+      #topHud .brand { max-width: 118px; }
+      #hudMetrics { max-width: calc(100% - 122px); }
+      .metric { min-width: 48px; padding: 5px 4px; }
+      .metricLabel { font-size: 6px; }
+      #timeMetric .metricValue, #scoreMetric .metricValue,
+      #comboMetric .metricValue, #successMetric .metricValue { font-size: 13px; }
+    }
+
+    @media (pointer: coarse) and (orientation: landscape) and (max-width: 700px) {
+      .brandMark { display: none; }
+      .brand { padding-left: 7px; padding-right: 7px; }
+      .brandTitle { font-size: 10px; }
+      #topHud .brand { max-width: 88px; }
+      #hudMetrics { max-width: calc(100% - 92px); }
+      .metric { min-width: 43px; }
+      #timeMetric .metricValue, #scoreMetric .metricValue,
+      #comboMetric .metricValue, #successMetric .metricValue { font-size: 12px; }
+    }
+
   </style>
 </head>
 <body>
@@ -1395,7 +1656,7 @@
           <div class="brandMark">⚽</div>
           <div>
             <div class="brandTitle">パスチャレンジ</div>
-            <div class="brandSub">FAR-TO-NEAR FIRST TOUCH × PASS</div>
+            <div class="brandSub">MOBILE FIRST TOUCH × PASS</div>
           </div>
         </div>
 
@@ -1404,32 +1665,44 @@
             <span class="metricLabel">フェーズ</span>
             <span id="phaseValue" class="metricValue">SETUP</span>
           </div>
+          <div id="timeMetric" class="metric glass mobileOnlyMetric">
+            <span class="metricLabel">TIME</span>
+            <span id="timeValue" class="metricValue">60</span>
+          </div>
+          <div id="comboMetric" class="metric glass mobileOnlyMetric">
+            <span class="metricLabel">COMBO</span>
+            <span id="comboValue" class="metricValue">0</span>
+          </div>
+          <div id="successMetric" class="metric glass mobileOnlyMetric">
+            <span class="metricLabel">RATE</span>
+            <span id="successRateValue" class="metricValue">—</span>
+          </div>
 
-          <div class="metric glass scenarioMetric">
+          <div class="metric glass scenarioMetric" id="scenarioMetric">
             <span class="metricLabel">状況</span>
             <span id="scenarioValue" class="metricValue">—</span>
           </div>
-          <div class="metric glass">
+          <div class="metric glass" id="scanMetric">
             <span class="metricLabel">首振り</span>
             <span id="scanValue" class="metricValue">—</span>
           </div>
-          <div class="metric glass">
+          <div class="metric glass" id="roundMetric">
             <span class="metricLabel">ラウンド</span>
             <span id="roundValue" class="metricValue">—</span>
           </div>
-          <div class="metric glass">
-            <span class="metricLabel">スコア</span>
+          <div class="metric glass" id="scoreMetric">
+            <span class="metricLabel">SCORE</span>
             <span id="scoreValue" class="metricValue">0</span>
           </div>
-          <div class="metric glass">
+          <div class="metric glass" id="trapMetric">
             <span class="metricLabel">トラップ</span>
             <span id="trapRateValue" class="metricValue">—</span>
           </div>
-          <div class="metric glass">
+          <div class="metric glass" id="passMetric">
             <span class="metricLabel">パス</span>
             <span id="passRateValue" class="metricValue">—</span>
           </div>
-          <div class="metric glass">
+          <div class="metric glass" id="fpsMetric">
             <span class="metricLabel">検出FPS</span>
             <span id="fpsValue" class="metricValue">0</span>
           </div>
@@ -1445,7 +1718,7 @@
       <div id="bottomHud">
         <div id="coachCard" class="glass">
           <div id="coachLabel">COACH</div>
-          <div id="coachText">カメラを開始し、全身が映る位置に立ってください。</div>
+          <div id="coachText">スマホ／タブレットを横向きに固定し、全身が映る位置に立ってください。</div>
         </div>
         <div id="trackingCard" class="glass">
           <div id="trackingDot"></div>
@@ -1483,7 +1756,7 @@
 
           <div class="vcHomeBody">
             <div class="vcDescription">
-              PCカメラで身体と足を骨格認識し、左右のパサーから来るボールをトラップ。数的有利やマークが外れた瞬間を見て、青い味方へ正確にパスするトレーニングアプリです。
+              スマホ／タブレットを横向きに固定し、カメラで身体と足を骨格認識します。左右のパサーから来るボールをトラップし、数的有利やマークが外れた瞬間に青い味方へパスするトレーニングです。PCでも使用できます。
             </div>
 
             <div class="vcContentGrid">
@@ -1491,20 +1764,20 @@
                 <h2 class="vcSectionTitle">難易度を選択</h2>
                 <div class="vcDifficultyList" role="group" aria-label="難易度">
                   <button class="difficultyButton vcDifficultyCard vcEasy" type="button" data-difficulty="easy" aria-pressed="false">
-                    <span><strong>EASY</strong><small>ゆっくり・6ボール</small></span><b>👕</b>
+                    <span><strong>EASY</strong><small>ゆっくり・60秒</small></span><b>👕</b>
                   </button>
                   <button class="difficultyButton vcDifficultyCard vcNormal" type="button" data-difficulty="normal" aria-pressed="true">
-                    <span><strong>NORMAL</strong><small>標準ペース・8ボール</small></span><b>⚽</b>
+                    <span><strong>NORMAL</strong><small>標準ペース・60秒</small></span><b>⚽</b>
                   </button>
                   <button class="difficultyButton vcDifficultyCard vcHard" type="button" data-difficulty="hard" aria-pressed="false">
-                    <span><strong>HARD</strong><small>高速・10ボール</small></span><b>🔴</b>
+                    <span><strong>HARD</strong><small>高速・45秒</small></span><b>🔴</b>
                   </button>
                 </div>
 
                 <h2 class="vcSectionTitle vcBackgroundTitle">背景を選択</h2>
                 <div class="backgroundModeRow vcBackgroundGrid" role="group" aria-label="バーチャル背景">
                   <button class="backgroundModeButton" type="button" data-background="camera_only" aria-pressed="false">
-                    <span class="backgroundPreview cameraPreview"><b>CAM</b></span><strong>カメラ</strong><small>実写</small>
+                    <span class="backgroundPreview cameraPreview"><b>CAM</b></span><strong>カメラ優先</strong><small>実写</small>
                   </button>
                   <button class="backgroundModeButton" type="button" data-background="grass_day" aria-pressed="true">
                     <span class="backgroundPreview dayPreview"></span><strong>芝ピッチ</strong><small>昼</small>
@@ -1518,7 +1791,7 @@
               <section class="vcSetupColumn" aria-label="プレー前の準備">
                 <div class="vcSetupCard">
                   <h2 class="vcSectionTitle">プレー前の準備</h2>
-                  <p class="vcSetupLead">PCを固定し、カメラから2〜4m離れて全身を映してください。左右は画面に見えている方向を基準にします。</p>
+                  <p class="vcSetupLead">スマホ／タブレットを横向きに固定し、カメラから2〜4m離れて頭から両足まで映してください。PCでも同じ手順です。左右は画面に見えている方向を基準にします。</p>
 
                   <div class="vcRuleList">
                     <div><span>1</span><p><b>ボールを受ける</b><small>左または右の青いパサーからグラウンダーが来ます。</small></p></div>
@@ -1531,12 +1804,12 @@
                     <span class="heightInputWrap"><input id="heightInput" type="number" min="130" max="220" step="1" value="170" inputmode="numeric" /><b>cm</b></span>
                   </label>
 
-                  <div class="vcSafety">周囲2m以上の安全なスペースを確保し、頭から両足まで画面に入れてください。</div>
+                  <div class="vcSafety">端末が倒れないよう固定し、周囲2m以上の安全なスペースを確保してください。頭から両足まで画面へ入れます。</div>
 
                   <button id="startButton" class="primaryButton vcStartButton" type="button">
-                    <span>ゲーム開始</span><span aria-hidden="true">▶</span>
+                    <span>横画面でゲーム開始</span><span aria-hidden="true">▶</span>
                   </button>
-                  <div id="startupStatus" class="statusBox" aria-live="polite">開始後、モデル読込・カメラ許可・床面キャリブレーションを行います。</div>
+                  <div id="startupStatus" class="statusBox" aria-live="polite">開始後、素材と骨格モデルを読み込み、カメラ許可と約1秒の足元補正を行います。補正が難しい場合は「簡易補正で開始」を使用できます。</div>
                   <p class="privacy">映像は端末内で処理し、外部へ保存・送信しません。リプレイ情報はブラウザのメモリ内だけに一時保持します。</p>
                 </div>
               </section>
@@ -1549,8 +1822,10 @@
         <div class="calibrationCard glass">
           <div class="calibrationIcon">骨</div>
           <h2 id="calibrationTitle" class="calibrationTitle">全身を映してください</h2>
-          <p id="calibrationText" class="calibrationText">頭から両足まで映し、正面を向いて静止します。身長を使って速度スケールを補正します。</p>
+          <p id="calibrationText" class="calibrationText">端末を横向きで固定し、頭から両足まで映して約1秒静止します。身長を使って速度スケールを補正します。</p>
           <div class="progressTrack"><div id="calibrationProgress"></div></div>
+          <div id="assetReadyText">ボール・選手素材を確認中…</div>
+          <button id="quickStartButton" type="button">簡易補正で開始</button>
         </div>
       </section>
 
@@ -1573,6 +1848,7 @@
             <div class="resultStat"><div class="resultStatLabel">PERFECT TRAP</div><div id="finalPerfect" class="resultStatValue">0</div></div>
             <div class="resultStat"><div class="resultStatLabel">パス成功率</div><div id="finalPassRate" class="resultStatValue">—</div></div>
             <div class="resultStat"><div class="resultStatLabel">ダイレクトパス</div><div id="finalDirectRate" class="resultStatValue">—</div></div>
+            <div class="resultStat"><div class="resultStatLabel">最大コンボ</div><div id="finalMaxCombo" class="resultStatValue">0</div></div>
             <div class="resultStat"><div class="resultStatLabel">ベスト選択率</div><div id="finalBestRate" class="resultStatValue">—</div></div>
             <div class="resultStat"><div class="resultStatLabel">平均判断時間</div><div id="finalDecision" class="resultStatValue">—</div></div>
             <div class="resultStat"><div class="resultStatLabel">左足トラップ</div><div id="finalLeft" class="resultStatValue">0</div></div>
@@ -1602,7 +1878,7 @@
       <div id="portraitNotice">
         <div>
           <strong>端末を横向きにしてください</strong>
-          <span>全身と床面上の選手配置を広く映すため、横長のPC画面でプレーします。</span>
+          <span>全身と床面上の選手配置を広く映すため、スマホ／タブレットを横向きにしてプレーします。</span>
         </div>
       </div>
     </main>
@@ -1614,9 +1890,17 @@
       PoseLandmarker,
     } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
 
-    const APP_VERSION = "8.0-pass-challenge-volley-ui";
+    const APP_VERSION = "10.0-mobile-tablet-volley-spec";
     const MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task";
     const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm";
+
+    const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const IS_ANDROID = /Android/i.test(navigator.userAgent);
+    const IS_COARSE = window.matchMedia?.("(pointer: coarse)")?.matches ?? false;
+    const IS_MOBILE_DEVICE = IS_IOS || IS_ANDROID || IS_COARSE;
+    const CAMERA_FIT = IS_MOBILE_DEVICE ? "contain" : "cover";
+
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -1664,6 +1948,11 @@
       trackingDot: $("#trackingDot"),
       trackingText: $("#trackingText"),
       phaseValue: $("#phaseValue"),
+      timeValue: $("#timeValue"),
+      comboValue: $("#comboValue"),
+      successRateValue: $("#successRateValue"),
+      quickStartButton: $("#quickStartButton"),
+      assetReadyText: $("#assetReadyText"),
       scenarioValue: $("#scenarioValue"),
       scanValue: $("#scanValue"),
       roundValue: $("#roundValue"),
@@ -1677,6 +1966,7 @@
       finalPerfect: $("#finalPerfect"),
       finalPassRate: $("#finalPassRate"),
       finalDirectRate: $("#finalDirectRate"),
+      finalMaxCombo: $("#finalMaxCombo"),
       finalBestRate: $("#finalBestRate"),
       finalDecision: $("#finalDecision"),
       finalLeft: $("#finalLeft"),
@@ -1694,7 +1984,8 @@
     const DIFFICULTY = {
       easy: {
         label: "EASY",
-        rounds: 6,
+        rounds: 999,
+        timeLimit: 60,
         receiveArrivalSpeed: [2.2, 3.0],
         contactRadius: 0.30,
         trapSuccessThreshold: 0.45,
@@ -1708,7 +1999,8 @@
       },
       normal: {
         label: "NORMAL",
-        rounds: 8,
+        rounds: 999,
+        timeLimit: 60,
         receiveArrivalSpeed: [3.0, 4.2],
         contactRadius: 0.27,
         trapSuccessThreshold: 0.52,
@@ -1722,7 +2014,8 @@
       },
       hard: {
         label: "HARD",
-        rounds: 10,
+        rounds: 999,
+        timeLimit: 45,
         receiveArrivalSpeed: [4.0, 5.5],
         contactRadius: 0.24,
         trapSuccessThreshold: 0.58,
@@ -1998,7 +2291,7 @@
       feet: { L: null, R: null },
       calibration: {
         progress: 0,
-        requiredSeconds: 2.0,
+        requiredSeconds: IS_MOBILE_DEVICE ? 1.05 : 1.8,
         samples: [],
         feet: { L: null, R: null },
         basePoint: null,
@@ -2036,6 +2329,13 @@
       resultUntil: 0,
       lastKickRejectedAt: 0,
       score: 0,
+      combo: 0,
+      maxCombo: 0,
+      sessionEndsAt: 0,
+      sessionStartedAt: 0,
+      calibrationElapsed: 0,
+      assetStatus: { silhouettes: false, ball: false, backgrounds: false },
+      wakeLock: null,
       stats: null,
       audio: null,
       gameTimeOffset: 0,
@@ -2169,7 +2469,18 @@
 
     function updateHud() {
       const cfg = getConfig();
-      ui.roundValue.textContent = app.round > 0 ? `${app.round}/${cfg.rounds}` : `0/${cfg.rounds}`;
+      const attempts = (app.stats?.trapAttempts ?? 0) + (app.stats?.directAttempts ?? 0);
+      const completed = (app.stats?.trapSuccess ?? 0) + (app.stats?.directSuccess ?? 0);
+      const passAttempts = app.stats?.passAttempts ?? 0;
+      const passSuccess = app.stats?.passSuccess ?? 0;
+      const overallDen = Math.max(0, attempts + passAttempts);
+      const overallNum = completed + passSuccess;
+      const now = app.gameNow || performance.now();
+      const seconds = app.sessionEndsAt > 0 ? Math.max(0, Math.ceil((app.sessionEndsAt - now) / 1000)) : cfg.timeLimit;
+      if (ui.timeValue) ui.timeValue.textContent = String(seconds);
+      if (ui.comboValue) ui.comboValue.textContent = String(app.combo || 0);
+      if (ui.successRateValue) ui.successRateValue.textContent = overallDen > 0 ? percent(overallNum, overallDen) : "—";
+      ui.roundValue.textContent = app.round > 0 ? String(app.round) : "0";
       ui.scoreValue.textContent = String(Math.max(0, Math.round(app.score)));
       ui.trapRateValue.textContent = percent(app.stats?.trapSuccess ?? 0, app.stats?.trapAttempts ?? 0);
       ui.passRateValue.textContent = percent(app.stats?.passSuccess ?? 0, app.stats?.passAttempts ?? 0);
@@ -2182,20 +2493,24 @@
     }
 
     function trackingIsGood() {
-      return Boolean(app.feet.L && app.feet.R && performance.now() - app.poseSeenAt < 700);
+      const grace = IS_MOBILE_DEVICE ? 1650 : 900;
+      return Boolean((app.feet.L || app.feet.R) && app.pose && performance.now() - app.poseSeenAt < grace);
     }
 
     function updateTrackingUi() {
       const good = trackingIsGood();
       ui.trackingDot.classList.toggle("ok", good);
-      ui.trackingText.textContent = good ? `POSE ON · ${app.modelDelegate} · ${Math.round(app.poseFps)} FPS` : "全身を検出中";
+      ui.trackingText.textContent = good
+        ? `POSE ON · ${app.modelDelegate} · ${Math.round(app.poseFps)} FPS`
+        : "足を含む全身を検出中";
     }
 
     function resizeCanvas() {
       const rect = stage.getBoundingClientRect();
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      app.display.width = rect.width;
-      app.display.height = rect.height;
+      const dprCap = IS_MOBILE_DEVICE ? 1.35 : 2;
+      const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+      app.display.width = Math.max(1, rect.width);
+      app.display.height = Math.max(1, rect.height);
       app.display.dpr = dpr;
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
@@ -2206,6 +2521,7 @@
       personCanvas.height = Math.max(1, Math.round(rect.height));
       personMaskCanvas.width = personCanvas.width;
       personMaskCanvas.height = personCanvas.height;
+      video.style.objectFit = CAMERA_FIT;
       updateVideoMap();
       if (app.calibration.basePoint) app.groundFrame = createGroundFrame();
     }
@@ -2215,7 +2531,7 @@
       const h = app.display.height;
       const vw = video.videoWidth || 1280;
       const vh = video.videoHeight || 720;
-      const scale = Math.max(w / vw, h / vh);
+      const scale = CAMERA_FIT === "contain" ? Math.min(w / vw, h / vh) : Math.max(w / vw, h / vh);
       const displayWidth = vw * scale;
       const displayHeight = vh * scale;
       app.videoMap = {
@@ -2292,7 +2608,7 @@
     function syncBallScreen(ball) {
       if (!ball || !app.groundFrame) return;
       const ground = projectGround(ball.worldX, ball.worldZ, ball.frame ?? app.groundFrame);
-      const radius = clamp(SURFACE.ballRadius * app.groundFrame.pixelsXAtOrigin * ground.scale * 1.66, 5, 43);
+      const radius = clamp(SURFACE.ballRadius * app.groundFrame.pixelsXAtOrigin * ground.scale * (IS_MOBILE_DEVICE ? 2.05 : 1.76), IS_MOBILE_DEVICE ? 9 : 6, IS_MOBILE_DEVICE ? 48 : 44);
       const verticalPixelsPerMeter = app.groundFrame.pixelsXAtOrigin * ground.scale * 0.95;
       ball.radius = radius;
       ball.groundX = ground.x;
@@ -2457,16 +2773,33 @@
     function computeFoot(mappedPose, side, now) {
       const index = FOOT_INDEX[side];
       const ankle = mappedPose[index.ankle];
-      const heel = mappedPose[index.heel];
-      const toe = mappedPose[index.toe];
-      if (!ankle || !heel || !toe) return null;
-      if (Math.min(ankle.visibility, heel.visibility, toe.visibility) < 0.24) return null;
+      const knee = mappedPose[index.knee];
+      if (!ankle || ankle.visibility < (IS_MOBILE_DEVICE ? 0.08 : 0.16)) return null;
+
+      const previous = app.feet[side];
+      const fallbackLength = Math.max(12, app.bodyScale * 0.065);
+      const lateralSign = side === "L" ? -1 : 1;
+      const rawHeel = mappedPose[index.heel];
+      const rawToe = mappedPose[index.toe];
+      const heelVisible = rawHeel && rawHeel.visibility >= (IS_MOBILE_DEVICE ? 0.06 : 0.15);
+      const toeVisible = rawToe && rawToe.visibility >= (IS_MOBILE_DEVICE ? 0.06 : 0.15);
+      const kneeDir = knee ? normalizeScreen(ankle.x - knee.x, ankle.y - knee.y) : { x: 0, y: 1 };
+      const heel = heelVisible ? rawHeel : (previous?.heel ?? {
+        x: ankle.x - lateralSign * fallbackLength * 0.28,
+        y: ankle.y + fallbackLength * 0.10,
+        visibility: ankle.visibility * 0.72,
+      });
+      const toe = toeVisible ? rawToe : (previous?.toe ?? {
+        x: ankle.x + lateralSign * fallbackLength * 0.62 + kneeDir.x * fallbackLength * 0.22,
+        y: ankle.y + fallbackLength * 0.18 + kneeDir.y * fallbackLength * 0.10,
+        visibility: ankle.visibility * 0.68,
+      });
 
       const center = {
-        x: ankle.x * 0.34 + heel.x * 0.26 + toe.x * 0.40,
-        y: ankle.y * 0.24 + heel.y * 0.33 + toe.y * 0.43,
+        x: ankle.x * 0.38 + heel.x * 0.24 + toe.x * 0.38,
+        y: ankle.y * 0.28 + heel.y * 0.30 + toe.y * 0.42,
       };
-      const confidence = (ankle.visibility + heel.visibility + toe.visibility) / 3;
+      const confidence = clamp((ankle.visibility * 1.4 + (heel.visibility ?? 0) + (toe.visibility ?? 0)) / 3.4, 0, 1);
       const groundY = Math.max(ankle.y, heel.y, toe.y);
       const screenAxis = normalizeScreen(toe.x - heel.x, toe.y - heel.y);
       const screenLength = Math.max(10, distanceScreen(heel, toe));
@@ -2485,7 +2818,7 @@
 
       const history = app.footHistory[side];
       history.push({ x: center.x, y: groundY, world, t: now });
-      while (history.length > 2 && now - history[0].t > 340) history.shift();
+      while (history.length > 2 && now - history[0].t > 360) history.shift();
 
       let vx = 0;
       let vy = 0;
@@ -2501,20 +2834,20 @@
           worldVx = (newest.world.x - oldest.world.x) / dt;
           worldVz = (newest.world.z - oldest.world.z) / dt;
         } else {
-          const pixelsPerMeter = Math.max(80, app.bodyScale / Math.max(0.75, app.userHeightM * 0.72));
+          const pixelsPerMeter = Math.max(72, app.bodyScale / Math.max(0.75, app.userHeightM * 0.72));
           worldVx = vx / pixelsPerMeter;
           worldVz = -vy / pixelsPerMeter;
         }
       }
 
-      const previous = app.feet[side];
       if (previous) {
-        vx = lerp(previous.vx, vx, 0.45);
-        vy = lerp(previous.vy, vy, 0.45);
-        worldVx = lerp(previous.worldVx, worldVx, 0.40);
-        worldVz = lerp(previous.worldVz, worldVz, 0.40);
-        center.x = lerp(previous.x, center.x, 0.64);
-        center.y = lerp(previous.y, center.y, 0.64);
+        const smoothing = IS_MOBILE_DEVICE ? 0.38 : 0.45;
+        vx = lerp(previous.vx, vx, smoothing);
+        vy = lerp(previous.vy, vy, smoothing);
+        worldVx = lerp(previous.worldVx, worldVx, smoothing);
+        worldVz = lerp(previous.worldVz, worldVz, smoothing);
+        center.x = lerp(previous.x, center.x, 0.58);
+        center.y = lerp(previous.y, center.y, 0.58);
       }
 
       const bodyCenter = app.body.hipMid ?? app.body.shoulderMid ?? { x: app.display.width * 0.5, y: app.display.height * 0.55 };
@@ -2544,6 +2877,7 @@
         speedMps,
         side,
         seenAt: now,
+        estimatedShape: !(heelVisible && toeVisible),
       };
     }
 
@@ -2824,15 +3158,74 @@
       }
     }
 
+    function allVisualImages() {
+      const images = [BALL_IMAGE, ...Object.values(VIRTUAL_BACKGROUND_IMAGES)];
+      for (const team of Object.values(SILHOUETTE_IMAGES)) {
+        for (const action of Object.values(team)) {
+          for (const sprite of Object.values(action)) if (sprite?.image) images.push(sprite.image);
+        }
+      }
+      return [...new Set(images)];
+    }
+
+    function waitForImage(image, timeoutMs = 2200) {
+      if (!image) return Promise.resolve(false);
+      if (image.complete && image.naturalWidth > 0) return Promise.resolve(true);
+      return new Promise((resolve) => {
+        let settled = false;
+        const done = (ok) => {
+          if (settled) return;
+          settled = true;
+          resolve(ok);
+        };
+        image.addEventListener("load", () => done(true), { once: true });
+        image.addEventListener("error", () => done(false), { once: true });
+        window.setTimeout(() => done(image.complete && image.naturalWidth > 0), timeoutMs);
+      });
+    }
+
+    async function preloadVisualAssets() {
+      const silhouetteImages = [];
+      for (const team of Object.values(SILHOUETTE_IMAGES)) {
+        for (const action of Object.values(team)) {
+          for (const sprite of Object.values(action)) if (sprite?.image) silhouetteImages.push(sprite.image);
+        }
+      }
+      const silhouetteResults = await Promise.all(silhouetteImages.map((image) => waitForImage(image)));
+      const ballReady = await waitForImage(BALL_IMAGE);
+      const backgroundResults = await Promise.all(Object.values(VIRTUAL_BACKGROUND_IMAGES).map((image) => waitForImage(image)));
+      app.assetStatus.silhouettes = silhouetteResults.some(Boolean);
+      app.assetStatus.ball = ballReady;
+      app.assetStatus.backgrounds = backgroundResults.some(Boolean);
+      if (ui.assetReadyText) {
+        ui.assetReadyText.textContent = `表示素材：選手${app.assetStatus.silhouettes ? "✓" : "簡易描画"}　ボール${app.assetStatus.ball ? "✓" : "簡易描画"}　芝${app.assetStatus.backgrounds ? "✓" : "簡易描画"}`;
+      }
+      return app.assetStatus;
+    }
+
+    async function requestWakeLock() {
+      try {
+        if ("wakeLock" in navigator) app.wakeLock = await navigator.wakeLock.request("screen");
+      } catch (error) {
+        console.warn("Wake Lock unavailable", error);
+      }
+    }
+
+    async function tryLandscapeMode() {
+      try {
+        if (screen.orientation?.lock) await screen.orientation.lock("landscape");
+      } catch (_) {}
+    }
+
     async function createPoseLandmarker() {
       const vision = await FilesetResolver.forVisionTasks(WASM_URL);
       const options = {
         baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" },
         runningMode: "VIDEO",
         numPoses: 1,
-        minPoseDetectionConfidence: 0.5,
-        minPosePresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
+        minPoseDetectionConfidence: IS_MOBILE_DEVICE ? 0.35 : 0.48,
+        minPosePresenceConfidence: IS_MOBILE_DEVICE ? 0.35 : 0.48,
+        minTrackingConfidence: IS_MOBILE_DEVICE ? 0.35 : 0.48,
         outputSegmentationMasks: false,
       };
       try {
@@ -2848,21 +3241,29 @@
 
     async function startCamera() {
       if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("このブラウザではカメラAPIを利用できません。HTTPSまたはlocalhostで開いてください。");
+        throw new Error("このブラウザではカメラAPIを利用できません。スマホではHTTPSで公開したURLから開いてください。");
       }
-      const constraints = {
+      const preferred = {
         audio: false,
         video: {
           facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, max: 60 },
+          width: { ideal: IS_MOBILE_DEVICE ? 960 : 1280 },
+          height: { ideal: IS_MOBILE_DEVICE ? 540 : 720 },
+          frameRate: { ideal: IS_MOBILE_DEVICE ? 24 : 30, max: 30 },
+          aspectRatio: { ideal: 16 / 9 },
         },
       };
-      app.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      try {
+        app.stream = await navigator.mediaDevices.getUserMedia(preferred);
+      } catch (firstError) {
+        console.warn("Preferred camera constraints failed; retrying.", firstError);
+        app.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "user" } });
+      }
       video.srcObject = app.stream;
+      video.setAttribute("playsinline", "");
+      video.muted = true;
       await new Promise((resolve, reject) => {
-        const timer = window.setTimeout(() => reject(new Error("カメラ映像の開始に時間がかかっています。")), 12000);
+        const timer = window.setTimeout(() => reject(new Error("カメラ映像の開始に時間がかかっています。")), 15000);
         video.onloadedmetadata = async () => {
           clearTimeout(timer);
           try {
@@ -2884,26 +3285,34 @@
       app.calibration.feet = { L: null, R: null };
       app.calibration.basePoint = null;
       app.calibration.floorY = 0;
+      app.calibrationElapsed = 0;
       app.footHistory = { L: [], R: [] };
       app.feet = { L: null, R: null };
       app.lastVideoTime = -1;
-      setStartupStatus("MediaPipeモデルとPCカメラを準備しています…");
+      if (ui.quickStartButton) ui.quickStartButton.classList.remove("isVisible");
+      setStartupStatus("選手・ボール素材、骨格モデル、カメラを準備しています…");
       try {
-        await Promise.all([createPoseLandmarker(), startCamera()]);
-        setStartupStatus(`準備完了 · ${app.modelDelegate}推論 · 身長${Math.round(app.userHeightM * 100)}cm`);
+        const [assetStatus] = await Promise.all([
+          preloadVisualAssets(),
+          createPoseLandmarker(),
+          startCamera(),
+        ]);
+        await requestWakeLock();
+        tryLandscapeMode();
+        setStartupStatus(`準備完了 · ${app.modelDelegate}推論 · 素材${assetStatus.ball ? "OK" : "簡易表示"} · 身長${Math.round(app.userHeightM * 100)}cm`);
         ui.startPanel.hidden = true;
         ui.controls.hidden = false;
         ui.calibrationPanel.hidden = false;
         app.running = true;
         app.lastFrameAt = performance.now();
         setPhase("calibrating");
-        setCoach("正面を向き、両足を床につけて静止してください。床面と身体スケールを測定します。");
+        setCoach("スマホ／タブレットを横向きに固定し、頭から両足まで映して約1秒静止してください。");
         requestAnimationFrame(loop);
       } catch (error) {
         console.error(error);
         const isPermission = error?.name === "NotAllowedError" || error?.name === "SecurityError";
         const message = isPermission
-          ? "カメラが許可されませんでした。ブラウザ設定で許可し、HTTPSまたはlocalhostから開いてください。"
+          ? "カメラが許可されませんでした。スマホではHTTPSのURLで開き、ブラウザ設定からカメラを許可してください。"
           : `開始できませんでした: ${error?.message ?? String(error)}`;
         setStartupStatus(message, true);
         ui.startButton.disabled = false;
@@ -2917,6 +3326,8 @@
       app.stream?.getTracks().forEach((track) => track.stop());
       app.stream = null;
       video.srcObject = null;
+      app.wakeLock?.release?.().catch?.(() => {});
+      app.wakeLock = null;
       app.poseLandmarker?.close?.();
       app.poseLandmarker = null;
       app.pose = null;
@@ -2935,18 +3346,21 @@
       ui.calibrationPanel.hidden = true;
       ui.startPanel.hidden = false;
       ui.startButton.disabled = false;
-      ui.startButton.querySelector("span").textContent = "カメラと骨格認識を開始";
+      ui.startButton.querySelector("span").textContent = "横画面でゲーム開始";
       setStartupStatus("カメラを終了しました。再開できます。");
       setPhase("setup");
-      setCoach("PCカメラを開始し、全身が映る位置に立ってください。");
+      setCoach("スマホ／タブレットを横向きに固定し、全身が映る位置に立ってください。");
       ctx.clearRect(0, 0, app.display.width, app.display.height);
     }
 
     function updateCalibration(dt) {
+      app.calibrationElapsed += dt;
       const left = app.feet.L;
       const right = app.feet.R;
-      const bothVisible = left && right && left.confidence > 0.42 && right.confidence > 0.42;
-      const stable = bothVisible && Math.max(left.speedMps, right.speedMps) < 0.36;
+      const confidenceFloor = IS_MOBILE_DEVICE ? 0.13 : 0.32;
+      const bothVisible = left && right && left.confidence > confidenceFloor && right.confidence > confidenceFloor;
+      const stableLimit = IS_MOBILE_DEVICE ? 0.68 : 0.42;
+      const stable = bothVisible && Math.max(left.speedMps, right.speedMps) < stableLimit;
       if (stable) {
         app.calibration.progress = Math.min(app.calibration.requiredSeconds, app.calibration.progress + dt);
         const shoulders = app.pose?.[11] && app.pose?.[12] ? distanceScreen(app.pose[11], app.pose[12]) : 0;
@@ -2958,22 +3372,26 @@
         });
         if (app.calibration.samples.length > 120) app.calibration.samples.shift();
       } else {
-        app.calibration.progress = Math.max(0, app.calibration.progress - dt * 0.65);
+        app.calibration.progress = Math.max(0, app.calibration.progress - dt * (IS_MOBILE_DEVICE ? 0.18 : 0.48));
       }
 
-      const progress = app.calibration.progress / app.calibration.requiredSeconds;
-      ui.calibrationProgress.style.width = `${Math.round(progress * 100)}%`;
+      const required = IS_MOBILE_DEVICE ? 1.05 : app.calibration.requiredSeconds;
+      const progress = app.calibration.progress / required;
+      ui.calibrationProgress.style.width = `${Math.round(clamp(progress, 0, 1) * 100)}%`;
       if (!bothVisible) {
-        ui.calibrationTitle.textContent = "全身を映してください";
-        ui.calibrationText.textContent = "頭から両足まで入るよう、PCカメラから2〜4m離れます。";
+        ui.calibrationTitle.textContent = "頭から両足まで映してください";
+        ui.calibrationText.textContent = "横画面で端末を固定します。カメラ映像を全体表示にしたため、足までフレームへ入れてください。";
       } else if (!stable) {
         ui.calibrationTitle.textContent = "両足を床につけて静止";
-        ui.calibrationText.textContent = "約2秒間動かずに立ちます。左右は画面基準で判定します。";
+        ui.calibrationText.textContent = "約1秒静止します。スマホの揺れではなく、身体を止めてください。";
       } else {
         ui.calibrationTitle.textContent = "床面と身体スケールを測定中";
-        ui.calibrationText.textContent = "このまま静止してください。完了後、自動で開始します。";
+        ui.calibrationText.textContent = "このまま静止してください。完了後、自動で3カウントが始まります。";
       }
-      if (progress >= 1) completeCalibration();
+
+      if (app.calibrationElapsed > 3.2 && ui.quickStartButton) ui.quickStartButton.classList.add("isVisible");
+      if (progress >= 1) completeCalibration(false);
+      else if (app.calibrationElapsed > 7.5 && (left || right || app.pose)) completeCalibration(true);
     }
 
     function averagePoints(samples, key) {
@@ -2982,17 +3400,36 @@
       return { x: sum.x / valid.length, y: sum.y / valid.length };
     }
 
-    function completeCalibration() {
+    function completeCalibration(useFallback = false) {
       const samples = app.calibration.samples.slice(-60);
-      app.calibration.feet.L = averagePoints(samples, "L");
-      app.calibration.feet.R = averagePoints(samples, "R");
-      app.calibration.basePoint = midpoint(app.calibration.feet.L, app.calibration.feet.R);
-      app.calibration.floorY = Math.max(app.calibration.feet.L.y, app.calibration.feet.R.y);
-      app.calibration.shoulderWidth = samples.reduce((sum, sample) => sum + (sample.shoulderWidth || 0), 0) / samples.length;
-      app.bodyScale = samples.reduce((sum, sample) => sum + sample.bodyScale, 0) / samples.length;
+      let leftPoint = samples.length ? averagePoints(samples, "L") : null;
+      let rightPoint = samples.length ? averagePoints(samples, "R") : null;
+      const poseLeft = app.pose?.[27];
+      const poseRight = app.pose?.[28];
+      if (!leftPoint && app.feet.L) leftPoint = { x: app.feet.L.x, y: app.feet.L.groundY };
+      if (!rightPoint && app.feet.R) rightPoint = { x: app.feet.R.x, y: app.feet.R.groundY };
+      if (!leftPoint && poseLeft) leftPoint = { x: poseLeft.x, y: poseLeft.y };
+      if (!rightPoint && poseRight) rightPoint = { x: poseRight.x, y: poseRight.y };
+      if (!leftPoint && rightPoint) leftPoint = { x: rightPoint.x - app.bodyScale * 0.12, y: rightPoint.y };
+      if (!rightPoint && leftPoint) rightPoint = { x: leftPoint.x + app.bodyScale * 0.12, y: leftPoint.y };
+      if (!leftPoint || !rightPoint) {
+        leftPoint = { x: app.display.width * 0.46, y: app.display.height * 0.84 };
+        rightPoint = { x: app.display.width * 0.54, y: app.display.height * 0.84 };
+      }
+      app.calibration.feet.L = leftPoint;
+      app.calibration.feet.R = rightPoint;
+      app.calibration.basePoint = midpoint(leftPoint, rightPoint);
+      app.calibration.floorY = Math.max(leftPoint.y, rightPoint.y);
+      app.calibration.shoulderWidth = samples.length
+        ? samples.reduce((sum, sample) => sum + (sample.shoulderWidth || 0), 0) / samples.length
+        : (app.pose?.[11] && app.pose?.[12] ? distanceScreen(app.pose[11], app.pose[12]) : app.bodyScale * 0.24);
+      if (samples.length) app.bodyScale = samples.reduce((sum, sample) => sum + sample.bodyScale, 0) / samples.length;
+      app.bodyScale = clamp(app.bodyScale || app.display.height * 0.72, app.display.height * 0.52, app.display.height * 1.18);
       app.groundFrame = createGroundFrame();
       app.footHistory = { L: [], R: [] };
       ui.calibrationPanel.hidden = true;
+      ui.quickStartButton?.classList.remove("isVisible");
+      if (useFallback) setCoach("簡易補正で開始します。足が画面内に入ると接触判定が自動で安定します。");
       beginSession();
     }
 
@@ -3296,6 +3733,10 @@
       app.replay.last = null;
       setReplayAvailability();
       app.score = 0;
+      app.combo = 0;
+      app.maxCombo = 0;
+      app.sessionEndsAt = 0;
+      app.sessionStartedAt = 0;
       app.round = 0;
       app.stats = freshStats();
       app.ball = null;
@@ -3309,8 +3750,8 @@
       app.countdownRemaining = 3.2;
       app.countdownTick = 4;
       setPhase("countdown");
-      setCoach("パサーは画面の左または右に現れます。横から斜めに入るボールを中央手前で受け、下側に広がる3人の味方から空いた出口を先に確認してください。");
-      setMessage("SIDE → CENTER SESSION", "3", "左または右のパサーから、中央手前へボールが入ります。", 0);
+      setCoach("ボレーシュートチャレンジと同じく、3カウント後に制限時間内で連続プレーします。左または右のパサーを確認してください。");
+      setMessage("PASS CHALLENGE", "3", `${getConfig().timeLimit}秒で、トラップ／ダイレクトからパスを連続成功させます。`, 0);
       updateHud();
     }
 
@@ -3324,7 +3765,10 @@
       }
       if (app.countdownRemaining <= 0) {
         hideMessage();
-        startNextRound(performance.now());
+        const now = app.gameNow || performance.now();
+        app.sessionStartedAt = now;
+        app.sessionEndsAt = now + getConfig().timeLimit * 1000;
+        startNextRound(now);
       }
     }
 
@@ -3640,7 +4084,7 @@
 
     function startNextRound(now = app.gameNow || performance.now()) {
       const cfg = getConfig();
-      if (app.round >= cfg.rounds) {
+      if (app.sessionEndsAt > 0 && now >= app.sessionEndsAt) {
         endSession();
         return;
       }
@@ -4034,6 +4478,7 @@
       if (passedPlayer || slowBeforePlayer || timeout) {
         registerFirstTouchMode("trap");
         recordScanIfNeeded();
+        app.combo = 0;
         setPhase("roundResult");
         setMessage("TRAP", "MISS", `${app.receive.directionLabel}からの到達点へ、身体ごと早めに移動してください。`, 1100);
         setCoach("足だけを伸ばさず、軸足を運んで身体の正面近くで触れると、角度とクッションを作りやすくなります。");
@@ -4140,6 +4585,7 @@
       if (oriented) app.stats.orientedTouches += 1;
 
       if (!success) {
+        app.combo = 0;
         setPhase("roundResult");
         setMessage(
           oriented ? "ORIENTED TRAP" : "TRAP",
@@ -4435,6 +4881,8 @@
       let replayLabel = "OFF TARGET";
       if (result.success && result.teammate) {
         const teammate = result.teammate;
+        app.combo += 1;
+        app.maxCombo = Math.max(app.maxCombo, app.combo);
         app.stats.passSuccess += 1;
         const direct = Boolean(app.kickSnapshot?.isDirect);
         if (direct) app.stats.directSuccess += 1;
@@ -4445,7 +4893,8 @@
         const designedMoment = Boolean(optionAtKick?.inDesignedWindow);
         const quickBonus = Math.max(0, Math.round(18 - (app.kickSnapshot?.decisionSeconds ?? 3) * 4));
         const linkBonus = Math.round((app.kickSnapshot?.linkScore ?? 0.45) * 18);
-        points = 42 + (best ? 24 : 0) + (openAtKick ? 14 : 0) + (designedMoment ? 12 : 0) + quickBonus + linkBonus + (direct ? 18 : 0);
+        const comboBonus = Math.max(0, app.combo - 1) * 5;
+        points = 42 + (best ? 24 : 0) + (openAtKick ? 14 : 0) + (designedMoment ? 12 : 0) + quickBonus + linkBonus + (direct ? 18 : 0) + comboBonus;
         app.score += points;
         const title = direct ? "ONE TOUCH!" : designedMoment ? "MARK OFF!" : best ? "BEST CHOICE" : "PASS COMPLETE";
         replayLabel = title;
@@ -4466,6 +4915,7 @@
         );
         beep(designedMoment || best ? 1040 : 820, 0.12, "sine");
       } else {
+        app.combo = 0;
         const title = result.intercepted ? "INTERCEPTED" : result.wrongReturn ? "NO RETURN" : "OFF TARGET";
         replayLabel = title;
         setMessage("PASS", title, result.reason ?? "パスが成功しませんでした。", 1500);
@@ -4493,6 +4943,10 @@
         stepBallPhysics(app.ball, dt, { rollDecel: SURFACE.rollingDeceleration * 1.2, allowBumps: true });
       }
       updateActors(now);
+      if (app.sessionEndsAt > 0 && now >= app.sessionEndsAt) {
+        endSession();
+        return;
+      }
       if (now >= app.resultUntil) startNextRound(now);
     }
 
@@ -4512,6 +4966,7 @@
       ui.finalPerfect.textContent = String(s.perfectTraps);
       ui.finalPassRate.textContent = percent(s.passSuccess, s.passAttempts);
       if (ui.finalDirectRate) ui.finalDirectRate.textContent = `${s.directSuccess}/${s.directAttempts}`;
+      if (ui.finalMaxCombo) ui.finalMaxCombo.textContent = String(app.maxCombo || 0);
       ui.finalBestRate.textContent = percent(s.bestChoices, s.passSuccess);
       ui.finalDecision.textContent = averageDecision === null ? "—" : `${averageDecision.toFixed(2)}秒`;
       ui.finalLeft.textContent = String(s.leftTraps);
@@ -4566,20 +5021,26 @@
       }
       if (app.phase === "setup" || app.phase === "ended") return;
 
-      if (!trackingIsGood()) {
-        if (!app.pausedForTracking) {
-          app.pausedForTracking = true;
-          setCoach("骨格を見失いました。頭から両足まで画面に戻ると自動で再開します。");
-          setMessage("TRACKING", "全身を映してください", "特に左右の足首・かかと・つま先が必要です。", 0);
-        }
+      if (app.sessionEndsAt > 0 && now >= app.sessionEndsAt && app.phase !== "countdown") {
+        endSession();
         return;
       }
-      if (app.pausedForTracking) {
+
+      const trackingGood = trackingIsGood();
+      if (!trackingGood) {
+        if (!app.pausedForTracking) {
+          app.pausedForTracking = true;
+          setCoach("骨格を一時的に見失っています。ボールと選手は進行を続けます。足を画面内へ戻してください。");
+          setMessage("TRACKING", "足を画面内へ", "スマホでは足首・かかと・つま先が画面端から切れないようにします。", 900);
+        }
+      } else if (app.pausedForTracking) {
         app.pausedForTracking = false;
         setCoach("骨格を再検出しました。プレーを続けます。");
-        setMessage("TRACKING", "再開", "", 650);
+        setMessage("TRACKING", "再検出", "", 520);
       }
 
+      // Unlike the previous PC-first build, the virtual world never freezes when pose FPS drops.
+      // Foot input is simply unavailable for that frame, while actors and the ball remain visible.
       if (app.phase === "countdown") updateCountdown(dt);
       else if (app.phase === "receiving") updateReceiving(dt, now);
       else if (app.phase === "absorbing") updateAbsorbing(dt, now);
@@ -4590,7 +5051,7 @@
 
     async function inferPose(now) {
       if (!app.poseLandmarker || app.inferenceBusy || video.readyState < 2) return;
-      if (now - app.lastInferenceAt < 38) return;
+      if (now - app.lastInferenceAt < (IS_MOBILE_DEVICE ? 48 : 36)) return;
       if (video.currentTime === app.lastVideoTime) return;
       app.lastInferenceAt = now;
       app.lastVideoTime = video.currentTime;
@@ -4728,7 +5189,7 @@
       if (hasMask) {
         personCtx.save();
         personCtx.globalCompositeOperation = "destination-in";
-        personCtx.filter = "blur(3px)";
+        personCtx.filter = IS_MOBILE_DEVICE ? "blur(1px)" : "blur(2px)";
         personCtx.drawImage(personMaskCanvas, 0, 0);
         personCtx.restore();
         ctx.save();
@@ -4739,7 +5200,7 @@
         ctx.restore();
       } else {
         ctx.save();
-        ctx.globalAlpha = 0.26;
+        ctx.globalAlpha = IS_MOBILE_DEVICE ? 0.46 : 0.30;
         ctx.drawImage(personCanvas, 0, 0, w, h);
         ctx.restore();
       }
@@ -4787,8 +5248,8 @@
       if (app.phase === "calibrating") drawCalibrationGuide();
       if (app.groundFrame && !["setup", "calibrating", "countdown", "ended"].includes(app.phase)) drawBaseReference();
       if (app.receive && app.phase === "receiving") drawReceiveGuide();
-      if (app.teammates.length || app.defenders.length) drawActors(now);
       drawVirtualPlayerCutout();
+      if (app.teammates.length || app.defenders.length) drawActors(now);
       drawOrientedTouchGuide();
       if (app.ball?.trail?.length > 1) drawBallTrail(app.ball.trail);
       if (app.ball) drawBall(app.ball);
@@ -5152,7 +5613,7 @@
       const image = sprite?.image;
       const size = sprite?.size ?? [90, 150];
       const depthScale = clamp(actor.scale ?? 1, 0.34, 1.15);
-      const height = clamp(app.bodyScale * 0.46 * depthScale, actor.source ? 42 : 50, 208);
+      const height = clamp(app.bodyScale * (IS_MOBILE_DEVICE ? 0.55 : 0.48) * depthScale, actor.source ? (IS_MOBILE_DEVICE ? 58 : 46) : (IS_MOBILE_DEVICE ? 66 : 54), IS_MOBILE_DEVICE ? 190 : 208);
       const width = height * (size[0] / Math.max(1, size[1]));
       const blocked = teammate && actor.eligible && option?.blocked;
       const sourcePulse = actor.source ? 0.72 + Math.sin(performance.now() / 130) * 0.12 : 1;
@@ -5177,9 +5638,23 @@
       } else {
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(actor.x, actor.y - height * 0.80, height * 0.09, 0, Math.PI * 2);
+        ctx.arc(actor.x, actor.y - height * 0.84, height * 0.09, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillRect(actor.x - width * 0.18, actor.y - height * 0.68, width * 0.36, height * 0.46);
+        ctx.lineCap = "round";
+        ctx.lineWidth = Math.max(5, height * 0.11);
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(actor.x, actor.y - height * 0.73);
+        ctx.lineTo(actor.x, actor.y - height * 0.40);
+        ctx.moveTo(actor.x, actor.y - height * 0.66);
+        ctx.lineTo(actor.x - width * 0.34, actor.y - height * 0.52);
+        ctx.moveTo(actor.x, actor.y - height * 0.66);
+        ctx.lineTo(actor.x + width * 0.34, actor.y - height * 0.52);
+        ctx.moveTo(actor.x, actor.y - height * 0.40);
+        ctx.lineTo(actor.x - width * 0.24, actor.y - height * 0.05);
+        ctx.moveTo(actor.x, actor.y - height * 0.40);
+        ctx.lineTo(actor.x + width * 0.24, actor.y - height * 0.05);
+        ctx.stroke();
       }
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
@@ -5251,13 +5726,29 @@
         ctx.drawImage(BALL_IMAGE, -radius, -radius, radius * 2, radius * 2);
       } else {
         const gradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.38, 0, 0, 0, radius);
-        gradient.addColorStop(0, "#fff");
-        gradient.addColorStop(0.72, "#dce2e8");
-        gradient.addColorStop(1, "#68727d");
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(0.72, "#e7e9eb");
+        gradient.addColorStop(1, "#747b83");
         ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.fillStyle = "#111318";
+        for (let i = 0; i < 6; i += 1) {
+          const angle = -Math.PI / 2 + i * Math.PI * 2 / 6;
+          const cx = i === 0 ? 0 : Math.cos(angle) * radius * 0.55;
+          const cy = i === 0 ? 0 : Math.sin(angle) * radius * 0.55;
+          const pr = i === 0 ? radius * 0.25 : radius * 0.18;
+          ctx.beginPath();
+          for (let p = 0; p < 5; p += 1) {
+            const a = -Math.PI / 2 + p * Math.PI * 2 / 5;
+            const px = cx + Math.cos(a) * pr;
+            const py = cy + Math.sin(a) * pr;
+            if (p === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+        }
       }
       ctx.shadowBlur = 0;
       const gloss = ctx.createRadialGradient(-radius * 0.42, -radius * 0.45, 0, -radius * 0.32, -radius * 0.35, radius * 0.72);
@@ -5355,6 +5846,7 @@
     });
 
     ui.startButton.addEventListener("click", initialize);
+    ui.quickStartButton?.addEventListener("click", () => completeCalibration(true));
     ui.backgroundButton.addEventListener("click", cycleBackgroundMode);
     ui.replayButton.addEventListener("click", () => app.replay.active ? stopReplay() : startReplay());
     ui.resultReplayButton.addEventListener("click", startReplay);
@@ -5378,8 +5870,9 @@
 
     window.addEventListener("resize", resizeCanvas);
     video.addEventListener("loadedmetadata", updateVideoMap);
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener("visibilitychange", async () => {
       if (document.hidden && app.running) setCoach("画面へ戻るとトレーニングを続けます。");
+      if (!document.hidden && app.running && !app.wakeLock) await requestWakeLock();
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && app.replay.active) stopReplay();
@@ -5390,8 +5883,10 @@
     window.addEventListener("beforeunload", () => app.stream?.getTracks().forEach((track) => track.stop()));
 
     resizeCanvas();
+    video.style.objectFit = CAMERA_FIT;
     setReplayAvailability();
     applyBackgroundMode();
+    preloadVisualAssets().catch(() => {});
     updateHud();
 
   </script>
