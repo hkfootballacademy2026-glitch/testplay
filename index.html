@@ -1649,17 +1649,6 @@
       </div>
     </div>
 
-    <div class="variant-panel hidden" id="goalkeeper-panel">
-      <div class="variant-heading">GOAL OPPONENT — ゴールありの対戦相手</div>
-      <div class="opponent-note" id="goalkeeper-row" role="note" aria-label="キーパーとの1対1固定">
-        <div class="opponent-note-icon">🧤</div>
-        <div>
-          <div class="opponent-note-title">キーパーとの1対1（固定）</div>
-          <div class="opponent-note-detail">ゴールありではフィールドDFを配置しません。ドリブルで角度を作り、キーパーの届かないコースへシュートします</div>
-        </div>
-      </div>
-    </div>
-
     <div class="variant-panel" id="defender-difficulty-panel">
       <div class="variant-heading">DEFENDER LEVEL — DF難易度</div>
       <div class="diff-grid" id="defender-difficulty-row">
@@ -1832,7 +1821,7 @@
     </div>
 
     <div class="feint-analysis" id="feint-analysis-box">
-      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · SHOT COMMIT v20</span></div>
+      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · LARGE SWING SHOT v27</span></div>
       <div class="feint-summary" id="feint-summary"></div>
       <div class="feint-analysis-note" id="feint-analysis-note"></div>
     </div>
@@ -2330,7 +2319,7 @@ const DEFENDER_SHOT_RULES = {
   closeGapPxRatio: 0.16,
 };
 
-// 意図しない自動シュートを防ぐ入力ガード。
+// v26: キックフェイントを維持しつつ、意図したシュートを拾いやすくした入力ガード。
 // ラウンド開始直後の姿勢補正値を捨て、足が一度ボールから離れてから再接触した時だけキック入力を受け付ける。
 const SHOT_INPUT_RULES = {
   roundGraceMs: 900,
@@ -2338,34 +2327,34 @@ const SHOT_INPUT_RULES = {
   releaseGapRatio: 0.30,
   // 強いドリブルタッチとの混同を減らすため、シュートは大きいテイクバックと
   // インパクト後の同方向フォロースルーの二段階で確定する。
-  shotReleaseHoldMs: 180,
-  shotReleaseGapRatio: 1.24,
-  minHistoryMs: 135,
-  minFootSpeed: 0.29,
-  minApproachSpeed: 0.038,
-  minPath: 0.060,
-  minDisplacement: 0.034,
-  minClosure: 0.022,
-  minPower: 0.62,
-  minQuality: 0.56,
-  minTakebackGapRatio: 1.10,
-  minTakebackDurationMs: 165,
+  shotReleaseHoldMs: 72,
+  shotReleaseGapRatio: 0.50,
+  minHistoryMs: 82,
+  minFootSpeed: 0.21,
+  minApproachSpeed: 0.032,
+  minPath: 0.040,
+  minDisplacement: 0.022,
+  minClosure: 0.018,
+  minPower: 0.54,
+  minQuality: 0.50,
+  minTakebackGapRatio: 0.56,
+  minTakebackDurationMs: 72,
   // インパクト直後には発射せず、複数の新しい姿勢フレームで継続スイングを確認する。
   // キックフェイントは最初の1〜2フレームだけシュートと似るため、約0.12秒の観察窓を置く。
-  followThroughMinMs: 118,
-  followThroughMaxMs: 250,
-  followThroughDistance: 0.031,
-  followThroughSpeed: 0.13,
-  followThroughAlignment: 0.42,
-  followThroughReleaseRatio: 0.66,
-  followThroughMinPoseSamples: 2,
-  followThroughMinAlignedSamples: 2,
-  followThroughSustainMs: 42,
-  followThroughFreshMs: 86,
-  followThroughBallTravelRatio: 0.18,
-  followThroughBallSpeed: 0.050,
+  followThroughMinMs: 84,
+  followThroughMaxMs: 270,
+  followThroughDistance: 0.022,
+  followThroughSpeed: 0.10,
+  followThroughAlignment: 0.34,
+  followThroughReleaseRatio: 0.52,
+  followThroughMinPoseSamples: 1,
+  followThroughMinAlignedSamples: 1,
+  followThroughSustainMs: 20,
+  followThroughFreshMs: 105,
+  followThroughBallTravelRatio: 0.13,
+  followThroughBallSpeed: 0.042,
   // 足を止める／引き戻す場合はシュートを破棄し、ボール移動が小さければキックフェイントへ変換。
-  kickFakeDecisionMinMs: 68,
+  kickFakeDecisionMinMs: 78,
   kickFakeStopSpeed: 0.082,
   kickFakeReverseAlignment: -0.08,
   kickFakePullbackDistance: 0.014,
@@ -3116,7 +3105,6 @@ function updateDefenderDifficultySetup() {
 function updateGoalkeeperSetup() {
   const visible = isGoalkeeperOnlyMode();
   goalkeeperEnabled = true;
-  $('goalkeeper-panel').classList.toggle('hidden', !visible);
   updateDefenderDifficultySetup();
   if (!visible) return;
   $('setup-mode-desc').textContent = `${VIRTUAL_VARIANT_INFO.goal.setup} ${GOALKEEPER_OPTION_INFO.on.setup}`;
@@ -8288,14 +8276,14 @@ function updatePendingShot(now = performance.now()) {
     pendingShot.poseSamples += 1;
     pendingShot.peakAlong = Math.max(pendingShot.peakAlong, along);
     pendingShot.peakPostSpeed = Math.max(pendingShot.peakPostSpeed, speed);
-    const alignedMotion = alignment >= 0.30
-      && speed >= unit * 0.095
-      && along >= pendingShot.lastAlong - unit * 0.005;
+    const alignedMotion = alignment >= 0.24
+      && speed >= unit * 0.082
+      && along >= pendingShot.lastAlong - unit * 0.006;
     if (alignedMotion) {
       pendingShot.alignedPoseSamples += 1;
       pendingShot.lastAlignedAt = now;
       if (!Number.isFinite(pendingShot.sustainStartedAt)) pendingShot.sustainStartedAt = now;
-    } else if (alignment < 0.14 || speed < unit * 0.075 || along < pendingShot.lastAlong - unit * 0.008) {
+    } else if (alignment < 0.08 || speed < unit * 0.060 || along < pendingShot.lastAlong - unit * 0.010) {
       pendingShot.sustainStartedAt = -Infinity;
       pendingShot.alignedPoseSamples = Math.max(0, pendingShot.alignedPoseSamples - 1);
     }
@@ -8415,15 +8403,28 @@ function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, pow
     && metrics.durationMs >= SHOT_INPUT_RULES.minHistoryMs
     && metrics.path > unit * SHOT_INPUT_RULES.minPath
     && metrics.displacement > unit * SHOT_INPUT_RULES.minDisplacement
-    && metrics.peakSpeed > unit * 0.30
-    && metrics.recentAverageSpeed > unit * 0.18;
+    && metrics.peakSpeed > unit * 0.26
+    && metrics.recentAverageSpeed > unit * 0.15;
   const impact = approach > unit * SHOT_INPUT_RULES.minApproachSpeed
     && metrics.closure > unit * SHOT_INPUT_RULES.minClosure;
-  const shotIntent = quality >= SHOT_INPUT_RULES.minQuality
+  // ボールを足元に置いたまま大きく振る近距離シュートでは、足とボールの距離が
+  // 十分に開かず、従来のテイクバック評価だけでは意図したシュートを取りこぼす。
+  // 大きな軌跡・速度・接近が揃う場合は「明確な大振り」として候補化し、
+  // 最終確定は従来どおり接触後のフォロースルーで行うためキックフェイントは除外できる。
+  const clearLargeSwing = footSpeed >= unit * 0.34
+    && metrics.peakSpeed >= unit * 0.37
+    && metrics.path >= unit * 0.072
+    && metrics.displacement >= unit * 0.036
+    && metrics.closure >= unit * 0.014
+    && approach >= unit * 0.022
+    && power >= 0.48;
+  const standardShotIntent = quality >= SHOT_INPUT_RULES.minQuality
     && power >= SHOT_INPUT_RULES.minPower
-    && takebackQuality >= 0.42
-    && takebackDurationQuality >= 0.90;
-  if (!swinging || !impact || !shotIntent) return null;
+    && takebackQuality >= 0.18
+    && takebackDurationQuality >= 0.45
+    && towardGoalQuality >= 0.10;
+  const shotIntent = standardShotIntent || clearLargeSwing;
+  if ((!swinging && !clearLargeSwing) || !impact || !shotIntent) return null;
 
   const contactBelowCenter = clamp((contact.y - ball.y) / Math.max(1, ball.radius), -1, 1);
   const upwardSwing = clamp(-footVelocity.y / (unit * 0.72), 0, 1.25);
@@ -9289,7 +9290,12 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const enteredContact = sweptHit || !foot.ballContactLatched;
   foot.ballContactLatched = currentInside;
   const contactWasArmed = foot.ballContactArmed;
-  const shotContactWasArmed = foot.shotContactArmed;
+  const unitForShotArm = Math.max(260, Math.min(FW, FH));
+  const nearBallLargeSwingArm = foot.ballContactArmed
+    && footVelocityForSweep
+    && Math.hypot(footVelocityForSweep.x, footVelocityForSweep.y) >= unitForShotArm * 0.31
+    && previousShotOutsideDuration >= 58;
+  const shotContactWasArmed = foot.shotContactArmed || nearBallLargeSwingArm;
   const shotTakebackGap = previousShotTakebackGap;
   const shotOutsideDuration = previousShotOutsideDuration;
   if (enteredContact) {
