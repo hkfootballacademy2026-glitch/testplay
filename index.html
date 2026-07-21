@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0B1026" />
-<title>1VS1 CHALLENGE — VOLLEY VISUAL PORT v30</title>
+<title>1VS1 CHALLENGE — EXAGGERATED SHOT GUARD v32</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=M+PLUS+1:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
@@ -1504,7 +1504,7 @@
   <section id="screen-start" class="screen" aria-label="スタートメニュー">
     <div class="eyebrow">AI FOOTBALL TRAINING</div>
     <h1 class="title">1VS1<br /><span class="gold">CHALLENGE</span></h1>
-    <div class="build-badge">SIMPLE SETUP · v24</div>
+    <div class="build-badge">EXAGGERATED SHOT GUARD · v32</div>
     <p class="subtitle">ゴールなし／リアルボールでは、DFを左右に揺さぶって画面左下・右下の突破エリアへボールごと運びます。ゴールありではフィールドDFを置かず、手前に配置したゴールのキーパーと直接1対1でシュートを競います。</p>
 
     <div class="mode-grid" aria-label="トレーニングモード">
@@ -1573,7 +1573,7 @@
           <li><b>バーチャル・ゴールなし</b> — タッチに連動する短いコントロール補助で、左下／右下の突破エリアを目指す</li>
           <li><b class="gold">インサイド、アウトサイド、インステップ、ソール、トー、インフロント、アウトフロント、ヒール</b>を、足首角度・足の回転・接触部位・ボール軌道から複数フレームで推定</li>
           <li>ボールは従来比約2.1倍。クラシックな黒白パネルと立体的な陰影へ刷新し、高速タッチはフレーム間補間で拾う</li>
-          <li>細かい接触と強めの運ぶタッチは<b class="gold">ドリブル</b>。シュートは<b class="cyan">大きなテイクバック・高速スイング・大きなフォロースルー</b>の3条件だけで確定します</li>
+          <li>細かい接触と強めの運ぶタッチは<b class="gold">ドリブル</b>。シュートは、腰に対して足を大きく引き、ボールへ高速で入り、接触後も複数フレーム大きく振り抜いて足がボールから離れた場合だけ確定します</li>
           <li>インパクト、接近速度、スイング速度、振り抜きから弾道を計算し、DFの身体との交差も判定</li>
           <li>DFがボールへ近づいた状態が続くと奪われる</li>
         </ul>
@@ -1821,7 +1821,7 @@
     </div>
 
     <div class="feint-analysis" id="feint-analysis-box">
-      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · SIMPLE 3-CONDITION SHOT v31</span></div>
+      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · EXAGGERATED SHOT GUARD v32</span></div>
       <div class="feint-summary" id="feint-summary"></div>
       <div class="feint-analysis-note" id="feint-analysis-note"></div>
     </div>
@@ -2326,46 +2326,50 @@ const DEFENDER_SHOT_RULES = {
   closeGapPxRatio: 0.16,
 };
 
-// v31: シュート判定を3条件へ単純化。
-// 1. 大きなテイクバック 2. 高速スイング 3. 大きなフォロースルー。
-// ゴール方向、ボール移動、停止・引き戻し、キックフェイントは判定条件に使用しない。
+// v32: 小さな横タッチや身体ごとの移動をシュートへ昇格させない厳格判定。
+// 1. 腰に対する大きなテイクバック 2. ボールへ向かう高速スイング
+// 3. 複数フレーム継続し、足がボールから明確に離れる大きなフォロースルー。
 const SHOT_INPUT_RULES = {
   roundGraceMs: 900,
-  releaseHoldMs: 95,
-  releaseGapRatio: 0.26,
-  shotReleaseHoldMs: 54,
-  shotReleaseGapRatio: 0.40,
+  releaseHoldMs: 110,
+  releaseGapRatio: 0.30,
+  shotReleaseHoldMs: 150,
+  shotReleaseGapRatio: 1.05,
 
-  // 条件1：大きなテイクバック
-  minHistoryMs: 70,
-  minPath: 0.060,
-  minDisplacement: 0.030,
-  minTakebackGapRatio: 0.44,
-  minTakebackDurationMs: 54,
+  // 条件1：大きなテイクバック。距離は接触半径の外側へ出た「余白」で測る。
+  minHistoryMs: 150,
+  minPath: 0.135,
+  minDisplacement: 0.080,
+  minTakebackGapRatio: 1.05,
+  minTakebackDurationMs: 150,
 
-  // 条件2：高速スイング
-  minFootSpeed: 0.27,
-  minPeakSpeed: 0.31,
-  minRecentSpeed: 0.16,
+  // 条件2：腰の移動を差し引いた足の高速スイング＋ボール方向への接近。
+  minFootSpeed: 0.42,
+  minPeakSpeed: 0.48,
+  minRecentSpeed: 0.30,
+  minApproachSpeed: 0.20,
+  minApproachShare: 0.50,
 
-  // 条件3：大きなフォロースルー
-  followThroughMinMs: 54,
-  followThroughMaxMs: 340,
-  followThroughDistance: 0.034,
-  followThroughSpeed: 0.15,
-  followThroughAlignment: 0.18,
-  followThroughMinPoseSamples: 1,
-  followThroughMinAlignedSamples: 1,
-  followThroughSustainMs: 0,
-  followThroughFreshMs: 145,
+  // 条件3：1フレームの跳ねではなく、明確に振り抜いたフォロースルー。
+  followThroughMinMs: 120,
+  followThroughMaxMs: 440,
+  followThroughDistance: 0.095,
+  followThroughCurrentDistanceRatio: 0.72,
+  followThroughSpeed: 0.28,
+  followThroughAlignment: 0.55,
+  followThroughMinPoseSamples: 3,
+  followThroughMinAlignedSamples: 2,
+  followThroughSustainMs: 75,
+  followThroughFreshMs: 90,
+  followThroughReleaseGapRatio: 0.28,
 
-  // インパクト瞬間が隠れた場合の、ボール付近の軌跡補完。
-  occludedImpactAssistRatio: 1.08,
-  occludedImpactMinSpeed: 0.27,
-  occludedImpactMinPath: 0.055,
-  occludedImpactMinDisplacement: 0.028,
-  occludedImpactMinOutsideMs: 40,
-  occludedImpactMaxObserveMs: 380,
+  // 高速動作でインパクト瞬間が欠けた場合の補完も、通常シュートと同等に大振りな場合だけ許可。
+  occludedImpactAssistRatio: 0.72,
+  occludedImpactMinSpeed: 0.46,
+  occludedImpactMinPath: 0.120,
+  occludedImpactMinDisplacement: 0.072,
+  occludedImpactMinOutsideMs: 150,
+  occludedImpactMaxObserveMs: 440,
 };
 
 let stream = null;
@@ -2414,6 +2418,7 @@ const pendingShot = {
   plan: null,
   queuedAt: -Infinity,
   footAtContact: null,
+  footRelativeAtContact: null,
   swingDirection: { x: 0, y: 0 },
   power: 0,
   initialFootSpeed: 0,
@@ -4704,6 +4709,7 @@ function updateBodyMotion(now, dt) {
   const comX = shoulderX * 0.38 + hipX * 0.62;
   const previous = bodyMotion.current;
   const rawHipVx = previous ? (hipX - previous.hipX) / Math.max(dt, 1 / 120) : 0;
+  const rawHipVy = previous ? (hipY - previous.hipY) / Math.max(dt, 1 / 120) : 0;
   const rawShoulderVx = previous ? (shoulderX - previous.shoulderX) / Math.max(dt, 1 / 120) : 0;
   const rawComVx = previous ? (comX - previous.comX) / Math.max(dt, 1 / 120) : 0;
   const lean = ((shoulderX - hipX) * 0.72 + (head.x - hipX) * 0.28) / bodyH;
@@ -4722,6 +4728,7 @@ function updateBodyMotion(now, dt) {
     lean,
     leanVelocity,
     hipVx: smooth(previous?.hipVx, rawHipVx),
+    hipVy: smooth(previous?.hipVy, rawHipVy),
     shoulderVx: smooth(previous?.shoulderVx, rawShoulderVx),
     comVx: smooth(previous?.comVx, rawComVx),
   };
@@ -5686,6 +5693,40 @@ function pointVelocity(previous, current, dt, priorVelocity) {
   };
 }
 
+function currentBodyReference() {
+  const metrics = bodyMotion.current;
+  return {
+    x: Number.isFinite(metrics?.hipX) ? metrics.hipX : 0,
+    y: Number.isFinite(metrics?.hipY) ? metrics.hipY : 0,
+    vx: Number.isFinite(metrics?.hipVx) ? metrics.hipVx : 0,
+    vy: Number.isFinite(metrics?.hipVy) ? metrics.hipVy : 0,
+  };
+}
+
+function footMotionRelativeToBody(foot, velocity = foot.velocity) {
+  const body = currentBodyReference();
+  return {
+    x: foot.center.x - body.x,
+    y: foot.center.y - body.y,
+    vx: velocity.x - body.vx,
+    vy: velocity.y - body.vy,
+  };
+}
+
+function footHistorySample(foot, now, predicted = false) {
+  const relative = footMotionRelativeToBody(foot, foot.velocity);
+  return {
+    x: foot.center.x, y: foot.center.y, speed: foot.speed, t: now, predicted,
+    relativeX: relative.x, relativeY: relative.y,
+    relativeVx: relative.vx, relativeVy: relative.vy,
+    relativeSpeed: Math.hypot(relative.vx, relative.vy),
+    frameId: foot.poseFrameId,
+    ankle: { ...foot.ankle }, heel: { ...foot.heel }, toe: { ...foot.toe }, center: { ...foot.center },
+    velocity: { ...foot.velocity }, ankleV: { ...foot.ankleV }, heelV: { ...foot.heelV }, toeV: { ...foot.toeV },
+    axisAngle: foot.axisAngle, axisAngularVelocity: foot.axisAngularVelocity,
+  };
+}
+
 function coastTrackedFoot(side, dt, now = performance.now()) {
   const foot = feet[side];
   const age = foot.lastSeenAt ? now - foot.lastSeenAt : Infinity;
@@ -5733,13 +5774,7 @@ function coastTrackedFoot(side, dt, now = performance.now()) {
   foot.active = true;
   foot.predicted = true;
   foot.stableFrames = Math.max(2, foot.stableFrames - 1);
-  foot.history.push({
-    x: foot.center.x, y: foot.center.y, speed: foot.speed, t: now, predicted: true,
-    frameId: foot.poseFrameId,
-    ankle: { ...foot.ankle }, heel: { ...foot.heel }, toe: { ...foot.toe }, center: { ...foot.center },
-    velocity: { ...foot.velocity }, ankleV: { ...foot.ankleV }, heelV: { ...foot.heelV }, toeV: { ...foot.toeV },
-    axisAngle: foot.axisAngle, axisAngularVelocity: foot.axisAngularVelocity,
-  });
+  foot.history.push(footHistorySample(foot, now, true));
   while (foot.history.length && now - foot.history[0].t > 520) foot.history.shift();
   return true;
 }
@@ -5801,13 +5836,7 @@ function updateTrackedFoot(side, dt) {
   foot.predicted = false;
   foot.initialized = true;
   foot.lastSeenAt = now;
-  foot.history.push({
-    x: center.x, y: center.y, speed: foot.speed, t: now, predicted: false,
-    frameId: foot.poseFrameId,
-    ankle: { ...ankle }, heel: { ...heel }, toe: { ...toe }, center: { ...center },
-    velocity: { ...foot.velocity }, ankleV: { ...foot.ankleV }, heelV: { ...foot.heelV }, toeV: { ...foot.toeV },
-    axisAngle: foot.axisAngle, axisAngularVelocity: foot.axisAngularVelocity,
-  });
+  foot.history.push(footHistorySample(foot, now, false));
   while (foot.history.length && now - foot.history[0].t > 520) foot.history.shift();
 }
 
@@ -5832,9 +5861,10 @@ function updatePose() {
       const visible = index => (landmarks[index].visibility ?? 1) > 0.45;
       const insideY = index => landmarks[index].y > 0.02 && landmarks[index].y < 0.99;
       bodyOK = visible(0) && insideY(0) && (visible(27) || visible(28)) && (insideY(27) || insideY(28));
+      // 足の履歴を腰相対で記録できるよう、同じ姿勢フレームの身体中心を先に更新する。
+      updateBodyMotion(now, dt);
       updateTrackedFoot('left', dt);
       updateTrackedFoot('right', dt);
-      updateBodyMotion(now, dt);
     } else {
       tracking = false;
       bodyOK = false;
@@ -8032,14 +8062,24 @@ function registerTouch(side, surface, power, spin, feintContext = null) {
 }
 
 function footSwingMetrics(foot, now, ballPoint = virtualBall) {
-  const samples = (foot.history || []).filter(sample => now - sample.t <= 300);
+  // シュート用の軌跡は予測フレームを除き、腰に対する足の移動で測る。
+  const samples = (foot.history || [])
+    .filter(sample => now - sample.t <= 320 && !sample.predicted);
   if (samples.length < 2) {
+    const relative = footMotionRelativeToBody(foot, foot.velocity);
     return {
-      path: 0, displacement: 0, peakSpeed: foot.speed || 0,
-      dx: foot.velocity.x || 0, dy: foot.velocity.y || 0,
-      durationMs: 0, closure: 0, recentAverageSpeed: foot.speed || 0, earlyAverageSpeed: 0,
+      path: 0, displacement: 0, peakSpeed: Math.hypot(relative.vx, relative.vy),
+      dx: relative.vx, dy: relative.vy,
+      durationMs: 0, closure: 0,
+      recentAverageSpeed: Math.hypot(relative.vx, relative.vy), earlyAverageSpeed: 0,
+      sampleCount: samples.length,
     };
   }
+  const samplePoint = sample => ({
+    x: Number.isFinite(sample.relativeX) ? sample.relativeX : sample.x,
+    y: Number.isFinite(sample.relativeY) ? sample.relativeY : sample.y,
+  });
+  const sampleSpeed = sample => Number.isFinite(sample.relativeSpeed) ? sample.relativeSpeed : sample.speed || 0;
   let path = 0;
   let peakSpeed = 0;
   let recentTotal = 0;
@@ -8047,33 +8087,39 @@ function footSwingMetrics(foot, now, ballPoint = virtualBall) {
   let earlyTotal = 0;
   let earlyCount = 0;
   for (let i = 1; i < samples.length; i += 1) {
-    path += Math.hypot(samples[i].x - samples[i - 1].x, samples[i].y - samples[i - 1].y);
-    peakSpeed = Math.max(peakSpeed, samples[i].speed || 0);
+    const previous = samplePoint(samples[i - 1]);
+    const current = samplePoint(samples[i]);
+    path += Math.hypot(current.x - previous.x, current.y - previous.y);
+    peakSpeed = Math.max(peakSpeed, sampleSpeed(samples[i]));
   }
   for (const sample of samples) {
     const age = now - sample.t;
-    if (age <= 95) {
-      recentTotal += sample.speed || 0;
+    const speed = sampleSpeed(sample);
+    if (age <= 110) {
+      recentTotal += speed;
       recentCount += 1;
-    } else if (age >= 130) {
-      earlyTotal += sample.speed || 0;
+    } else if (age >= 150) {
+      earlyTotal += speed;
       earlyCount += 1;
     }
   }
   const first = samples[0];
   const last = samples[samples.length - 1];
+  const firstRelative = samplePoint(first);
+  const lastRelative = samplePoint(last);
   const startDistance = Math.hypot(first.x - ballPoint.x, first.y - ballPoint.y);
   const endDistance = Math.hypot(last.x - ballPoint.x, last.y - ballPoint.y);
   return {
     path,
-    displacement: Math.hypot(last.x - first.x, last.y - first.y),
+    displacement: Math.hypot(lastRelative.x - firstRelative.x, lastRelative.y - firstRelative.y),
     peakSpeed,
-    dx: last.x - first.x,
-    dy: last.y - first.y,
+    dx: lastRelative.x - firstRelative.x,
+    dy: lastRelative.y - firstRelative.y,
     durationMs: last.t - first.t,
     closure: startDistance - endDistance,
-    recentAverageSpeed: recentCount ? recentTotal / recentCount : foot.speed || 0,
+    recentAverageSpeed: recentCount ? recentTotal / recentCount : sampleSpeed(last),
     earlyAverageSpeed: earlyCount ? earlyTotal / earlyCount : 0,
+    sampleCount: samples.length,
   };
 }
 
@@ -8085,6 +8131,7 @@ function clearPendingShot() {
   pendingShot.plan = null;
   pendingShot.queuedAt = -Infinity;
   pendingShot.footAtContact = null;
+  pendingShot.footRelativeAtContact = null;
   pendingShot.swingDirection = { x: 0, y: 0 };
   pendingShot.power = 0;
   pendingShot.initialFootSpeed = 0;
@@ -8103,7 +8150,8 @@ function clearPendingShot() {
 }
 
 function queuePendingShot(plan, side, surface, foot, footVelocity, power, now = performance.now(), context = {}) {
-  const speed = Math.hypot(footVelocity.x, footVelocity.y) || 1;
+  const relativeMotion = footMotionRelativeToBody(foot, footVelocity);
+  const speed = Math.hypot(relativeMotion.vx, relativeMotion.vy) || 1;
   pendingShot.active = true;
   pendingShot.side = side;
   pendingShot.label = surface.label;
@@ -8111,7 +8159,8 @@ function queuePendingShot(plan, side, surface, foot, footVelocity, power, now = 
   pendingShot.plan = plan;
   pendingShot.queuedAt = now;
   pendingShot.footAtContact = { x: foot.center.x, y: foot.center.y };
-  pendingShot.swingDirection = { x: footVelocity.x / speed, y: footVelocity.y / speed };
+  pendingShot.footRelativeAtContact = { x: relativeMotion.x, y: relativeMotion.y };
+  pendingShot.swingDirection = { x: relativeMotion.vx / speed, y: relativeMotion.vy / speed };
   pendingShot.power = power;
   pendingShot.initialFootSpeed = speed;
   pendingShot.preTouchBall = context.preTouchBall ? { ...context.preTouchBall } : null;
@@ -8131,8 +8180,8 @@ function queuePendingShot(plan, side, surface, foot, footVelocity, power, now = 
   pendingShot.peakPostSpeed = 0;
   pendingShot.fakeCuePushed = false;
   pendingShot.occludedImpact = Boolean(context.occludedImpact);
-  clearVirtualBallControl();
-  CUE.textContent = 'フォロースルー';
+  // 確定前は通常のドリブル物理を維持し、シュート発射時だけ制御を解除する。
+  CUE.textContent = '大きく振り抜け';
   SUB.textContent = '';
 }
 
@@ -8167,16 +8216,23 @@ function evaluateShotCommitmentState(input) {
   const enoughSamples = input.poseSamples >= rules.followThroughMinPoseSamples
     && input.alignedPoseSamples >= rules.followThroughMinAlignedSamples;
   const largeFollowThrough = (input.peakAlong || 0) >= unit * rules.followThroughDistance;
+  const stillExtended = (input.along || 0) >= unit * rules.followThroughDistance * rules.followThroughCurrentDistanceRatio;
   const fastFollowThrough = (input.peakPostSpeed || 0) >= unit * rules.followThroughSpeed;
-  const continuingForward = (input.alignment ?? -1) >= rules.followThroughAlignment
-    || (input.peakAlong || 0) >= unit * rules.followThroughDistance * 1.28;
+  const continuingForward = (input.alignment ?? -1) >= rules.followThroughAlignment;
+  const sustained = (input.sustainMs || 0) >= rules.followThroughSustainMs;
+  const fresh = (input.nowSinceAligned ?? Infinity) <= rules.followThroughFreshMs;
+  const clearlyReleased = Boolean(input.releasedPastBall);
 
   if (input.elapsed >= rules.followThroughMinMs
     && enoughSamples
     && largeFollowThrough
+    && stillExtended
     && fastFollowThrough
-    && continuingForward) {
-    return { decision: 'commit', reason: 'three-condition-shot' };
+    && continuingForward
+    && sustained
+    && fresh
+    && clearlyReleased) {
+    return { decision: 'commit', reason: 'exaggerated-three-condition-shot' };
   }
 
   if (input.elapsed > rules.followThroughMaxMs) {
@@ -8229,7 +8285,7 @@ function restoreBallAfterKickFake() {
   virtualBall.spin *= 0.42;
 }
 
-// 接触時の強さだけでは発射せず、接触後のフォロースルーを確認してからシュートへ昇格する。
+// 接触時の強さだけでは発射せず、接触後の大きく持続したフォロースルーを確認してからシュートへ昇格する。
 function updatePendingShot(now = performance.now()) {
   if (!pendingShot.active) return false;
   if (mode !== 'virtual' || virtualVariant !== 'goal' || phase !== 'play' || shotState.active) {
@@ -8238,7 +8294,7 @@ function updatePendingShot(now = performance.now()) {
   }
   const elapsed = now - pendingShot.queuedAt;
   const foot = feet[pendingShot.side];
-  if (!foot?.active || !pendingShot.footAtContact) {
+  if (!foot?.active || !pendingShot.footAtContact || !pendingShot.footRelativeAtContact) {
     if (elapsed > (pendingShot.occludedImpact ? SHOT_INPUT_RULES.occludedImpactMaxObserveMs : SHOT_INPUT_RULES.followThroughMaxMs)) clearPendingShot();
     return false;
   }
@@ -8247,30 +8303,37 @@ function updatePendingShot(now = performance.now()) {
     return false;
   }
 
+  const rules = SHOT_INPUT_RULES;
   const unit = Math.max(260, Math.min(FW, FH));
-  const displacementX = foot.center.x - pendingShot.footAtContact.x;
-  const displacementY = foot.center.y - pendingShot.footAtContact.y;
+  const relativeMotion = footMotionRelativeToBody(foot, foot.velocity);
+  const displacementX = relativeMotion.x - pendingShot.footRelativeAtContact.x;
+  const displacementY = relativeMotion.y - pendingShot.footRelativeAtContact.y;
   const along = displacementX * pendingShot.swingDirection.x + displacementY * pendingShot.swingDirection.y;
-  const speed = Math.hypot(foot.velocity.x, foot.velocity.y);
+  const speed = Math.hypot(relativeMotion.vx, relativeMotion.vy);
   const alignment = speed > 1
-    ? (foot.velocity.x * pendingShot.swingDirection.x + foot.velocity.y * pendingShot.swingDirection.y) / speed
+    ? (relativeMotion.vx * pendingShot.swingDirection.x + relativeMotion.vy * pendingShot.swingDirection.y) / speed
     : -1;
   const ballGap = footContactAt(foot, virtualBall, 1).distance;
-  const releasedPastBall = ballGap >= ballContactRadius(virtualBall) * SHOT_INPUT_RULES.followThroughReleaseRatio;
+  const footRadius = clamp(virtualBall.radius * DRIBBLE_CONTROL.footContactRatio, 13, 28);
+  const releaseDistance = ballContactRadius(virtualBall) + footRadius
+    + virtualBall.radius * rules.followThroughReleaseGapRatio;
+  const releasedPastBall = ballGap >= releaseDistance;
 
   if (foot.poseFrameId !== pendingShot.lastPoseFrameId) {
     pendingShot.lastPoseFrameId = foot.poseFrameId;
     pendingShot.poseSamples += 1;
     pendingShot.peakAlong = Math.max(pendingShot.peakAlong, along);
     pendingShot.peakPostSpeed = Math.max(pendingShot.peakPostSpeed, speed);
-    const alignedMotion = alignment >= 0.24
-      && speed >= unit * 0.082
-      && along >= pendingShot.lastAlong - unit * 0.006;
+    const alignedMotion = alignment >= rules.followThroughAlignment
+      && speed >= unit * rules.followThroughSpeed
+      && along >= pendingShot.lastAlong - unit * 0.004;
     if (alignedMotion) {
       pendingShot.alignedPoseSamples += 1;
       pendingShot.lastAlignedAt = now;
       if (!Number.isFinite(pendingShot.sustainStartedAt)) pendingShot.sustainStartedAt = now;
-    } else if (alignment < 0.08 || speed < unit * 0.060 || along < pendingShot.lastAlong - unit * 0.010) {
+    } else if (alignment < rules.followThroughAlignment * 0.45
+      || speed < unit * rules.followThroughSpeed * 0.62
+      || along < pendingShot.lastAlong - unit * 0.008) {
       pendingShot.sustainStartedAt = -Infinity;
       pendingShot.alignedPoseSamples = Math.max(0, pendingShot.alignedPoseSamples - 1);
     }
@@ -8333,29 +8396,30 @@ function updatePendingShot(now = performance.now()) {
   return false;
 }
 
-function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, power, sideOffset, now, token, takebackGap = 0, outsideDuration = 0, occludedImpact = false }) {
+function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, power, sideOffset, now, token, takebackGap = 0, outsideDuration = 0, contactArmed = false, occludedImpact = false }) {
   const unit = Math.max(260, Math.min(FW, FH));
   if (now < shotInputReadyAt) return null;
   const metrics = footSwingMetrics(foot, now, virtualBall);
   const goal = centralGoalGeometry();
   const ball = virtualBall;
 
-  // v31: シュート候補は以下の2条件だけで作る。
-  // フォロースルー（3条件目）は接触後の updatePendingShot で確認する。
-  const largeTakeback = (
-    takebackGap >= ball.radius * SHOT_INPUT_RULES.minTakebackGapRatio
-    && outsideDuration >= SHOT_INPUT_RULES.minTakebackDurationMs
-  ) || (
-    metrics.path >= unit * SHOT_INPUT_RULES.minPath
+  // v32: 候補化の時点で、接触解除・腰相対の大振り・高速接近をすべて要求する。
+  // フォロースルー（3条件目）は接触後の updatePendingShot で複数フレーム確認する。
+  if (!contactArmed && !occludedImpact) return null;
+  const clearTakeback = takebackGap >= ball.radius * SHOT_INPUT_RULES.minTakebackGapRatio
+    && outsideDuration >= SHOT_INPUT_RULES.minTakebackDurationMs;
+  const largeRelativeSwing = metrics.path >= unit * SHOT_INPUT_RULES.minPath
     && metrics.displacement >= unit * SHOT_INPUT_RULES.minDisplacement
     && metrics.durationMs >= SHOT_INPUT_RULES.minHistoryMs
-  );
-
+    && metrics.sampleCount >= 3;
+  const approachShare = footSpeed > 1 ? approach / footSpeed : 0;
   const highSpeedSwing = footSpeed >= unit * SHOT_INPUT_RULES.minFootSpeed
     && metrics.peakSpeed >= unit * SHOT_INPUT_RULES.minPeakSpeed
-    && metrics.recentAverageSpeed >= unit * SHOT_INPUT_RULES.minRecentSpeed;
+    && metrics.recentAverageSpeed >= unit * SHOT_INPUT_RULES.minRecentSpeed
+    && approach >= unit * SHOT_INPUT_RULES.minApproachSpeed
+    && approachShare >= SHOT_INPUT_RULES.minApproachShare;
 
-  if (!largeTakeback || !highSpeedSwing) return null;
+  if (!clearTakeback || !largeRelativeSwing || !highSpeedSwing) return null;
 
   const speedQuality = clamp(footSpeed / (unit * 0.72), 0, 1.25);
   const pathQuality = clamp(metrics.path / (unit * 0.11), 0, 1.25);
@@ -9208,13 +9272,15 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const sweepRelativeY = footVelocityForSweep.y - ball.vy;
   const sweepApproach = sweepRelativeX * sweepNormal.x + sweepRelativeY * sweepNormal.y;
   const sweepSpeed = Math.hypot(footVelocityForSweep.x, footVelocityForSweep.y);
+  const shotSweepMotion = footMotionRelativeToBody(foot, footVelocityForSweep);
+  const shotSweepSpeed = Math.hypot(shotSweepMotion.vx, shotSweepMotion.vy);
   const unitForOcclusion = Math.max(260, Math.min(FW, FH));
   const preImpactMetrics = footSwingMetrics(foot, now, ball);
   const occludedImpactCandidate = mode === 'virtual' && virtualVariant === 'goal' && phase === 'play'
     && !shotState.active && !pendingShot.active
-    && (foot.shotContactArmed || foot.ballContactArmed)
+    && foot.shotContactArmed
     && previousShotOutsideDuration >= SHOT_INPUT_RULES.occludedImpactMinOutsideMs
-    && sweepSpeed >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinSpeed
+    && shotSweepSpeed >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinSpeed
     && preImpactMetrics.path >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinPath
     && preImpactMetrics.displacement >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinDisplacement
 ;
@@ -9243,13 +9309,9 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const enteredContact = sweptHit || !foot.ballContactLatched;
   foot.ballContactLatched = currentInside;
   const contactWasArmed = foot.ballContactArmed;
-  const unitForShotArm = Math.max(260, Math.min(FW, FH));
-  const nearBallLargeSwingArm = foot.ballContactArmed
-    && footVelocityForSweep
-    && Math.hypot(footVelocityForSweep.x, footVelocityForSweep.y) >= unitForShotArm * SHOT_INPUT_RULES.minFootSpeed
-    && preImpactMetrics.path >= unitForShotArm * SHOT_INPUT_RULES.minPath;
-  const shotContactWasArmed = foot.shotContactArmed || nearBallLargeSwingArm || inferredOccludedImpact;
-  const shotTakebackGap = previousShotTakebackGap;
+  const shotContactWasArmed = foot.shotContactArmed || inferredOccludedImpact;
+  // maxOutsideBallGap はボール中心から足までの絶対距離なので、接触半径を差し引いた余白へ直す。
+  const shotTakebackGap = Math.max(0, previousShotTakebackGap - collisionDistance);
   const shotOutsideDuration = previousShotOutsideDuration;
   if (enteredContact) {
     foot.ballContactArmed = false;
@@ -9264,6 +9326,10 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const relativeX = footVelocity.x - ball.vx;
   const relativeY = footVelocity.y - ball.vy;
   const approach = relativeX * normal.x + relativeY * normal.y;
+  const shotMotion = footMotionRelativeToBody(foot, footVelocity);
+  const shotFootVelocity = { x: shotMotion.vx, y: shotMotion.vy };
+  const shotFootSpeed = Math.hypot(shotFootVelocity.x, shotFootVelocity.y);
+  const shotApproach = (shotFootVelocity.x - ball.vx) * normal.x + (shotFootVelocity.y - ball.vy) * normal.y;
   const unit = Math.max(260, Math.min(FW, FH));
   const stableInput = !foot.predicted
     && now - roundStartedAt >= DRIBBLE_CONTROL.roundGraceMs
@@ -9387,14 +9453,14 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
       + Math.abs(footVelocity.x) * 0.075
   ) * info.tapSpeed * DRIBBLE_CONTROL.dribbleImpulseScale;
   const dribbleMaxSpeed = unit * (info.key === 'sole' ? 0.22 : tierMaxRatio);
-  const tapSpeed = shotContactWasArmed
-    ? clamp(rawTapSpeed * 1.42, unit * 0.12, unit * 1.22)
-    : clamp(rawTapSpeed, unit * 0.045, dribbleMaxSpeed);
-  const retainedVx = ball.vx * (shotContactWasArmed ? info.retain : Math.min(info.retain, 0.48));
+  // シュートはフォロースルー確定後に専用弾道へ切り替える。
+  // 候補段階では誤判定しても必ず通常ドリブルの小さなインパルスに留める。
+  const tapSpeed = clamp(rawTapSpeed, unit * 0.045, dribbleMaxSpeed);
+  const retainedVx = ball.vx * Math.min(info.retain, 0.48);
   ball.vx = clamp(
     retainedVx + directionX * tapSpeed,
-    -dribbleMaxSpeed * (shotContactWasArmed ? 2.0 : 1.0),
-    dribbleMaxSpeed * (shotContactWasArmed ? 2.0 : 1.0),
+    -dribbleMaxSpeed,
+    dribbleMaxSpeed,
   );
 
   const contactBelowCenter = clamp((contact.y - ball.y) / Math.max(1, ball.radius), -1, 1);
@@ -9457,9 +9523,11 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   if (mode === 'virtual' && virtualVariant === 'goal' && phase === 'play'
     && !shotState.active && !pendingShot.active && shotContactCertain && !touchMetrics.soleCandidate) {
     const plan = planVirtualShot({
-      foot, contact, footVelocity, footSpeed, approach, power, sideOffset, now, token: sessionToken,
+      foot, contact, footVelocity: shotFootVelocity, footSpeed: shotFootSpeed, approach: shotApproach,
+      power, sideOffset, now, token: sessionToken,
       takebackGap: shotTakebackGap,
       outsideDuration: shotOutsideDuration,
+      contactArmed: shotContactWasArmed,
       occludedImpact: inferredOccludedImpact,
     });
     if (plan) {
@@ -9482,7 +9550,7 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
         occludedImpact: inferredOccludedImpact,
       });
     } else {
-      const attemptedSwing = footSpeed > unit * 0.38 && approach > unit * 0.018 && power > 0.72;
+      const attemptedSwing = shotFootSpeed > unit * 0.42 && shotApproach > unit * 0.12 && power > 0.72;
       if (attemptedSwing && now - lastShotPromptAt > 900) {
         lastShotPromptAt = now;
         CUE.textContent = '';
@@ -10415,7 +10483,7 @@ function loop(time) {
   if (!recordingFrameTimer) renderRecordingFrame();
 }
 
-window.__HKFA_BUILD__ = 'v23-stage-bgm-minimal-text';
+window.__HKFA_BUILD__ = 'v32-exaggerated-shot-guard';
 window.__HKFA_TEST__ = {
   renderVisualStage,
   updateVisualStageSetup,
