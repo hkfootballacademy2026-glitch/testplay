@@ -1821,7 +1821,7 @@
     </div>
 
     <div class="feint-analysis" id="feint-analysis-box">
-      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · LARGE SWING SHOT v27</span></div>
+      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · OCCLUDED IMPACT SHOT v28</span></div>
       <div class="feint-summary" id="feint-summary"></div>
       <div class="feint-analysis-note" id="feint-analysis-note"></div>
     </div>
@@ -2360,6 +2360,13 @@ const SHOT_INPUT_RULES = {
   kickFakePullbackDistance: 0.014,
   kickFakeSmallBallTravelRatio: 2.10,
   kickFakeSmallBallSpeed: 0.52,
+  // インパクト瞬間が脚や身体で隠れても、前後の大振り軌跡がボール位置を横切れば接触を補完する。
+  occludedImpactAssistRatio: 0.94,
+  occludedImpactMinSpeed: 0.31,
+  occludedImpactMinPath: 0.060,
+  occludedImpactMinDisplacement: 0.030,
+  occludedImpactMinOutsideMs: 46,
+  occludedImpactMaxObserveMs: 360,
 };
 
 let stream = null;
@@ -7096,7 +7103,7 @@ function drawBreakthroughZone(side, open) {
   fctx.restore();
 }
 
-/* ===== Virtual ball physics — multi-frame touch sequence v14 ===== */
+/* ===== Virtual ball physics — discrete touch dribbling v29 ===== */
 const virtualBall = {
   x: 0,
   y: 0,
@@ -8094,6 +8101,7 @@ function clearPendingShot() {
   pendingShot.lastAlong = 0;
   pendingShot.peakPostSpeed = 0;
   pendingShot.fakeCuePushed = false;
+  pendingShot.occludedImpact = false;
 }
 
 function queuePendingShot(plan, side, surface, foot, footVelocity, power, now = performance.now(), context = {}) {
@@ -8124,6 +8132,7 @@ function queuePendingShot(plan, side, surface, foot, footVelocity, power, now = 
   pendingShot.lastAlong = 0;
   pendingShot.peakPostSpeed = 0;
   pendingShot.fakeCuePushed = false;
+  pendingShot.occludedImpact = Boolean(context.occludedImpact);
   clearVirtualBallControl();
   CUE.textContent = '振り抜き確認';
   SUB.textContent = '';
@@ -8187,10 +8196,22 @@ function evaluateShotCommitmentState(input) {
     && input.releasedPastBall;
   const ballCommitted = (input.ballAlong || 0) >= ballRadius * rules.followThroughBallTravelRatio
     || (input.ballAlongSpeed || 0) >= unit * rules.followThroughBallSpeed;
+  // 接触瞬間が遮蔽された場合は、ボール移動を必須にすると本物のシュートを取りこぼす。
+  // 十分なテイクバック後にボール位置を横切り、再出現後も高速・大振りのフォロースルーが
+  // 継続している場合だけ、接触を時系列から補完してシュートへ昇格する。
+  const occludedImpactCommitted = Boolean(input.occludedImpact)
+    && input.peakAlong >= unit * Math.max(0.030, rules.followThroughDistance)
+    && (input.peakPostSpeed || 0) >= unit * Math.max(0.13, rules.followThroughSpeed)
+    && (input.alignment ?? -1) >= 0.16
+    && !pulledBack;
 
   if (input.elapsed >= rules.followThroughMinMs
-    && enoughSamples && sustained && footCommitted && ballCommitted) {
-    return { decision: 'commit', reason: 'sustained-follow-through', smallBallMovement };
+    && enoughSamples && sustained && footCommitted && (ballCommitted || occludedImpactCommitted)) {
+    return {
+      decision: 'commit',
+      reason: occludedImpactCommitted && !ballCommitted ? 'occluded-impact-follow-through' : 'sustained-follow-through',
+      smallBallMovement,
+    };
   }
   if (input.elapsed > rules.followThroughMaxMs) {
     return { decision: smallBallMovement ? 'fake' : 'drive', reason: 'timeout', smallBallMovement };
@@ -8252,11 +8273,11 @@ function updatePendingShot(now = performance.now()) {
   const elapsed = now - pendingShot.queuedAt;
   const foot = feet[pendingShot.side];
   if (!foot?.active || !pendingShot.footAtContact) {
-    if (elapsed > SHOT_INPUT_RULES.followThroughMaxMs) clearPendingShot();
+    if (elapsed > (pendingShot.occludedImpact ? SHOT_INPUT_RULES.occludedImpactMaxObserveMs : SHOT_INPUT_RULES.followThroughMaxMs)) clearPendingShot();
     return false;
   }
   if (foot.predicted) {
-    if (elapsed > SHOT_INPUT_RULES.followThroughMaxMs) clearPendingShot();
+    if (elapsed > (pendingShot.occludedImpact ? SHOT_INPUT_RULES.occludedImpactMaxObserveMs : SHOT_INPUT_RULES.followThroughMaxMs)) clearPendingShot();
     return false;
   }
 
@@ -8317,6 +8338,7 @@ function updatePendingShot(now = performance.now()) {
     ballSpeed,
     ballAlong,
     ballAlongSpeed,
+    occludedImpact: pendingShot.occludedImpact,
     recentKickFakeCue: (() => {
       const cue = recentKickFakeCue(pendingShot.side, now, 260);
       return Boolean(cue && cue.t >= pendingShot.queuedAt);
@@ -8356,7 +8378,7 @@ function updatePendingShot(now = performance.now()) {
   return false;
 }
 
-function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, power, sideOffset, now, token, takebackGap = 0, outsideDuration = 0 }) {
+function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, power, sideOffset, now, token, takebackGap = 0, outsideDuration = 0, occludedImpact = false }) {
   const unit = Math.max(260, Math.min(FW, FH));
   if (now < shotInputReadyAt) return null;
   const metrics = footSwingMetrics(foot, now, virtualBall);
@@ -8405,8 +8427,9 @@ function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, pow
     && metrics.displacement > unit * SHOT_INPUT_RULES.minDisplacement
     && metrics.peakSpeed > unit * 0.26
     && metrics.recentAverageSpeed > unit * 0.15;
-  const impact = approach > unit * SHOT_INPUT_RULES.minApproachSpeed
-    && metrics.closure > unit * SHOT_INPUT_RULES.minClosure;
+  const impact = (approach > unit * SHOT_INPUT_RULES.minApproachSpeed
+    && metrics.closure > unit * SHOT_INPUT_RULES.minClosure)
+    || (occludedImpact && approach > unit * 0.010 && metrics.path > unit * 0.060);
   // ボールを足元に置いたまま大きく振る近距離シュートでは、足とボールの距離が
   // 十分に開かず、従来のテイクバック評価だけでは意図したシュートを取りこぼす。
   // 大きな軌跡・速度・接近が揃う場合は「明確な大振り」として候補化し、
@@ -9177,18 +9200,8 @@ function applyGuidedDribble(ball, footVelocity, approach, normal, penetration, d
     const blend = 1 - Math.exp(-DRIBBLE_CONTROL.soleRollResponse * Math.max(1 / 240, dt));
     ball.vx = lerp(ball.vx, direction * targetSpeed, blend);
     ball.vy = lerp(ball.vy, 0, Math.min(0.88, blend * 3.4));
-    const targetX = clamp(
-      (metrics?.contactX ?? ball.x) + direction * ball.radius * 0.08,
-      ball.radius,
-      FW - ball.radius,
-    );
-    const correction = clamp(
-      (targetX - ball.x) * DRIBBLE_CONTROL.soleRollPositionAssist,
-      -unit * 0.18 * dt,
-      unit * 0.18 * dt,
-    );
-    ball.x += correction;
-    ball.y = lerp(ball.y, groundCenter, Math.min(0.82, blend * 2.6));
+    // 足裏でもボール位置を足へ寄せない。摩擦による速度変化だけを与える。
+    ball.y = lerp(ball.y, groundCenter, Math.min(0.62, blend * 1.8));
     const rollSpin = direction * targetSpeed / Math.max(1, ball.radius) * 1.35;
     ball.spin = lerp(ball.spin, rollSpin, Math.min(0.72, blend * 1.8));
     return true;
@@ -9271,15 +9284,31 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const sweepRelativeY = footVelocityForSweep.y - ball.vy;
   const sweepApproach = sweepRelativeX * sweepNormal.x + sweepRelativeY * sweepNormal.y;
   const sweepSpeed = Math.hypot(footVelocityForSweep.x, footVelocityForSweep.y);
-  const assistDistance = sweepSpeed > Math.max(260, Math.min(FW, FH)) * DRIBBLE_CONTROL.minImpactFootSpeed
+  const unitForOcclusion = Math.max(260, Math.min(FW, FH));
+  const preImpactMetrics = footSwingMetrics(foot, now, ball);
+  const occludedImpactCandidate = mode === 'virtual' && virtualVariant === 'goal' && phase === 'play'
+    && !shotState.active && !pendingShot.active
+    && (foot.shotContactArmed || foot.ballContactArmed)
+    && previousShotOutsideDuration >= SHOT_INPUT_RULES.occludedImpactMinOutsideMs
+    && sweepSpeed >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinSpeed
+    && preImpactMetrics.path >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinPath
+    && preImpactMetrics.displacement >= unitForOcclusion * SHOT_INPUT_RULES.occludedImpactMinDisplacement
+    && sweepApproach > unitForOcclusion * 0.010;
+  const regularAssistDistance = sweepSpeed > unitForOcclusion * DRIBBLE_CONTROL.minImpactFootSpeed
     && sweepApproach > 0
     ? ball.radius * DRIBBLE_CONTROL.contactAssistRatio
     : 0;
+  const occludedAssistDistance = occludedImpactCandidate
+    ? ball.radius * SHOT_INPUT_RULES.occludedImpactAssistRatio
+    : 0;
+  const assistDistance = Math.max(regularAssistDistance, occludedAssistDistance);
   const currentInside = currentContact.distance <= collisionDistance;
   const sweptHit = !currentInside && sweptContact.distance <= collisionDistance + assistDistance;
-  // ドリブルは近接補助を許可するが、シュート候補は足線分が実際の接触半径を通った時だけ許可。
-  // ボール直前で足を止めるキックフェイントを、接触補助だけでシュートへ変換しない。
-  const shotContactCertain = currentInside || sweptContact.distance <= collisionDistance * 1.02;
+  // 通常は実接触を優先するが、インパクト瞬間が遮蔽された明確な大振りだけは、
+  // ボール位置付近を横切った軌跡を接触として補完する。最終確定はフォロースルーで行う。
+  const inferredOccludedImpact = occludedImpactCandidate
+    && sweptContact.distance <= collisionDistance + occludedAssistDistance;
+  const shotContactCertain = currentInside || sweptContact.distance <= collisionDistance * 1.02 || inferredOccludedImpact;
   if (!currentInside && !sweptHit) {
     foot.ballContactLatched = false;
     releaseTouchEpisode(side, foot, now);
@@ -9295,7 +9324,7 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
     && footVelocityForSweep
     && Math.hypot(footVelocityForSweep.x, footVelocityForSweep.y) >= unitForShotArm * 0.31
     && previousShotOutsideDuration >= 58;
-  const shotContactWasArmed = foot.shotContactArmed || nearBallLargeSwingArm;
+  const shotContactWasArmed = foot.shotContactArmed || nearBallLargeSwingArm || inferredOccludedImpact;
   const shotTakebackGap = previousShotTakebackGap;
   const shotOutsideDuration = previousShotOutsideDuration;
   if (enteredContact) {
@@ -9327,17 +9356,18 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
     foot.soleContactSince = 0;
   }
 
-  // 足をボールに添えたまま横へ動かした時も、タッチ面に応じた低い地上タッチとして力を伝える。
+  // v29: ボールを足へ追従させない。通常のドリブルは接触開始時の単発インパルスで動かす。
+  // 足裏ロールだけは例外として、位置固定を伴わない短時間の摩擦力を許可する。
   let guidedApplied = false;
   const pendingFollowThrough = pendingShot.active && pendingShot.side === side;
-  if (currentInside && stableInput && !pendingFollowThrough) {
-    captureVirtualBallControl(side, foot, normal.x, now, continuousSurface.key, touchMetrics.medialness);
+  if (currentInside && stableInput && !pendingFollowThrough && continuousSurface.key === 'sole') {
     guidedApplied = applyGuidedDribble(
       ball, footVelocity, approach, normal, penetration, dt, unit, continuousSurface, touchMetrics,
     );
   } else {
-    ball.x += normal.x * penetration * 0.12;
-    ball.y += normal.y * penetration * 0.04;
+    // めり込みだけを最小限解消し、足位置・身体移動への追従は行わない。
+    ball.x += normal.x * penetration * 0.10;
+    ball.y += normal.y * penetration * 0.035;
   }
 
   const horizontalIntent = Math.abs(footVelocity.x) > unit * 0.045;
@@ -9491,6 +9521,7 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
       foot, contact, footVelocity, footSpeed, approach, power, sideOffset, now, token: sessionToken,
       takebackGap: shotTakebackGap,
       outsideDuration: shotOutsideDuration,
+      occludedImpact: inferredOccludedImpact,
     });
     if (plan) {
       const shotSurface = classifyTouchSurface(touchMetrics, power, { isShot: true });
@@ -9509,6 +9540,7 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
       });
       queuePendingShot(plan, side, shotSurface, foot, footVelocity, power, now, {
         preTouchBall: { x: preTouchX, y: preTouchY, vx: preTouchVx, vy: preTouchVy },
+        occludedImpact: inferredOccludedImpact,
       });
     } else {
       const attemptedSwing = footSpeed > unit * 0.38 && approach > unit * 0.018 && power > 0.72;
@@ -9561,19 +9593,13 @@ function updateVirtualBallPhysics(dt, allowContacts = true) {
   for (let index = 0; index < steps; index += 1) {
     const now = performance.now();
     recordVirtualBallSample(now, false);
-    let possessionActive = false;
     if (allowContacts) {
       resolveFootBallCollision(feet.left, 'left', now, step);
       resolveFootBallCollision(feet.right, 'right', now, step);
       if (shotState.active) break;
-      possessionActive = pendingShot.active ? false : updateVirtualBallPossession(step, now);
-    }
-
-    // Contact assistance changes velocity only; gravity, rolling friction and inertia still run.
-    // This keeps the ball responsive without making it stick to the player.
-    if (possessionActive) {
-      const support = clamp(virtualBall.controlStrength, 0, 1);
-      virtualBall.vy *= Math.exp(-6.5 * support * step);
+      // v29: プレイ中のポゼッション追従は使わない。
+      // 各タッチの間は慣性・摩擦・回転だけでボールを自由運動させる。
+      if (virtualBall.controlFoot) clearVirtualBallControl();
     }
 
     const speed = Math.hypot(virtualBall.vx, virtualBall.vy);
