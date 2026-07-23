@@ -1821,7 +1821,7 @@
     </div>
 
     <div class="feint-analysis" id="feint-analysis-box">
-      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · SIMPLE 4-STATE SHOT v52</span></div>
+      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · SIMPLE 4-STATE SHOT v53</span></div>
       <div class="feint-summary" id="feint-summary"></div>
       <div class="feint-analysis-note" id="feint-analysis-note"></div>
     </div>
@@ -2362,7 +2362,7 @@ const SHOT_INPUT_RULES = {
 
   // 接触後は短時間の振り抜き、または高速インパクト直後の遮蔽で確定。
   followThroughMinMs: 55,
-  followThroughMaxMs: 300,
+  followThroughMaxMs: 420,
   followThroughDistance: 0.016,
   followThroughSpeed: 0.085,
   followThroughAlignment: -0.18,
@@ -8275,22 +8275,22 @@ function evaluateShotCommitmentState(input) {
     || (input.ballAlongSpeed || 0) >= unit * 0.045;
 
   // 通常の振り抜き。正面カメラでは振り抜きが弧を描くため、方向一致を厳しくしない。
-  const trackedFollow = elapsed >= 38
+  const trackedFollow = elapsed >= 28
     && (input.poseSamples || 0) >= 1
-    && distance >= unit * 0.0045
-    && postSpeed >= unit * 0.032;
+    && distance >= unit * 0.0022
+    && postSpeed >= unit * 0.018;
 
   // インパクト直後に足がボール・反対脚へ隠れるケース。動画で最も多いパターン。
-  const occlusionFollow = elapsed >= 55
+  const occlusionFollow = elapsed >= 38
     && Boolean(input.occludedImpact)
-    && (input.initialFootSpeed || 0) >= unit * 0.12
+    && (input.initialFootSpeed || 0) >= unit * 0.085
     && ((input.poseSamples || 0) >= 1 || ballEvidence);
 
   // 高速で明確に接触し、その後ボールが蹴り方向へ離れた場合もシュートとする。
-  const impactFollow = elapsed >= 42
-    && (input.initialFootSpeed || 0) >= unit * 0.11
-    && ballEvidence
-    && ((input.peakAlong || 0) >= unit * 0.005 || (input.poseSamples || 0) >= 1);
+  const impactFollow = elapsed >= 30
+    && (input.initialFootSpeed || 0) >= unit * 0.080
+    && (ballEvidence || (input.poseSamples || 0) >= 1)
+    && ((input.peakAlong || 0) >= unit * 0.002 || (input.poseSamples || 0) >= 1);
 
   if (trackedFollow || occlusionFollow || impactFollow) {
     return { decision: 'commit', reason: trackedFollow ? 'tracked-follow' : occlusionFollow ? 'occluded-follow' : 'impact-ball-follow' };
@@ -8518,11 +8518,24 @@ function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, pow
     && Math.abs(footVelocity.x - bodyVx) <= unit * 0.060
     && kickToSupportRatio < 1.30
     && verticalRange < unit * 0.006;
-  const kickIntent = !bodyCarryOnly
-    && footSpeed >= unit * 0.105
-    && clearSwing
-    && independentFromSupport
-    && (supportStable || kickToSupportRatio >= 1.55 || explicitTakeback || acceleratedKick);
+  // v53: 水平固定モードでは、正面カメラで奥行き方向の情報が欠けるため、
+  // 身体移動との差や完全な軸足固定を入口条件にしない。
+  // 「接触時の速度バースト」「直前の足軌道」「通常タッチより大きい変位」の3点を主条件にする。
+  const speedBurst = footSpeed >= unit * 0.090
+    || metrics.peakSpeed >= unit * 0.105;
+  const enoughPreContactPath = metrics.path >= unit * 0.011
+    && metrics.displacement >= unit * 0.0045;
+  const kickFootClearlyActive = footSpeed - supportSpeed >= unit * 0.025
+    || kickToSupportRatio >= 1.15
+    || relativeKickSpeed >= unit * 0.070
+    || metrics.displacement >= unit * 0.012;
+  const tinyLateralTouch = metrics.path < unit * 0.013
+    && metrics.displacement < unit * 0.006
+    && footSpeed < unit * 0.115;
+  const kickIntent = speedBurst
+    && enoughPreContactPath
+    && kickFootClearlyActive
+    && !tinyLateralTouch;
   if (!kickIntent) return null;
 
   const speedQuality = clamp(footSpeed / (unit * 0.72), 0, 1.25);
