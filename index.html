@@ -1821,7 +1821,7 @@
     </div>
 
     <div class="feint-analysis" id="feint-analysis-box">
-      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · SIMPLE 3-CONDITION SHOT v31</span></div>
+      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · SIMPLE 4-STATE SHOT v51</span></div>
       <div class="feint-summary" id="feint-summary"></div>
       <div class="feint-analysis-note" id="feint-analysis-note"></div>
     </div>
@@ -2441,7 +2441,7 @@ const pendingShot = {
 };
 
 
-// v50 virtual-ball control model only. Real-ball detection and processing are intentionally untouched.
+// v51 virtual-ball control model only. Real-ball detection and processing are intentionally untouched.
 const VIRTUAL_CONTROL_STATE = Object.seal({
   mode: 'FREE', // FREE | DRIBBLE | SOLE | SHOT
   side: '',
@@ -8232,22 +8232,22 @@ function evaluateShotCommitmentState(input) {
     || (input.ballAlongSpeed || 0) >= unit * 0.045;
 
   // 通常の振り抜き。正面カメラでは振り抜きが弧を描くため、方向一致を厳しくしない。
-  const trackedFollow = elapsed >= Math.min(rules.followThroughMinMs, 35)
+  const trackedFollow = elapsed >= 38
     && (input.poseSamples || 0) >= 1
-    && distance >= unit * 0.007
-    && postSpeed >= unit * 0.050;
+    && distance >= unit * 0.0045
+    && postSpeed >= unit * 0.032;
 
   // インパクト直後に足がボール・反対脚へ隠れるケース。動画で最も多いパターン。
-  const occlusionFollow = elapsed >= 70
+  const occlusionFollow = elapsed >= 55
     && Boolean(input.occludedImpact)
-    && (input.initialFootSpeed || 0) >= unit * 0.18
+    && (input.initialFootSpeed || 0) >= unit * 0.12
     && ((input.poseSamples || 0) >= 1 || ballEvidence);
 
   // 高速で明確に接触し、その後ボールが蹴り方向へ離れた場合もシュートとする。
-  const impactFollow = elapsed >= 55
-    && (input.initialFootSpeed || 0) >= unit * 0.16
+  const impactFollow = elapsed >= 42
+    && (input.initialFootSpeed || 0) >= unit * 0.11
     && ballEvidence
-    && ((input.peakAlong || 0) >= unit * 0.010 || (input.poseSamples || 0) >= 2);
+    && ((input.peakAlong || 0) >= unit * 0.005 || (input.poseSamples || 0) >= 1);
 
   if (trackedFollow || occlusionFollow || impactFollow) {
     return { decision: 'commit', reason: trackedFollow ? 'tracked-follow' : occlusionFollow ? 'occluded-follow' : 'impact-ball-follow' };
@@ -8459,16 +8459,27 @@ function planVirtualShot({ foot, contact, footVelocity, footSpeed, approach, pow
   const pureLateralCarry = bothFeetStepping && footFollowsBody && !explicitTakeback;
   const independentKickSwing = relativeKickSpeed >= unit * 0.125
     && (Math.abs(relativeFootDx) >= unit * 0.012 || verticalRange >= unit * 0.010 || explicitTakeback || fullLegSwing);
-  // v50: 4-state model. A shot is an independent large swing, not a surface classification.
-  // Lateral body carry remains dribble; the support foot only needs to be slower than the kicking foot.
-  const kickIntent = !pureLateralCarry
-    && relativeKickSpeed >= unit * 0.105
-    && footSpeed >= unit * 0.135
-    && metrics.path >= unit * 0.024
-    && metrics.displacement >= unit * 0.010
-    && (supportStable || footSpeed >= Math.max(unit * 0.18, supportSpeed * 1.45))
-    && (radialApproachStrong || metrics.closure >= -unit * 0.006)
-    && (explicitTakeback || fullLegSwing || acceleratedKick || verticalRange >= unit * 0.008);
+  // v51: 正面カメラでは奥行き方向のキックを radialApproach/closure で落とさない。
+  // シュートは「軸足より蹴り足が明確に速い」「接触前に大きな軌道がある」を主条件とする。
+  // 身体と両足が同じ速度で横移動する場合だけ、横ドリブルとして除外する。
+  const supportBase = Math.max(unit * 0.035, supportSpeed);
+  const kickToSupportRatio = footSpeed / supportBase;
+  const clearSwing = metrics.path >= unit * 0.017
+    && metrics.displacement >= unit * 0.006
+    && metrics.peakSpeed >= unit * 0.115;
+  const independentFromSupport = kickToSupportRatio >= 1.42
+    || footSpeed - supportSpeed >= unit * 0.075
+    || relativeKickSpeed >= unit * 0.095;
+  const bodyCarryOnly = bodyMovingLaterally
+    && supportSpeed >= unit * 0.105
+    && Math.abs(footVelocity.x - bodyVx) <= unit * 0.060
+    && kickToSupportRatio < 1.30
+    && verticalRange < unit * 0.006;
+  const kickIntent = !bodyCarryOnly
+    && footSpeed >= unit * 0.105
+    && clearSwing
+    && independentFromSupport
+    && (supportStable || kickToSupportRatio >= 1.55 || explicitTakeback || acceleratedKick);
   if (!kickIntent) return null;
 
   const speedQuality = clamp(footSpeed / (unit * 0.72), 0, 1.25);
