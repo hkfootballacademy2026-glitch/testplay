@@ -2385,8 +2385,8 @@ let visionFileset = null;
 let lastVideoTime = -1;
 let lastBallInferenceAt = -Infinity;
 let state = 'idle';
-let mode = 'real';
-let virtualVariant = 'goal';
+var mode = 'real';
+var virtualVariant = 'goal';
 let goalkeeperEnabled = true; // ゴールありは常にキーパーとの1対1
 let breakthroughDistance = 'near';
 let defenderDifficulty = 'normal';
@@ -11278,5 +11278,87 @@ updateDefenderDifficultySetup();
 renderBest5();
 requestAnimationFrame(loop);
 </script>
+
+<script>
+(function installModeCardFallback() {
+  const MODE_COPY = {
+    real: {
+      label: 'REAL BALL',
+      title: 'リアルボールモード',
+      desc: '実物のサッカーボールをAIで検出・追跡してプレーします。'
+    },
+    virtual: {
+      label: 'VIRTUAL BALL',
+      title: 'バーチャルボールモード',
+      desc: '画面上のバーチャルボールを足の骨格検出で操作します。'
+    }
+  };
+
+  function fallbackShowSetup(selectedMode) {
+    window.mode = selectedMode;
+    document.documentElement.dataset.selectedMode = selectedMode;
+    const info = MODE_COPY[selectedMode] || MODE_COPY.real;
+    const byId = id => document.getElementById(id);
+    const label = byId('setup-mode-label');
+    const title = byId('setup-mode-title');
+    const desc = byId('setup-mode-desc');
+    if (label) label.textContent = info.label;
+    if (title) title.textContent = info.title;
+    if (desc) desc.textContent = info.desc;
+    const virtualPanel = byId('virtual-variant-panel');
+    if (virtualPanel) virtualPanel.classList.toggle('hidden', selectedMode !== 'virtual');
+    const visualPanel = byId('visual-stage-panel');
+    if (visualPanel) visualPanel.classList.toggle('hidden', selectedMode !== 'virtual');
+    document.querySelectorAll('.screen').forEach(screen => {
+      screen.classList.toggle('hidden', screen.id !== 'screen-setup');
+    });
+    const setup = byId('screen-setup');
+    if (setup) setup.scrollTop = 0;
+  }
+
+  function chooseMode(card) {
+    if (!card || card.dataset.modeHandled === '1') return;
+    card.dataset.modeHandled = '1';
+    const selectedMode = card.dataset.mode === 'virtual' ? 'virtual' : 'real';
+    try {
+      window.mode = selectedMode;
+      if (typeof window.openSetup === 'function') {
+        window.openSetup(selectedMode);
+      } else {
+        fallbackShowSetup(selectedMode);
+      }
+    } catch (error) {
+      console.error('Mode selection fallback:', error);
+      fallbackShowSetup(selectedMode);
+    } finally {
+      setTimeout(() => { delete card.dataset.modeHandled; }, 250);
+    }
+  }
+
+  function bindCards() {
+    document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
+      if (card.dataset.fallbackBound === '1') return;
+      card.dataset.fallbackBound = '1';
+      card.style.touchAction = 'manipulation';
+      card.addEventListener('pointerup', event => {
+        event.preventDefault();
+        chooseMode(card);
+      }, { passive: false });
+      card.addEventListener('click', event => {
+        event.preventDefault();
+        chooseMode(card);
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindCards, { once: true });
+  } else {
+    bindCards();
+  }
+  window.addEventListener('pageshow', bindCards);
+})();
+</script>
+
 </body>
 </html>
