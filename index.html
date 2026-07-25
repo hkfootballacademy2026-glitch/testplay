@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0B1026" />
-<title>1VS1 CHALLENGE — STABLE VISUAL + SHOT REBUILD v63</title>
+<title>1VS1 CHALLENGE — LEGACY SHOT RESTORE v68</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=M+PLUS+1:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
@@ -1504,7 +1504,7 @@
   <section id="screen-start" class="screen" aria-label="スタートメニュー">
     <div class="eyebrow">AI FOOTBALL TRAINING</div>
     <h1 class="title">1VS1<br /><span class="gold">CHALLENGE</span></h1>
-    <div class="build-badge">STAGE VISUAL v24/25 · SHOT REBUILD v63</div>
+    <div class="build-badge">STABLE VISUAL · LEGACY SHOT v68</div>
     <p class="subtitle">ゴールなし／リアルボールでは、DFを左右に揺さぶって画面左下・右下の突破エリアへボールごと運びます。ゴールありではフィールドDFを置かず、手前に配置したゴールのキーパーと直接1対1でシュートを競います。</p>
 
     <div class="mode-grid" aria-label="トレーニングモード">
@@ -2344,38 +2344,42 @@ const DEFENDER_SHOT_RULES = {
 // 1. 大きなテイクバック 2. 高速スイング 3. 大きなフォロースルー。
 // ゴール方向、ボール移動、停止・引き戻し、キックフェイントは判定条件に使用しない。
 const SHOT_INPUT_RULES = {
-  roundGraceMs: 700,
-  releaseHoldMs: 80,
-  releaseGapRatio: 0.24,
-  shotReleaseHoldMs: 42,
-  shotReleaseGapRatio: 0.32,
+  roundGraceMs: 900,
+  releaseHoldMs: 95,
+  releaseGapRatio: 0.26,
+  shotReleaseHoldMs: 54,
+  shotReleaseGapRatio: 0.40,
 
-  // 正面カメラ用：接触前の「大きく速い一振り」をシュート候補にする。
-  minHistoryMs: 55,
-  minPath: 0.034,
-  minDisplacement: 0.018,
-  minTakebackGapRatio: 0.24,
-  minTakebackDurationMs: 32,
-  minFootSpeed: 0.18,
-  minPeakSpeed: 0.22,
-  minRecentSpeed: 0.12,
+  // 条件1：大きなテイクバック
+  minHistoryMs: 70,
+  minPath: 0.060,
+  minDisplacement: 0.030,
+  minTakebackGapRatio: 0.44,
+  minTakebackDurationMs: 54,
 
-  // 接触後は短時間の振り抜き、または高速インパクト直後の遮蔽で確定。
-  followThroughMinMs: 55,
-  followThroughMaxMs: 300,
-  followThroughDistance: 0.016,
-  followThroughSpeed: 0.085,
-  followThroughAlignment: -0.18,
+  // 条件2：高速スイング
+  minFootSpeed: 0.27,
+  minPeakSpeed: 0.31,
+  minRecentSpeed: 0.16,
+
+  // 条件3：大きなフォロースルー
+  followThroughMinMs: 54,
+  followThroughMaxMs: 340,
+  followThroughDistance: 0.034,
+  followThroughSpeed: 0.15,
+  followThroughAlignment: 0.18,
   followThroughMinPoseSamples: 1,
   followThroughMinAlignedSamples: 1,
   followThroughSustainMs: 0,
-  followThroughFreshMs: 210,
-  occludedImpactAssistRatio: 1.18,
-  occludedImpactMinSpeed: 0.18,
-  occludedImpactMinPath: 0.032,
-  occludedImpactMinDisplacement: 0.016,
-  occludedImpactMinOutsideMs: 24,
-  occludedImpactMaxObserveMs: 360,
+  followThroughFreshMs: 145,
+
+  // インパクト瞬間が隠れた場合の、ボール付近の軌跡補完。
+  occludedImpactAssistRatio: 1.08,
+  occludedImpactMinSpeed: 0.27,
+  occludedImpactMinPath: 0.055,
+  occludedImpactMinDisplacement: 0.028,
+  occludedImpactMinOutsideMs: 40,
+  occludedImpactMaxObserveMs: 380,
 };
 
 let stream = null;
@@ -8490,34 +8494,25 @@ function evaluateShotCommitmentState(input) {
   input = input || {};
   const rules = SHOT_INPUT_RULES;
   const unit = Math.max(1, input.unit || 1);
-  const elapsed = input.elapsed || 0;
-  const distance = input.peakAlong || 0;
-  const postSpeed = input.peakPostSpeed || 0;
-  const ballEvidence = (input.ballAlong || 0) >= unit * 0.010
-    || (input.ballAlongSpeed || 0) >= unit * 0.045;
 
-  // 通常の振り抜き。正面カメラでは振り抜きが弧を描くため、方向一致を厳しくしない。
-  const trackedFollow = elapsed >= rules.followThroughMinMs
-    && (input.poseSamples || 0) >= 1
-    && distance >= unit * rules.followThroughDistance
-    && postSpeed >= unit * rules.followThroughSpeed;
+  const enoughSamples = input.poseSamples >= rules.followThroughMinPoseSamples
+    && input.alignedPoseSamples >= rules.followThroughMinAlignedSamples;
+  const largeFollowThrough = (input.peakAlong || 0) >= unit * rules.followThroughDistance;
+  const fastFollowThrough = (input.peakPostSpeed || 0) >= unit * rules.followThroughSpeed;
+  const continuingForward = (input.alignment ?? -1) >= rules.followThroughAlignment
+    || (input.peakAlong || 0) >= unit * rules.followThroughDistance * 1.28;
 
-  // インパクト直後に足がボール・反対脚へ隠れるケース。動画で最も多いパターン。
-  const occlusionFollow = elapsed >= 70
-    && Boolean(input.occludedImpact)
-    && (input.initialFootSpeed || 0) >= unit * 0.18
-    && ((input.poseSamples || 0) >= 1 || ballEvidence);
-
-  // 高速で明確に接触し、その後ボールが蹴り方向へ離れた場合もシュートとする。
-  const impactFollow = elapsed >= 75
-    && (input.initialFootSpeed || 0) >= unit * 0.24
-    && ballEvidence
-    && ((input.peakAlong || 0) >= unit * 0.010 || (input.poseSamples || 0) >= 2);
-
-  if (trackedFollow || occlusionFollow || impactFollow) {
-    return { decision: 'commit', reason: trackedFollow ? 'tracked-follow' : occlusionFollow ? 'occluded-follow' : 'impact-ball-follow' };
+  if (input.elapsed >= rules.followThroughMinMs
+    && enoughSamples
+    && largeFollowThrough
+    && fastFollowThrough
+    && continuingForward) {
+    return { decision: 'commit', reason: 'three-condition-shot' };
   }
-  if (elapsed > rules.followThroughMaxMs) return { decision: 'drive', reason: 'no-follow-through' };
+
+  if (input.elapsed > rules.followThroughMaxMs) {
+    return { decision: 'drive', reason: 'follow-through-insufficient' };
+  }
   return { decision: 'wait', reason: 'observe' };
 }
 
@@ -8573,21 +8568,15 @@ function updatePendingShot(now = performance.now()) {
     return false;
   }
   const elapsed = now - pendingShot.queuedAt;
-  const oppositeSide = pendingShot.side === 'left' ? 'right' : 'left';
-  if (recentFootImpacts[oppositeSide] > pendingShot.queuedAt && elapsed <= DOUBLE_TOUCH_WINDOW_MS + 80) {
-    clearPendingShot();
-    CUE.textContent = '';
-    SUB.textContent = '';
-    bigMsg('DOUBLE TOUCH', 'var(--cyan)', 420);
-    return false;
-  }
   const foot = feet[pendingShot.side];
   if (!foot?.active || !pendingShot.footAtContact) {
     if (elapsed > (pendingShot.occludedImpact ? SHOT_INPUT_RULES.occludedImpactMaxObserveMs : SHOT_INPUT_RULES.followThroughMaxMs)) clearPendingShot();
     return false;
   }
-  // インパクト直後の遮蔽は正常なキックで起きるため、predictedでも直前速度を使って継続評価する。
-  if (foot.predicted) pendingShot.occludedImpact = true;
+  if (foot.predicted) {
+    if (elapsed > (pendingShot.occludedImpact ? SHOT_INPUT_RULES.occludedImpactMaxObserveMs : SHOT_INPUT_RULES.followThroughMaxMs)) clearPendingShot();
+    return false;
+  }
 
   const unit = Math.max(260, Math.min(FW, FH));
   const displacementX = foot.center.x - pendingShot.footAtContact.x;
@@ -8647,7 +8636,6 @@ function updatePendingShot(now = performance.now()) {
     ballAlong,
     ballAlongSpeed,
     occludedImpact: pendingShot.occludedImpact,
-    initialFootSpeed: pendingShot.initialFootSpeed,
   });
 
   if (decision.decision === 'commit') {
