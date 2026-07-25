@@ -687,7 +687,15 @@ button:focus-visible{outline:4px solid #fff;outline-offset:3px}
         <span class="handMark">近</span><b>近距離モード</b><small>顔・肩・両腕が映ればOK</small>
       </button>
     </div>
-    <div class="note" style="margin-top:8px">2m取れない場所では<b style="color:var(--green)">近距離モード</b>を選ぶと、膝まで映ればキャリブレーション可能です。</div>
+    <div class="note" style="margin-top:8px">2m取れない場所では<b style="color:var(--green)">近距離モード</b>を選べます。片手モードなら顔と投球腕だけでも開始できます。</div>
+  </div>
+  <div class="setupSection">
+    <div class="setupSectionTitle">ピッチング操作</div>
+    <div class="handChoice compact" aria-label="ピッチング操作モード">
+      <button class="handBtn pitchControlBtn sel" type="button" data-pitch-control="two" aria-pressed="true"><span class="handMark">両</span><b>両腕モード</b><small>両肩・両腕を使って判定</small></button>
+      <button class="handBtn pitchControlBtn" type="button" data-pitch-control="one" aria-pressed="false"><span class="handMark">片</span><b>片手モード</b><small>投球腕だけでプレイ</small></button>
+    </div>
+    <div class="virtualBgNote">片手モードでは、画面に映っている投球腕の肩・ひじ・手首だけで投球を判定します。</div>
   </div>
   <div class="setupSection">
     <div class="setupSectionTitle">バーチャル背景を選択</div>
@@ -770,6 +778,13 @@ button:focus-visible{outline:4px solid #fff;outline-offset:3px}
     <div class="handChoice compact" aria-label="試合の投球距離モード">
       <button class="handBtn pitchDistBtn sel" type="button" data-dist="normal" aria-pressed="true"><span class="handMark">標</span><b>標準距離</b><small>全身を映して投球</small></button>
       <button class="handBtn pitchDistBtn" type="button" data-dist="near" aria-pressed="false"><span class="handMark">近</span><b>近距離モード</b><small>顔・肩・両腕が映ればOK</small></button>
+    </div>
+  </div>
+  <div class="setupSection">
+    <div class="setupSectionTitle">守備時のピッチング操作</div>
+    <div class="handChoice compact" aria-label="試合のピッチング操作モード">
+      <button class="handBtn pitchControlBtn sel" type="button" data-pitch-control="two" aria-pressed="true"><span class="handMark">両</span><b>両腕モード</b><small>両肩・両腕で判定</small></button>
+      <button class="handBtn pitchControlBtn" type="button" data-pitch-control="one" aria-pressed="false"><span class="handMark">片</span><b>片手モード</b><small>投球腕だけで判定</small></button>
     </div>
   </div>
   <div class="setupSection">
@@ -1409,6 +1424,7 @@ async function initEngine(msgEl){
 let savedBatterHand='right';
 let savedPitchView='catcher';
 let savedPitchDistance='normal';
+let savedPitchControl='two';
 let savedPitchBackground='camera';
 let savedBatBackground='practice';
 let savedMatchBackground='camera';
@@ -1417,6 +1433,7 @@ try{
   const storedHand=localStorage.getItem('arBaseballBatterHand');
   const storedView=localStorage.getItem('arBaseballPitchView');
   const storedPitchDistance=localStorage.getItem('arBaseballPitchDistance');
+  const storedPitchControl=localStorage.getItem('arBaseballPitchControl');
   const storedPitchBackground=localStorage.getItem('arBaseballPitchBackground');
   const storedBatBackground=localStorage.getItem('arBaseballBatBackground');
   const storedMatchBackground=localStorage.getItem('arBaseballMatchBackground');
@@ -1424,6 +1441,7 @@ try{
   if(storedHand==='left'||storedHand==='right') savedBatterHand=storedHand;
   savedPitchView='catcher';
   if(storedPitchDistance==='near'||storedPitchDistance==='normal') savedPitchDistance=storedPitchDistance;
+  if(storedPitchControl==='one'||storedPitchControl==='two') savedPitchControl=storedPitchControl;
   if(STADIUM_BACKGROUNDS[storedPitchBackground]) savedPitchBackground=storedPitchBackground;
   if(BATTING_BACKGROUNDS[storedBatBackground]) savedBatBackground=storedBatBackground;
   if(STADIUM_BACKGROUNDS[storedMatchBackground]) savedMatchBackground=storedMatchBackground;
@@ -1436,6 +1454,7 @@ const S = {
   batterHand:savedBatterHand, // COM打者: 'right' | 'left'
   pitchView:savedPitchView,   // 'pitcher' | 'catcher'
   pitchDistance:savedPitchDistance, // 'normal' | 'near'
+  pitchControl:savedPitchControl, // 'two' | 'one'
   pitchBackground:savedPitchBackground, // camera | practice | classic | dome | open
   batBackground:savedBatBackground, // camera | practice | classic | dome | open
   matchBackground:savedMatchBackground, // 試合では攻守共通
@@ -1477,6 +1496,7 @@ const M = { // 試合
 function batterHandLabel(){ return S.batterHand==='left'?'左バッター':'右バッター'; }
 function pitchViewLabel(){ return 'キャッチャー視点'; }
 function pitchDistanceLabel(){ return S.pitchDistance==='near'?'近距離モード':'標準距離'; }
+function pitchControlLabel(){ return S.pitchControl==='one'?'片手モード':'両腕モード'; }
 function batControlLabel(){ return S.batControl==='one'?'片手モード':'両手モード'; }
 function activeBatSide(){ return S.batterHand==='left'?'R':'L'; }
 function setBatControl(mode){
@@ -1543,6 +1563,26 @@ function setPitchDistance(mode){
   });
   updatePitchViewBadge();
 }
+function setPitchControl(mode){
+  S.pitchControl=mode==='one'?'one':'two';
+  try{localStorage.setItem('arBaseballPitchControl',S.pitchControl);}catch(_err){}
+  document.querySelectorAll('.pitchControlBtn').forEach(btn=>{
+    const selected=btn.dataset.pitchControl===S.pitchControl;
+    btn.classList.toggle('sel',selected);
+    btn.setAttribute('aria-pressed',String(selected));
+  });
+  updatePitchViewBadge();
+}
+function visiblePitchArmSide(lm){
+  const score=side=>{
+    const ids=side==='L'?[LM.Lsh,LM.Lel,LM.Lwr]:[LM.Rsh,LM.Rel,LM.Rwr];
+    return ids.reduce((sum,i)=>sum+(visibleLm(lm?.[i],.30)?1:0),0);
+  };
+  const l=score('L'),r=score('R');
+  if(l===0&&r===0)return null;
+  return l>=r?'L':'R';
+}
+
 function updatePitchViewBadge(){
   const el=$('pitchViewBadge');if(!el)return;
   const hudVisible=$('board').style.display!=='none';
@@ -1550,7 +1590,7 @@ function updatePitchViewBadge(){
   el.style.display=visible?'block':'none';
   if(!visible)return;
   el.textContent=S.mode==='pitch'
-    ?`キャッチャー視点 ・ ${pitchDistanceLabel()} ・ ${pitchBackgroundLabel()} ・ ${batterHandLabel()}`
+    ?`キャッチャー視点 ・ ${pitchDistanceLabel()} ・ ${pitchControlLabel()} ・ ${pitchBackgroundLabel()} ・ ${batterHandLabel()}`
     :`投手背面視点 ・ ${batBackgroundLabel()}`;
 }
 
@@ -1728,7 +1768,9 @@ function poseFingerprint(lm){
   const ls=nPoint(lm[LM.Lsh]),rs=nPoint(lm[LM.Rsh]);
   const lh=nPoint(lm[LM.Lhip]),rh=nPoint(lm[LM.Rhip]);
   const le=nPoint(lm[LM.Lel]),re=nPoint(lm[LM.Rel]);
-  const active=activeBatSide();
+  const active=(S.mode==='pitch'||S.analysisType==='pitch')&&S.pitchControl==='one'
+    ?(visiblePitchArmSide(lm)||'L')
+    :activeBatSide();
   const activeSh=active==='L'?ls:rs;
   const activeEl=active==='L'?le:re;
   const sh=meanPoint(ls,rs)||activeSh;
@@ -1749,6 +1791,7 @@ function calibrationQuality(profile,lm){
   const isPitchProfile=profile==='pitch'||profile==='analysisPitch';
   const isBatProfile=profile==='bat'||profile==='analysisBat';
   const nearPitchMode=isPitchProfile&&S.pitchDistance==='near';
+  const oneHandPitch=isPitchProfile&&S.pitchControl==='one';
   const oneHandBat=isBatProfile&&S.batControl==='one';
   const activeSide=activeBatSide();
   const activeArm=activeSide==='L'
@@ -1757,20 +1800,24 @@ function calibrationQuality(profile,lm){
 
   const armUpper=[LM.nose,LM.Lsh,LM.Rsh,LM.Lel,LM.Rel,LM.Lwr,LM.Rwr];
   const torsoUpper=[...armUpper,LM.Lhip,LM.Rhip];
-  const required=oneHandBat?activeArm:(nearPitchMode?armUpper:torsoUpper);
+  const visiblePitchSide=oneHandPitch?visiblePitchArmSide(lm):null;
+  const pitchArm=visiblePitchSide==='R'?[LM.nose,LM.Rsh,LM.Rel,LM.Rwr]:[LM.nose,LM.Lsh,LM.Lel,LM.Lwr];
+  const required=oneHandBat?activeArm:(oneHandPitch?pitchArm:(nearPitchMode?armUpper:torsoUpper));
 
   if(required.some(i=>!visibleLm(lm[i],.38))){
     return{
       ok:false,
       msg:oneHandBat
         ?`${S.batterHand==='left'?'右':'左'}肩・ひじ・手首と顔を画面に映してください`
-        :nearPitchMode
+        :oneHandPitch
+          ?'顔と投球する腕の肩・ひじ・手首を画面に映してください'
+          :nearPitchMode
           ?'近距離モードでは、顔・両肩・両ひじ・両手首をすべて映してください'
           :'顔・肩・ひじ・手首・腰がすべて映る位置へ移動してください'
     };
   }
 
-  const needLegs=isPitchProfile&&!nearPitchMode;
+  const needLegs=isPitchProfile&&!nearPitchMode&&S.pitchControl!=='one';
   const legs=[LM.Lknee,LM.Rknee,LM.Lankle,LM.Rankle];
   const legsOk=legs.filter(i=>visibleLm(lm[i],.28)).length>=3;
   if(needLegs&&!legsOk)return{ok:false,msg:'標準距離では、膝から足元まで画面に入れてください'};
@@ -1778,9 +1825,11 @@ function calibrationQuality(profile,lm){
 
   const boundsPoints=oneHandBat
     ?activeArm
-    :nearPitchMode
-      ?armUpper
-      :[...torsoUpper,...(needLegs?legs:[])];
+    :oneHandPitch
+      ?pitchArm
+      :nearPitchMode
+        ?armUpper
+        :[...torsoUpper,...(needLegs?legs:[])];
   const pts=boundsPoints.map(i=>lm[i]).filter(Boolean);
   const minX=Math.min(...pts.map(p=>1-p.x)),maxX=Math.max(...pts.map(p=>1-p.x));
   const minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));
@@ -1789,7 +1838,9 @@ function calibrationQuality(profile,lm){
       ok:false,
       msg:oneHandBat
         ?`黄色いガイド内に顔と${S.batterHand==='left'?'右':'左'}腕が収まるようにしてください`
-        :nearPitchMode
+        :oneHandPitch
+          ?'黄色いガイド内に顔と投球腕が収まるようにしてください'
+          :nearPitchMode
           ?'黄色いガイド内に頭・肩・両腕が収まるように立ってください'
           :'黄色いガイド内に身体全体が収まるように立ってください'
     };
@@ -1797,21 +1848,23 @@ function calibrationQuality(profile,lm){
 
   const fp=poseFingerprint(lm);
   if(!fp)return{ok:false,msg:'使用する腕が見切れない範囲で、もう少しカメラに近づいてください'};
-  if(!oneHandBat&&fp.shoulder<.10)return{ok:false,msg:'両腕が見切れない範囲で、もう少しカメラに近づいてください'};
+  if(!oneHandBat&&!oneHandPitch&&fp.shoulder<.10)return{ok:false,msg:'両腕が見切れない範囲で、もう少しカメラに近づいてください'};
   return{
     ok:true,
     msg:profile==='bat'||profile==='analysisBat'
       ?(oneHandBat
         ?`${S.batterHand==='left'?'右':'左'}腕を自然に構えて、動かずに待ってください`
         :'半身で構えたまま動かずに待ってください')
-      :nearPitchMode
-        ?'近距離モードです。正面を向き、両腕を自然に下ろして止まってください'
-        :'投球位置で正面を向き、動かずに待ってください',
+      :oneHandPitch
+        ?'片手モードです。投球する腕を自然に構えて止まってください'
+        :nearPitchMode
+          ?'近距離モードです。正面を向き、両腕を自然に下ろして止まってください'
+          :'投球位置で正面を向き、動かずに待ってください',
     fp
   };
 }
 function showCalibration(profile){
-  const labels={bat:['人物キャリブレーション',S.batControl==='one'?`${S.batterHand==='left'?'右':'左'}肩・ひじ・手首を検出します。手首を中心にバットを表示します`:'身体の大きさと構えを検出します。立ち位置はゲーム開始後に自動調整します'],pitch:['人物キャリブレーション','身体の大きさを検出します。投球位置はゲーム開始後に自動調整します'],analysisBat:['打撃フォーム準備','分析する構えと身体スケールを確定します'],analysisPitch:['投球フォーム準備','分析する投球位置と身体スケールを確定します']};
+  const labels={bat:['人物キャリブレーション',S.batControl==='one'?`${S.batterHand==='left'?'右':'左'}肩・ひじ・手首を検出します。手首を中心にバットを表示します`:'身体の大きさと構えを検出します。立ち位置はゲーム開始後に自動調整します'],pitch:['人物キャリブレーション',S.pitchControl==='one'?'顔と投球腕の肩・ひじ・手首を検出します':'身体の大きさを検出します。投球位置はゲーム開始後に自動調整します'],analysisBat:['打撃フォーム準備','分析する構えと身体スケールを確定します'],analysisPitch:['投球フォーム準備','分析する投球位置と身体スケールを確定します']};
   const [title,status]=labels[profile]||labels.pitch;
   $('calibTitle').textContent=title;$('calibStatus').textContent=status;$('calibProgress').style.width='0%';$('calibCount').textContent='';$('calibCount').classList.remove('show');$('calibrationOverlay').style.display='flex';
 }
@@ -1825,17 +1878,22 @@ function beginCalibration(profile){
 function captureCalibration(profile,lm){
   const ls=lm[LM.Lsh],rs=lm[LM.Rsh],lh=lm[LM.Lhip],rh=lm[LM.Rhip];
   const le=lm[LM.Lel],re=lm[LM.Rel];
-  const shSpan=Math.max(.08,Math.abs(ls.x-rs.x));
+  const pitchSide=visiblePitchArmSide(lm);
+  const activeSh=pitchSide==='R'?rs:ls;
+  const activeEl=pitchSide==='R'?re:le;
+  const bothShoulders=visibleLm(ls,.25)&&visibleLm(rs,.25);
+  const shSpan=bothShoulders
+    ?Math.max(.08,Math.abs(ls.x-rs.x))
+    :Math.max(.08,activeSh&&activeEl?Math.hypot(activeSh.x-activeEl.x,activeSh.y-activeEl.y)*.82:.12);
   const hipsVisible=visibleLm(lh,.25)&&visibleLm(rh,.25);
   const torso=hipsVisible
     ?Math.max(.08,Math.abs((lh.y+rh.y-ls.y-rs.y)/2))
     :Math.max(.08,shSpan*1.16);
-  const bodyX=hipsVisible
-    ?1-(ls.x+rs.x+lh.x+rh.x)/4
-    :1-(ls.x+rs.x+(le?.x??ls.x)+(re?.x??rs.x))/4;
-  const bodyY=hipsVisible
-    ?(ls.y+rs.y+lh.y+rh.y)/4
-    :(ls.y+rs.y+(le?.y??ls.y)+(re?.y??rs.y))/4;
+  const shoulderPts=[ls,rs].filter(Boolean);
+  const armPts=[activeSh,activeEl].filter(Boolean);
+  const bodySource=hipsVisible?[...shoulderPts,lh,rh].filter(Boolean):[...shoulderPts,...armPts].filter(Boolean);
+  const bodyX=bodySource.length?bodySource.reduce((sum,p)=>sum+(1-p.x),0)/bodySource.length:.5;
+  const bodyY=bodySource.length?bodySource.reduce((sum,p)=>sum+p.y,0)/bodySource.length:.4;
   if(profile==='bat'||profile==='analysisBat'){
     updateBattingAR(lm,performance.now());
     const z=computeBatZoneFromLm(lm);
@@ -1862,7 +1920,9 @@ function captureCalibration(profile,lm){
       torsoNorm:torso,
       hasFeet,
       at:Date.now(),
-      distanceMode:S.pitchDistance
+      distanceMode:S.pitchDistance,
+      controlMode:S.pitchControl,
+      detectedSide:pitchSide
     };
   }
   calibrationData.lastProfile=profile;
@@ -2087,20 +2147,21 @@ function fixedBatTarget(){
 function fixedPitchTarget(hasFeet){
   const portrait=H>=W;
   const near=S.pitchDistance==='near';
-  // 近距離では上半身だけを画面奥へ配置し、見えていない足元は生成しない。
+  // v33: 初期版の奥行き構図へ戻す。
+  // プレイヤー投手は奥中央に置くが、投球動作が見える大きさを確保する。
   return{
-    targetX:W*.50,
+    targetX:W*(portrait?.535:.525),
     targetY:H*(
       hasFeet
-        ?(portrait?.455:.49)
+        ?(portrait?.625:.655)
         :near
-          ?(portrait?.315:.34)
-          :(portrait?.325:.35)
+          ?(portrait?.405:.435)
+          :(portrait?.430:.455)
     ),
     targetShoulder:clamp(
-      W*(near?(portrait?.145:.125):(portrait?.125:.105)),
-      near?52:46,
-      W*(near?.18:.16)
+      W*(near?(portrait?.190:.165):(portrait?.180:.155)),
+      near?66:60,
+      W*(near?.235:.215)
     ),
     mode:'pitch'
   };
@@ -2111,7 +2172,9 @@ function rawPosePlacement(lm,mode){
   const ls=rawScreenPoint(lm[LM.Lsh]),rs=rawScreenPoint(lm[LM.Rsh]);
   const lh=rawScreenPoint(lm[LM.Lhip]),rh=rawScreenPoint(lm[LM.Rhip]);
   const le=rawScreenPoint(lm[LM.Lel]),re=rawScreenPoint(lm[LM.Rel]);
-  const active=activeBatSide();
+  const active=(S.mode==='pitch'||S.analysisType==='pitch')&&S.pitchControl==='one'
+    ?(visiblePitchArmSide(lm)||'L')
+    :activeBatSide();
   const activeSh=active==='L'?ls:rs;
   const activeEl=active==='L'?le:re;
   if(!ls&&!rs)return null;
@@ -2162,12 +2225,18 @@ function smoothVirtualTransform(next,now){
     return{scale:st.scale,tx:st.tx,ty:st.ty,mode:st.mode,useFeet:next.useFeet};
   }
 
-  // 小さな骨格揺れを抑えつつ、カメラ位置が変わっても人物を固定する。
+  // v33: 投球中は補正を止め、踏み込み・上体の前進・腕の伸びを残す。
+  // 待機中だけ非常にゆっくり基準位置へ戻す。
   const dt=Math.max(1,now-st.lastAt);
-  const follow=1-Math.exp(-dt/90);
-  st.scale=lerp(st.scale,next.scale,follow*.72);
-  st.tx=lerp(st.tx,next.tx,follow);
-  st.ty=lerp(st.ty,next.ty,follow);
+  const pitchMotionActive=next.mode==='pitch'&&(
+    !!S.ball ||
+    (arm.activeSide&&now-(arm.cockedAt[arm.activeSide]||0)<1050)
+  );
+  const tau=next.mode==='pitch'?520:90;
+  const follow=pitchMotionActive?0:(1-Math.exp(-dt/tau));
+  st.scale=lerp(st.scale,next.scale,follow*(next.mode==='pitch'?.34:.72));
+  st.tx=lerp(st.tx,next.tx,follow*(next.mode==='pitch'?.42:1));
+  st.ty=lerp(st.ty,next.ty,follow*(next.mode==='pitch'?.42:1));
   st.lastAt=now;
   return{scale:st.scale,tx:st.tx,ty:st.ty,mode:st.mode,useFeet:next.useFeet};
 }
@@ -2380,8 +2449,11 @@ function updateBattingAR(lm,now=performance.now()){
 }
 
 function trackThrow(lm,now){
-  if(!S.ball)gripState.locked=null;updateGripObservation(lm,now);
-  for(const side of ['L','R']){
+  if(!S.ball)gripState.locked=null;
+  updateGripObservation(lm,now);
+  const detected=visiblePitchArmSide(lm);
+  const sides=S.pitchControl==='one'?(detected?[detected]:[]):['L','R'];
+  for(const side of sides){
     const wr=lm[side==='L'?LM.Lwr:LM.Rwr],sh=lm[side==='L'?LM.Lsh:LM.Rsh],hip=lm[side==='L'?LM.Lhip:LM.Rhip];
     if(!wr||!sh)continue;
     const h=arm.hist[side];h.push({t:now,x:wr.x,y:wr.y});while(h.length&&now-h[0].t>950)h.shift();
@@ -2398,9 +2470,10 @@ function trackThrow(lm,now){
       const crossedDown=a.y<sh.y && b.y>=sh.y-.04;
       const lateralSweep=Math.abs(b.x-a.x)>.022;
       const upwardSweep=!!hip && a.y>hip.y-.01 && b.y<hip.y-.05;
-      const overhandRelease=cocked&&motion.releaseStyle==='overhand'&&motion.vy>.66&&motion.speedNorm>1.18&&crossedDown;
-      const sidearmRelease=cocked&&motion.releaseStyle==='sidearm'&&Math.abs(motion.vx)>.82&&motion.speedNorm>1.08&&lateralSweep;
-      const underhandRelease=cocked&&motion.releaseStyle==='underhand'&&motion.vy<-.36&&motion.speedNorm>1.00&&upwardSweep;
+      const one=S.pitchControl==='one';
+      const overhandRelease=cocked&&motion.releaseStyle==='overhand'&&motion.vy>(one?.54:.66)&&motion.speedNorm>(one?1.00:1.18)&&crossedDown;
+      const sidearmRelease=cocked&&motion.releaseStyle==='sidearm'&&Math.abs(motion.vx)>(one?.68:.82)&&motion.speedNorm>(one?.94:1.08)&&lateralSweep;
+      const underhandRelease=cocked&&motion.releaseStyle==='underhand'&&motion.vy<(one?-.28:-.36)&&motion.speedNorm>(one?.90:1.00)&&upwardSweep;
       if(overhandRelease||sidearmRelease||underhandRelease) releaseUserPitch(side,lm,motion);
     }
   }
@@ -2475,91 +2548,97 @@ function catcherViewSceneLayout(){
   const hand=S.batterHand==='left'?'left':'right';
   const virtualBg=virtualPitchBackgroundActive();
 
-  let batterH,batterW,feetY,zoneTopInBatter,zoneBottomInBatter,zoneWScale,gap;
-  let aimBounds,plateY,mittBaseY,batterAlpha;
-
   if(virtualBg){
-    // v30: プレイヤー投手を画面奥の固定マウンドへ置き、
-    // COMバッターとストライクゾーンは画面下部の打席へ固定する。
-    batterH=clamp(H*(portrait?0.42:0.52),Math.min(250,H*.31),Math.min(500,H*.57));
-    batterW=batterH*(902/1324)*.90;
-    feetY=clamp(H*(portrait?0.885:0.90),batterH+H*.045,H*.925);
-    zoneTopInBatter=.34;
-    zoneBottomInBatter=.73;
-    zoneWScale=.70;
-    gap=clamp(H*.010,7,15);
-    batterAlpha=.94;
-  }else{
-    // カメラ背景では従来どおり大きめに表示
-    const minBatterH=Math.min(350,H*.55);
-    const maxBatterH=Math.min(760,H*.86);
-    batterH=clamp(H*(portrait?0.71:0.84),minBatterH,Math.max(minBatterH,maxBatterH));
-    batterW=batterH*(902/1324)*.90;
-    feetY=clamp(H*(portrait?0.92:0.94),batterH+H*.028,H*.965);
-    zoneTopInBatter=.395;
-    zoneBottomInBatter=.725;
-    zoneWScale=.68;
-    gap=clamp(H*.012,7,16);
-    batterAlpha=.86;
+    // v33: 添付動画の初期構図。
+    // 右打者は左手前、左打者は右手前。ゾーンはその内側。
+    const batterH=clamp(
+      H*(portrait?.665:.72),
+      Math.min(330,H*.52),
+      Math.min(700,H*.79)
+    );
+    const batterW=batterH*(902/1324)*.90;
+    const feetY=clamp(H*(portrait?.945:.955),batterH+H*.035,H*.975);
+    const batterY=feetY-batterH;
+
+    const zoneH=clamp(H*(portrait?.265:.31),150,Math.min(330,H*.36));
+    const zoneW=zoneH*.68;
+    const zoneCenterX=W*(hand==='right'?.575:.425);
+    let zoneX=clamp(zoneCenterX-zoneW*.5,W*.23,W*.77-zoneW);
+    const zoneY=clamp(H*(portrait?.485:.455),H*.34,H*.72-zoneH);
+
+    const gap=clamp(W*.014,7,18);
+    let batterX=hand==='right'
+      ?zoneX-gap-batterW*.82
+      :zoneX+zoneW+gap-batterW*.18;
+
+    const margin=W*.015;
+    const groupLeft=Math.min(zoneX,batterX);
+    const groupRight=Math.max(zoneX+zoneW,batterX+batterW);
+    let shiftX=0;
+    if(groupLeft<margin)shiftX=margin-groupLeft;
+    if(groupRight+shiftX>W-margin)shiftX+=(W-margin)-(groupRight+shiftX);
+    zoneX+=shiftX;
+    batterX+=shiftX;
+
+    const zone={x:zoneX,y:zoneY,w:zoneW,h:zoneH};
+    const batter={x:batterX,y:batterY,w:batterW,h:batterH};
+    const plateY=clamp(zone.y+zone.h+clamp(zone.h*.055,7,14),zone.y+zone.h+6,H*.89);
+
+    return{
+      view:'catcher',
+      hand,
+      mirror:hand==='left'?-1:1,
+      zone,
+      batter,
+      feetY,
+      batterAlpha:.96,
+      plateY,
+      aimBounds:{x:W*.08,y:H*.18,w:W*.84,h:H*.70},
+      mittBase:{
+        x:hand==='right'
+          ?clamp(zone.x+zone.w*.64,W*.37,W*.72)
+          :clamp(zone.x+zone.w*.36,W*.28,W*.63),
+        y:clamp(plateY+zone.h*.34,H*.76,H*.925)
+      }
+    };
   }
 
+  // カメラ背景時の従来レイアウト
+  const minBatterH=Math.min(350,H*.55);
+  const maxBatterH=Math.min(760,H*.86);
+  const batterH=clamp(H*(portrait?0.71:0.84),minBatterH,Math.max(minBatterH,maxBatterH));
+  const batterW=batterH*(902/1324)*.90;
+  const feetY=clamp(H*(portrait?0.92:0.94),batterH+H*.028,H*.965);
   const batterY=feetY-batterH;
-  const zoneH=virtualBg
-    ? clamp(batterH*(zoneBottomInBatter-zoneTopInBatter),Math.min(145,H*.18),Math.min(285,H*.34))
-    : clamp(batterH*(zoneBottomInBatter-zoneTopInBatter),Math.min(165,H*.235),Math.min(340,H*.43));
-  const zoneW=zoneH*zoneWScale;
+  const zoneH=clamp(batterH*(.725-.395),Math.min(165,H*.235),Math.min(340,H*.43));
+  const zoneW=zoneH*.68;
   let zoneX=clamp(W*.5-zoneW/2,W*.045,W*.955-zoneW);
-  const zoneY=virtualBg
-    ? clamp(batterY+batterH*zoneTopInBatter,H*.47,Math.max(H*.47,H*.88-zoneH))
-    : clamp(batterY+batterH*zoneTopInBatter,H*.19,Math.max(H*.19,H*.865-zoneH));
-
-  // 投手視点の球場背景では、打者の身体がストライクゾーンと重ならないよう、
-  // 右打者は画面左、左打者は画面右のバッターボックスへ大きく離して配置する。
-  // バット先端だけがゾーン側へ入る程度の位置関係にする。
-  let batterX;
-  if(virtualBg){
-    // 右バッターは画面左、左バッターは画面右。
-    batterX=hand==='right'
-      ? zoneX-gap-batterW*.90
-      : zoneX+zoneW+gap-batterW*.10;
-  }else{
-    batterX=hand==='right'
-      ? zoneX-gap-batterW*.78
-      : zoneX+zoneW+gap-batterW*.22;
-  }
+  const zoneY=clamp(batterY+batterH*.395,H*.19,Math.max(H*.19,H*.865-zoneH));
+  const gap=clamp(H*.012,7,16);
+  let batterX=hand==='right'
+    ?zoneX-gap-batterW*.78
+    :zoneX+zoneW+gap-batterW*.22;
   const groupLeft=Math.min(zoneX,batterX);
   const groupRight=Math.max(zoneX+zoneW,batterX+batterW);
   let shiftX=0;
-  const margin=virtualBg?W*.03:W*.012;
-  if(groupLeft<margin) shiftX=margin-groupLeft;
-  if(groupRight+shiftX>W-margin) shiftX+=(W-margin)-(groupRight+shiftX);
+  const margin=W*.012;
+  if(groupLeft<margin)shiftX=margin-groupLeft;
+  if(groupRight+shiftX>W-margin)shiftX+=(W-margin)-(groupRight+shiftX);
   zoneX+=shiftX;batterX+=shiftX;
-
   const zone={x:zoneX,y:zoneY,w:zoneW,h:zoneH};
   const batter={x:batterX,y:batterY,w:batterW,h:batterH};
-
-  if(virtualBg){
-    plateY=clamp(zone.y+zone.h+clamp(zone.h*.055,7,13),zone.y+zone.h+6,H*.88);
-    aimBounds={x:W*.10,y:H*.10,w:W*.80,h:H*.72};
-    mittBaseY=clamp(plateY+zone.h*.42,H*.76,H*.925);
-  }else{
-    plateY=clamp(zone.y+zone.h+clamp(zone.h*.045,8,16),zone.y+zone.h+7,H*.92);
-    aimBounds={x:W*.025,y:H*.10,w:W*.95,h:H*.82};
-    mittBaseY=clamp(plateY+zone.h*.72,H*.77,H*.95);
-  }
-
-  return {
+  const plateY=clamp(zone.y+zone.h+clamp(zone.h*.045,8,16),zone.y+zone.h+7,H*.92);
+  return{
     view:'catcher',hand,mirror:hand==='left'?-1:1,
-    zone,batter,feetY,batterAlpha,plateY,
-    aimBounds,
+    zone,batter,feetY,batterAlpha:.86,plateY,
+    aimBounds:{x:W*.025,y:H*.10,w:W*.95,h:H*.82},
     mittBase:{
-      x:hand==='right'
-        ?clamp(zone.x-zone.w*.42,W*.12,W*.45)
-        :clamp(zone.x+zone.w*1.42,W*.55,W*.88),
-      y:mittBaseY
+      x:zone.x+zone.w*.5,
+      y:clamp(plateY+zone.h*.72,H*.77,H*.95)
     }
   };
 }
+
 function pitchingSceneLayout(){return catcherViewSceneLayout();}
 function comZone(){ return {...pitchingSceneLayout().zone}; }
 
@@ -2576,8 +2655,21 @@ function fullScreenPitchTarget(side,lm,motion,z,bounds){
 /* ================= あなたの投球(ピッチングモード/試合の裏) ================= */
 function releaseUserPitch(side,lm,motion){
   const wr=lm[side==='L'?LM.Lwr:LM.Rwr];const pitch=inferPitchType(side,motion,lm);const profile=PITCH_TYPES[pitch.type]||PITCH_TYPES.fastball;const kmh=estimatePitchKmh(motion,pitch.type);S.maxKmh=Math.max(S.maxKmh,kmh);S.pitches++;
-  const release=handBallPoint(side,lm)||screenPoint(wr)||{x:(1-wr.x)*W,y:wr.y*H};const sx=release.x,sy=release.y;const layout=catcherViewSceneLayout(),z=layout.zone,aim=fullScreenPitchTarget(side,lm,motion,z,layout.aimBounds);const breakSign=side==='R'?-1:1;const strength=.72+(pitch.confidence||.3)*.36;const breakX=profile.breakX*z.w*breakSign*strength,breakY=profile.breakY*z.h*strength;const control=clamp((motion.speedNorm-1.15)/3.4,0,1);const missX=z.w*(.026+(1-control)*.065),missY=z.h*(.023+(1-control)*.060);const tx=clamp(aim.x+breakX+(Math.random()-.5)*missX*2,layout.aimBounds.x,layout.aimBounds.x+layout.aimBounds.w);const ty=clamp(aim.y+breakY+(Math.random()-.5)*missY*2,layout.aimBounds.y,layout.aimBounds.y+layout.aimBounds.h);const flight=clamp(18.44/(kmh/3.6)*1000,430,1250),now=performance.now(),releaseDelay=68;
-  S.ball={dir:'toCom',sx,sy,tx,ty,t0:now+releaseDelay,dur:flight,kmh,resolved:false,releaseSide:side,zone:{...z},pitchView:'catcher',pitchType:pitch.type,pitchName:pitch.name,pitchConfidence:pitch.confidence||.3,breakX,breakY,spin:(pitch.type==='curve'||pitch.type==='slider')?1.1:.55};S.cooldownUntil=now+releaseDelay+flight+900;S.lastPitch={...pitch,kmh};gripState.locked={...pitch};updatePitchTypeHUD();showGun(kmh);
+  const release=handBallPoint(side,lm)||screenPoint(wr)||{x:(1-wr.x)*W,y:wr.y*H};const sx=release.x,sy=release.y;const layout=catcherViewSceneLayout(),z=layout.zone,aim=fullScreenPitchTarget(side,lm,motion,z,layout.aimBounds);const breakSign=side==='R'?-1:1;const strength=.72+(pitch.confidence||.3)*.36;const breakX=profile.breakX*z.w*breakSign*strength,breakY=profile.breakY*z.h*strength;const control=clamp((motion.speedNorm-1.15)/3.4,0,1);const missX=z.w*(.026+(1-control)*.065),missY=z.h*(.023+(1-control)*.060);const tx=clamp(aim.x+breakX+(Math.random()-.5)*missX*2,layout.aimBounds.x,layout.aimBounds.x+layout.aimBounds.w);const ty=clamp(aim.y+breakY+(Math.random()-.5)*missY*2,layout.aimBounds.y,layout.aimBounds.y+layout.aimBounds.h);const flight=clamp(18.44/(kmh/3.6)*1000,430,1250),now=performance.now(),releaseDelay=0;
+  // 最初の区間は手から前へ抜け、その後ゾーンへ収束させる。
+  const screenVx=-(motion.vx||0);
+  const screenVy=(motion.vy||0);
+  const controlX=clamp(
+    sx+(tx-sx)*.20+screenVx*W*.035,
+    Math.min(sx,tx)-W*.08,
+    Math.max(sx,tx)+W*.08
+  );
+  const controlY=clamp(
+    sy+(ty-sy)*.16+screenVy*H*.018,
+    Math.min(sy,ty)-H*.08,
+    Math.max(sy,ty)+H*.08
+  );
+  S.ball={dir:'toCom',sx,sy,tx,ty,controlX,controlY,startR:clamp(Math.min(W,H)*.014,6,11),t0:now+releaseDelay,dur:flight,kmh,resolved:false,releaseSide:side,zone:{...z},pitchView:'catcher',pitchType:pitch.type,pitchName:pitch.name,pitchConfidence:pitch.confidence||.3,breakX,breakY,spin:(pitch.type==='curve'||pitch.type==='slider')?1.1:.55};S.cooldownUntil=now+releaseDelay+flight+900;S.lastPitch={...pitch,kmh};gripState.locked={...pitch};updatePitchTypeHUD();showGun(kmh);
   const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;const b=S.comBatter;b.willSwing=inZone?Math.random()<.78:Math.random()<.22;b.swingDuration=560;if(b.willSwing){let p=.66-(kmh-80)*.0048;if(pitch.type!=='fastball')p-=.05;if(!inZone)p-=.30;b.contact=Math.random()<Math.max(.06,p);b.swingT=S.ball.t0+flight*.63;}else{b.contact=false;b.swingT=0;}S.ball.inZone=inZone;arm.hist[side]=[];SFX.whoosh(sx);beep(120,.08,'sine',.12);
 }
 
@@ -3492,37 +3584,13 @@ function drawBattingPitcherBackViewBase(){
 /* 捕手視点の前景。ライブ映像のプレイヤーを画面奥の投手として見せる。 */
 
 function drawCalibratedPitchPosition(lm){
-  const c=calibrationData.pitch;if(!c)return;
+  if(!lm)return false;
   const feet=getVisiblePitchFeetPlacement(lm);
-  const bodySpan=clamp((c.shoulderSpanNorm*W)*1.18,54,W*.32);
-  const x=feet?.x ?? c.bodyX*W;
-  const y=feet?.y ?? (c.feetY||.90)*H;
-  const span=feet?.span ? clamp(feet.span*1.35,54,W*.28) : bodySpan;
-  let moved=false;
-  if(lm){
-    const ls=lm[LM.Lsh],rs=lm[LM.Rsh],lh=lm[LM.Lhip],rh=lm[LM.Rhip];
-    if(ls&&rs&&lh&&rh){
-      const cx=(1-(ls.x+rs.x+lh.x+rh.x)/4)*W;
-      moved=Math.abs(cx-c.bodyX*W)>Math.max(span*.48,W*.12);
-    }
-  }
-  if(feet){
-    drawARMoundAt(x,y+8,span*.88,moved?.58:.82);
-    ctx.save();
-    ctx.strokeStyle=moved?'rgba(255,77,61,.60)':'rgba(55,214,122,.48)';
-    ctx.fillStyle=moved?'rgba(255,77,61,.035)':'rgba(55,214,122,.030)';
-    ctx.lineWidth=2;
-    ctx.setLineDash([7,8]);
-    ctx.beginPath();ctx.ellipse(x,y+4,span,clamp(span*.22,13,28),0,0,Math.PI*2);ctx.fill();ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(x-8,y+4);ctx.lineTo(x+8,y+4);ctx.moveTo(x,y-4);ctx.lineTo(x,y+12);ctx.stroke();
-    ctx.font=`${Math.max(10,Math.min(13,W*.03))}px 'DotGothic16'`;
-    ctx.textAlign='center';
-    ctx.fillStyle=moved?'rgba(255,126,112,.85)':'rgba(120,255,176,.72)';
-    ctx.fillText(moved?'投球位置へ戻る':'投球位置',x,y+clamp(span*.22,13,28)+22);
-    ctx.restore();
-  }
-  return moved;
+  // 近距離では足が映らないためマウンドを出さない。
+  if(!feet)return false;
+  const span=clamp(feet.span*1.25,54,W*.25);
+  drawARMoundAt(feet.x,feet.y+8,span*.86,.84);
+  return false;
 }
 
 function drawCatcherViewBase(layout){
@@ -3663,13 +3731,51 @@ function drawComPitcher(now){
 }
 
 function pitchBallRadius(ball,e){
-  if(ball.dir==='toCom')return 5+Math.pow(e,1.58)*29; // 投手(画面奥)→捕手(画面手前)
-  return 21-e*16; // 背面投手(画面手前)→打者(画面奥)
+  if(ball.dir==='toCom'){
+    const start=ball.startR||7;
+    return start+Math.pow(e,1.48)*(34-start); // 奥の投手→手前の打者
+  }
+  return 21-e*16;
+}
+function ballFlightPoint(ball,p){
+  const e=smoothstep(p);
+  const late=Math.pow(p,2.75);
+  const curveFactor=late-e;
+  let x,y;
+  if(ball.dir==='toCom'&&Number.isFinite(ball.controlX)&&Number.isFinite(ball.controlY)){
+    const u=1-e;
+    x=u*u*ball.sx+2*u*e*ball.controlX+e*e*ball.tx;
+    y=u*u*ball.sy+2*u*e*ball.controlY+e*e*ball.ty;
+  }else{
+    x=ball.sx+(ball.tx-ball.sx)*e;
+    y=ball.sy+(ball.ty-ball.sy)*e;
+  }
+  x+=curveFactor*(ball.breakX||0)*.95;
+  y+=curveFactor*(ball.breakY||0)*.90-Math.sin(p*Math.PI)*H*(ball.dir==='toCom'?.010:.025);
+  return{x,y,e};
 }
 function drawBall(now){
-  const ball=S.ball;if(!ball)return;const p=clamp((now-ball.t0)/ball.dur,0,1),e=smoothstep(p),late=Math.pow(p,2.75),curveFactor=late-e;const x=ball.sx+(ball.tx-ball.sx)*e+curveFactor*(ball.breakX||0)*.95;const y=ball.sy+(ball.ty-ball.sy)*e+curveFactor*(ball.breakY||0)*.90-Math.sin(p*Math.PI)*H*(ball.dir==='toCom'?.010:.025);const r=pitchBallRadius(ball,e);
-  if(p>.015){ctx.fillStyle='rgba(242,239,230,.15)';for(let i=1;i<=3;i++){const pp=Math.max(0,p-i*.045),ee=smoothstep(pp),ll=Math.pow(pp,2.75),cf=ll-ee;const xx=ball.sx+(ball.tx-ball.sx)*ee+cf*(ball.breakX||0)*.95,yy=ball.sy+(ball.ty-ball.sy)*ee+cf*(ball.breakY||0)*.90-Math.sin(pp*Math.PI)*H*(ball.dir==='toCom'?.010:.025),rr=pitchBallRadius(ball,ee);ctx.beginPath();ctx.arc(xx,yy,Math.max(2,rr*.80),0,Math.PI*2);ctx.fill();}}
-  drawBaseballSprite(x,y,r,1);if(p>=1&&!ball.resolved){if(ball.dir==='toCom')resolveUserPitch();else resolveComPitch();}
+  const ball=S.ball;
+  if(!ball)return;
+  const p=clamp((now-ball.t0)/ball.dur,0,1);
+  const pt=ballFlightPoint(ball,p);
+  const r=pitchBallRadius(ball,pt.e);
+  if(p>.012){
+    ctx.fillStyle='rgba(242,239,230,.15)';
+    for(let i=1;i<=3;i++){
+      const pp=Math.max(0,p-i*.040);
+      const trail=ballFlightPoint(ball,pp);
+      const rr=pitchBallRadius(ball,trail.e);
+      ctx.beginPath();
+      ctx.arc(trail.x,trail.y,Math.max(2,rr*.78),0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  drawBaseballSprite(pt.x,pt.y,r,1);
+  if(p>=1&&!ball.resolved){
+    if(ball.dir==='toCom')resolveUserPitch();
+    else resolveComPitch();
+  }
 }
 function drawHitBall(){
   const hb=S.hitBall; if(!hb) return;
@@ -3696,7 +3802,7 @@ function loop(now,token=S.loopToken){
   let catcherOverlayLayout=null;
   if(S.mode==='pitch'){
     const layout=catcherViewSceneLayout();drawCatcherViewBase(layout);const movedFromMound=drawCalibratedPitchPosition(lastLm);drawComBatter(now,layout);drawZoneRect(layout.zone);drawHomePlate(layout.zone.x+layout.zone.w/2,layout.plateY,layout.zone.w*.46);
-    if(lastLm){hint(S.ball?'':(now<S.cooldownUntil?'返球を待っています…':movedFromMound?'緑の投球位置へ戻ってください':virtualPitchBackgroundActive()?(S.pitchDistance==='near'?'画面奥の投球位置へ上半身を自動配置しています。ミットへ投げてください':'画面奥のマウンドに自動配置されています。ミットへ投げてください'):'握りを見せてから、画面奥の自分からミットへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
+    if(lastLm){hint(S.ball?'':(now<S.cooldownUntil?'返球を待っています…':movedFromMound?'緑の投球位置へ戻ってください':virtualPitchBackgroundActive()?(S.pitchDistance==='near'?'奥中央の投手位置へ配置されています。手元から左手前の打者へ投げてください':'奥中央のマウンドへ配置されています。左手前の打者へ投げてください'):'握りを見せてから、画面奥の自分からミットへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
   }else if(S.mode==='bat'){
     if(!virtualBatBackgroundActive())drawBattingPitcherBackViewBase();
     if(lastLm){
@@ -3752,11 +3858,12 @@ function goHome(){
 }
 
 /* ===== イベント（v9: メニューはAI読込前に即時バインド） ===== */
-$('btnPitch').addEventListener('click',()=>{$('home').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='none';$('pitchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setBatControl(S.batControl);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);setBatBackground(S.batBackground);});
+$('btnPitch').addEventListener('click',()=>{$('home').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='none';$('pitchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setBatControl(S.batControl);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);setBatBackground(S.batBackground);});
 $('pitchStartBtn').addEventListener('click',()=>startMode('pitch',false));
 $('pitchSetupBackBtn').addEventListener('click',goHome);
 document.querySelectorAll('.handBtn[data-hand]').forEach(btn=>btn.addEventListener('click',()=>setBatterHand(btn.dataset.hand)));
 document.querySelectorAll('.pitchDistBtn').forEach(btn=>btn.addEventListener('click',()=>setPitchDistance(btn.dataset.dist)));
+document.querySelectorAll('.pitchControlBtn').forEach(btn=>btn.addEventListener('click',()=>setPitchControl(btn.dataset.pitchControl)));
 document.querySelectorAll('.batControlBtn').forEach(btn=>btn.addEventListener('click',()=>setBatControl(btn.dataset.batControl)));
 document.querySelectorAll('[data-stadium]').forEach(btn=>btn.addEventListener('click',()=>setPitchBackground(btn.dataset.stadium)));
 document.querySelectorAll('[data-bat-stadium]').forEach(btn=>btn.addEventListener('click',()=>setBatBackground(btn.dataset.batStadium)));
@@ -3768,7 +3875,7 @@ $('btnAnalysis').addEventListener('click',()=>{$('home').style.display='none';$(
 document.querySelectorAll('.analysisBtn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.analysisBtn').forEach(x=>x.classList.remove('sel'));btn.classList.add('sel');S.analysisType=btn.dataset.analysis==='pitch'?'pitch':'bat';}));
 $('analysisStartBtn').addEventListener('click',()=>{const sel=document.querySelector('.analysisBtn.sel');S.analysisType=sel?.dataset.analysis==='pitch'?'pitch':'bat';startMode('analysis',false);});
 $('analysisSetupBackBtn').addEventListener('click',goHome);
-$('btnMatch').addEventListener('click',()=>{$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('analysisSetup').style.display='none';$('matchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setBatControl(S.batControl);setMatchBackground(S.matchBackground);});
+$('btnMatch').addEventListener('click',()=>{$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('analysisSetup').style.display='none';$('matchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setBatControl(S.batControl);setMatchBackground(S.matchBackground);});
 document.querySelectorAll('.inningsBtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.inningsBtn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');}));
 $('matchStartBtn').addEventListener('click',()=>{M.innings=parseInt(document.querySelector('.inningsBtn.sel').dataset.inn,10);M.inning=1;M.half=0;M.bases=[false,false,false];M.scoreYou=[];M.scoreCom=[];M.scoreYou[0]=0;S.pitchBackground=S.matchBackground;S.batBackground=S.matchBackground;startMode('bat',true);});
 $('replayCloseBtn').addEventListener('click',closeReplayOverlay);
