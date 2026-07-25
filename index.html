@@ -978,7 +978,7 @@ function currentVirtualBackground(){
 }
 function buildPoseFallbackMask(lm){
   if(!lm||!W||!H)return false;
-  const p=i=>screenPoint(lm[i]);
+  const p=i=>rawScreenPoint(lm[i]);
   const ls=p(LM.Lsh),rs=p(LM.Rsh),le=p(LM.Lel),re=p(LM.Rel),lw=p(LM.Lwr),rw=p(LM.Rwr),lh=p(LM.Lhip),rh=p(LM.Rhip),lk=p(LM.Lknee),rk=p(LM.Rknee),la=p(LM.Lankle),ra=p(LM.Rankle),nose=p(LM.nose);
   if(!ls||!rs||!lh||!rh)return false;
   const c=poseFallbackMaskCtx;c.clearRect(0,0,W,H);c.save();c.fillStyle='#fff';c.strokeStyle='#fff';c.lineCap='round';c.lineJoin='round';
@@ -1024,7 +1024,16 @@ function drawVirtualBackground(now){
     else if(buildPoseFallbackMask(lastLm)){pc.filter='blur(1.4px)';pc.drawImage(poseFallbackMaskCanvas,0,0,W,H);pc.filter='none';}
     else{pc.globalAlpha=.18;pc.fillStyle='#fff';pc.fillRect(0,0,W,H);pc.globalAlpha=1;}
     pc.globalCompositeOperation='source-over';
-    ctx.save();ctx.shadowColor='rgba(0,0,0,.42)';ctx.shadowBlur=10;ctx.drawImage(virtualPersonCanvas,0,0,W,H);ctx.restore();
+    const playerTransform=getVirtualPlayerTransform();
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.42)';
+    ctx.shadowBlur=10;
+    if(playerTransform){
+      ctx.translate(playerTransform.tx,playerTransform.ty);
+      ctx.scale(playerTransform.scale,playerTransform.scale);
+    }
+    ctx.drawImage(virtualPersonCanvas,0,0,W,H);
+    ctx.restore();
   }
   const vignette=ctx.createRadialGradient(W*.5,H*.48,Math.min(W,H)*.18,W*.5,H*.48,Math.max(W,H)*.72);
   vignette.addColorStop(0,'rgba(0,0,0,0)');
@@ -1626,7 +1635,10 @@ function scoreLow(v,good,bad){return clamp(Math.round(100-(v-good)/(bad-good)*80
 function scaledBatZone(){
   const n=calibrationData.batZoneNorm;
   if(!n)return null;
-  return{x:n.x*W,y:n.y*H,w:n.w*W,h:n.h*H};
+  const raw={x:n.x*W,y:n.y*H,w:n.w*W,h:n.h*H};
+  return virtualBatBackgroundActive()
+    ?applyVirtualPlayerRect(raw)
+    :raw;
 }
 function inferBatSide(lm){
   const ls=lm[LM.Lsh],rs=lm[LM.Rsh],lh=lm[LM.Lhip],rh=lm[LM.Rhip];
@@ -1652,7 +1664,7 @@ function computeBatZoneFromLm(lm){
   const lk=screenPoint(lm[LM.Lknee]),rk=screenPoint(lm[LM.Rknee]);
   const shoulder=meanPoint(ls,rs),hip=meanPoint(lh,rh),knee=meanPoint(lk,rk);
   if(!shoulder||!hip)return{x:W*.55,y:H*.28,w:W*.25,h:H*.30};
-  const side=inferBatSide(lm);battingAR.side=side;
+  const side=S.batterHand==='left'?-1:1;battingAR.side=side;
   const torso=Math.max(55,Math.abs(hip.y-shoulder.y));
   let top=shoulder.y+torso*.36;
   let bottom=knee?knee.y-torso*.015:hip.y+torso*.72;
@@ -1691,7 +1703,7 @@ function calibrationQuality(profile,lm){
   return{ok:true,msg:profile==='bat'||profile==='analysisBat'?'半身で構えたまま動かずに待ってください':nearPitchMode?'近距離モードです。正面を向き、膝まで見える位置で止まってください':'投球位置で正面を向き、動かずに待ってください',fp};
 }
 function showCalibration(profile){
-  const labels={bat:['打席キャリブレーション','ストライクゾーンを確定します'],pitch:['投球位置キャリブレーション','キャッチャー視点の投球位置を確定します'],analysisBat:['打撃フォーム準備','分析する構えと身体スケールを確定します'],analysisPitch:['投球フォーム準備','分析する投球位置と身体スケールを確定します']};
+  const labels={bat:['打席キャリブレーション','構えを読み取り、ゲーム内の打席へ自動配置します'],pitch:['投球位置キャリブレーション','姿勢を読み取り、ゲーム内のマウンド中央へ自動配置します'],analysisBat:['打撃フォーム準備','分析する構えと身体スケールを確定します'],analysisPitch:['投球フォーム準備','分析する投球位置と身体スケールを確定します']};
   const [title,status]=labels[profile]||labels.pitch;
   $('calibTitle').textContent=title;$('calibStatus').textContent=status;$('calibProgress').style.width='0%';$('calibCount').textContent='';$('calibCount').classList.remove('show');$('calibrationOverlay').style.display='flex';
 }
@@ -1714,10 +1726,18 @@ function captureCalibration(profile,lm){
   }
   if(profile==='pitch'||profile==='analysisPitch'){
     const la=lm[LM.Lankle],ra=lm[LM.Rankle],lk=lm[LM.Lknee],rk=lm[LM.Rknee];
-    const ankleY=avgNum([la?.y,ra?.y].filter(Number.isFinite));
+    const visibleAnkles=[la,ra].filter(p=>visibleLm(p,.24));
+    const ankleY=avgNum(visibleAnkles.map(p=>p.y).filter(Number.isFinite));
+    const ankleX=avgNum(visibleAnkles.map(p=>1-p.x).filter(Number.isFinite));
     const kneeY=avgNum([lk?.y,rk?.y].filter(Number.isFinite));
-    const feetY=Number.isFinite(ankleY)&&ankleY>0?ankleY:(Number.isFinite(kneeY)&&kneeY>0?clamp(kneeY+torso*.95,.62,.96):clamp(bodyY+torso*2.15,.64,.96));
-    calibrationData.pitch={shoulderSpanNorm:shSpan,torsoNorm:torso,bodyX,bodyY,feetY,at:Date.now(),distanceMode:S.pitchDistance};
+    const hasFeet=visibleAnkles.length>0&&Number.isFinite(ankleY)&&ankleY>0;
+    const feetY=hasFeet?ankleY:(Number.isFinite(kneeY)&&kneeY>0?clamp(kneeY+torso*.95,.62,.96):clamp(bodyY+torso*2.15,.64,.96));
+    const feetX=hasFeet?ankleX:bodyX;
+    calibrationData.pitch={
+      shoulderSpanNorm:shSpan,torsoNorm:torso,
+      bodyX,bodyY,feetX,feetY,hasFeet,
+      at:Date.now(),distanceMode:S.pitchDistance
+    };
   }
   calibrationData.lastProfile=profile;
 }
@@ -1898,13 +1918,88 @@ const battingAR={
   zone:null
 };
 
-function screenPoint(p){
+function rawScreenPoint(p){
   if(!p || (Number.isFinite(p.visibility) && p.visibility<.12)) return null;
   return {
     x:(1-p.x)*W,
     y:p.y*H,
     z:Number.isFinite(p.z)?p.z:0
   };
+}
+function fixedBatTarget(){
+  const portrait=H>=W;
+  const desiredH=clamp(H*(portrait?.29:.37),Math.min(165,H*.22),Math.min(350,H*.40));
+  const centerX=S.batterHand==='left'?W*.42:W*.58;
+  const centerY=H*(portrait?.565:.515);
+  return{centerX,centerY,desiredH};
+}
+function getVirtualPlayerTransform(){
+  if(!virtualBackgroundActive()||S.calibration?.active||!W||!H)return null;
+
+  if(S.mode==='bat'){
+    const n=calibrationData.batZoneNorm;
+    if(!n||!n.h)return null;
+    const source={
+      x:n.x*W,y:n.y*H,w:n.w*W,h:n.h*H
+    };
+    const target=fixedBatTarget();
+    const scale=clamp(target.desiredH/Math.max(1,source.h),.72,1.42);
+    const sourceX=source.x+source.w*.5;
+    const sourceY=source.y+source.h*.5;
+    return{
+      scale,
+      tx:target.centerX-sourceX*scale,
+      ty:target.centerY-sourceY*scale,
+      sourceX,sourceY,
+      targetX:target.centerX,targetY:target.centerY,
+      mode:'bat'
+    };
+  }
+
+  if(S.mode==='pitch'){
+    const c=calibrationData.pitch;
+    if(!c)return null;
+    const portrait=H>=W;
+    const sourceShoulder=Math.max(1,(c.shoulderSpanNorm||.20)*W);
+    const targetShoulder=clamp(W*(portrait?.255:.195),Math.min(92,W*.20),W*.31);
+    const scale=clamp(targetShoulder/sourceShoulder,.70,1.40);
+
+    const useFeet=!!c.hasFeet&&Number.isFinite(c.feetX)&&Number.isFinite(c.feetY);
+    const sourceX=(useFeet?c.feetX:c.bodyX)*W;
+    const sourceY=(useFeet?c.feetY:c.bodyY)*H;
+    const targetX=W*.50;
+    const targetY=H*(useFeet?(portrait?.91:.93):(portrait?.565:.54));
+
+    return{
+      scale,
+      tx:targetX-sourceX*scale,
+      ty:targetY-sourceY*scale,
+      sourceX,sourceY,targetX,targetY,
+      mode:'pitch',
+      useFeet
+    };
+  }
+  return null;
+}
+function applyVirtualPlayerTransform(point,transform=getVirtualPlayerTransform()){
+  if(!point||!transform)return point;
+  return{
+    x:point.x*transform.scale+transform.tx,
+    y:point.y*transform.scale+transform.ty,
+    z:point.z
+  };
+}
+function applyVirtualPlayerRect(rect,transform=getVirtualPlayerTransform()){
+  if(!rect||!transform)return rect;
+  return{
+    x:rect.x*transform.scale+transform.tx,
+    y:rect.y*transform.scale+transform.ty,
+    w:rect.w*transform.scale,
+    h:rect.h*transform.scale
+  };
+}
+function screenPoint(p){
+  return applyVirtualPlayerTransform(rawScreenPoint(p));
 }
 function meanPoint(...pts){
   const valid=pts.filter(Boolean);
@@ -2162,7 +2257,7 @@ function catcherViewSceneLayout(){
   }
 
   return {
-    view:'catcher',hand,mirror:hand==='left'?1:-1,
+    view:'catcher',hand,mirror:hand==='left'?-1:1,
     zone,batter,feetY,batterAlpha,plateY,
     aimBounds,
     mittBase:{x:zone.x+zone.w*.5,y:mittBaseY}
@@ -2184,7 +2279,7 @@ function fullScreenPitchTarget(side,lm,motion,z,bounds){
 /* ================= あなたの投球(ピッチングモード/試合の裏) ================= */
 function releaseUserPitch(side,lm,motion){
   const wr=lm[side==='L'?LM.Lwr:LM.Rwr];const pitch=inferPitchType(side,motion,lm);const profile=PITCH_TYPES[pitch.type]||PITCH_TYPES.fastball;const kmh=estimatePitchKmh(motion,pitch.type);S.maxKmh=Math.max(S.maxKmh,kmh);S.pitches++;
-  const release=handBallPoint(side,lm)||{x:(1-wr.x)*W,y:wr.y*H};const sx=release.x,sy=release.y;const layout=catcherViewSceneLayout(),z=layout.zone,aim=fullScreenPitchTarget(side,lm,motion,z,layout.aimBounds);const breakSign=side==='R'?-1:1;const strength=.72+(pitch.confidence||.3)*.36;const breakX=profile.breakX*z.w*breakSign*strength,breakY=profile.breakY*z.h*strength;const control=clamp((motion.speedNorm-1.15)/3.4,0,1);const missX=z.w*(.026+(1-control)*.065),missY=z.h*(.023+(1-control)*.060);const tx=clamp(aim.x+breakX+(Math.random()-.5)*missX*2,layout.aimBounds.x,layout.aimBounds.x+layout.aimBounds.w);const ty=clamp(aim.y+breakY+(Math.random()-.5)*missY*2,layout.aimBounds.y,layout.aimBounds.y+layout.aimBounds.h);const flight=clamp(18.44/(kmh/3.6)*1000,430,1250),now=performance.now(),releaseDelay=68;
+  const release=handBallPoint(side,lm)||screenPoint(wr)||{x:(1-wr.x)*W,y:wr.y*H};const sx=release.x,sy=release.y;const layout=catcherViewSceneLayout(),z=layout.zone,aim=fullScreenPitchTarget(side,lm,motion,z,layout.aimBounds);const breakSign=side==='R'?-1:1;const strength=.72+(pitch.confidence||.3)*.36;const breakX=profile.breakX*z.w*breakSign*strength,breakY=profile.breakY*z.h*strength;const control=clamp((motion.speedNorm-1.15)/3.4,0,1);const missX=z.w*(.026+(1-control)*.065),missY=z.h*(.023+(1-control)*.060);const tx=clamp(aim.x+breakX+(Math.random()-.5)*missX*2,layout.aimBounds.x,layout.aimBounds.x+layout.aimBounds.w);const ty=clamp(aim.y+breakY+(Math.random()-.5)*missY*2,layout.aimBounds.y,layout.aimBounds.y+layout.aimBounds.h);const flight=clamp(18.44/(kmh/3.6)*1000,430,1250),now=performance.now(),releaseDelay=68;
   S.ball={dir:'toCom',sx,sy,tx,ty,t0:now+releaseDelay,dur:flight,kmh,resolved:false,releaseSide:side,zone:{...z},pitchView:'catcher',pitchType:pitch.type,pitchName:pitch.name,pitchConfidence:pitch.confidence||.3,breakX,breakY,spin:(pitch.type==='curve'||pitch.type==='slider')?1.1:.55};S.cooldownUntil=now+releaseDelay+flight+900;S.lastPitch={...pitch,kmh};gripState.locked={...pitch};updatePitchTypeHUD();showGun(kmh);
   const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;const b=S.comBatter;b.willSwing=inZone?Math.random()<.78:Math.random()<.22;b.swingDuration=560;if(b.willSwing){let p=.66-(kmh-80)*.0048;if(pitch.type!=='fastball')p-=.05;if(!inZone)p-=.30;b.contact=Math.random()<Math.max(.06,p);b.swingT=S.ball.t0+flight*.63;}else{b.contact=false;b.swingT=0;}S.ball.inZone=inZone;arm.hist[side]=[];SFX.whoosh(sx);beep(120,.08,'sine',.12);
 }
@@ -3070,19 +3165,11 @@ function drawUserBattersBoxFromPose(lm){
   drawARBattersBoxAt(feet.x,feet.y,feet.span,S.batterHand==='left'?'left':'right',.94);
 }
 function drawPitchVirtualFieldCleanup(layout){
-  if(!virtualPitchBackgroundActive()) return;
-  const farX=layout.zone.x+layout.zone.w*.5;
-  const farY=layout.batter.y+layout.batter.h*.40;
-  ctx.save();
-  ctx.fillStyle='rgba(184,147,102,.96)';
-  ctx.beginPath();ctx.ellipse(farX,farY,layout.zone.w*2.10,layout.zone.h*1.05,0,0,Math.PI*2);ctx.fill();
-  const cal=calibrationData.pitch;
-  const moundX=(cal?.bodyX??.5)*W;
-  const moundY=(cal?.feetY??.88)*H;
-  ctx.fillStyle='rgba(171,117,69,.94)';
-  ctx.beginPath();ctx.ellipse(moundX,moundY+7,Math.max(56,layout.zone.w*1.10),Math.max(14,layout.zone.h*.16),0,0,Math.PI*2);ctx.fill();
-  ctx.restore();
+  // v27: 背景の中央〜右側に被る大きな土色の円形オーバーレイを廃止。
+  // 新しい背景画像では背景側のマウンド/打席消し込みが不要なため何も描画しない。
+  return;
 }
+
 
 function drawBattingPitcherBackViewBase(){
   const vanish={x:W*.5,y:H*.21};ctx.save();const g=ctx.createRadialGradient(W*.5,H*.86,0,W*.5,H*.86,W*.72);g.addColorStop(0,'rgba(176,99,47,.20)');g.addColorStop(.52,'rgba(35,96,58,.08)');g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,H*.14,W,H*.86);ctx.strokeStyle='rgba(242,239,230,.20)';ctx.lineWidth=2;ctx.setLineDash([9,11]);ctx.beginPath();ctx.moveTo(W*.06,H*.97);ctx.lineTo(vanish.x-W*.05,vanish.y);ctx.moveTo(W*.94,H*.97);ctx.lineTo(vanish.x+W*.05,vanish.y);ctx.stroke();ctx.setLineDash([]);ctx.restore();
@@ -3175,16 +3262,10 @@ function drawCatcherMitt(now,layout){
   ctx.restore();
 }
 function drawCatcherMaskFrame(){
-  const m=Math.min(W,H),pad=clamp(m*.035,13,28);
-  ctx.save();ctx.strokeStyle='rgba(4,8,13,.58)';ctx.lineWidth=clamp(m*.022,8,17);ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.moveTo(pad,H*.23);ctx.quadraticCurveTo(W*.5,H*.08,W-pad,H*.23);
-  ctx.moveTo(pad,H*.24);ctx.quadraticCurveTo(W*.03,H*.54,pad,H*.80);
-  ctx.moveTo(W-pad,H*.24);ctx.quadraticCurveTo(W*.97,H*.54,W-pad,H*.80);
-  ctx.moveTo(W*.18,H*.89);ctx.quadraticCurveTo(W*.5,H*.96,W*.82,H*.89);ctx.stroke();
-  ctx.strokeStyle='rgba(242,239,230,.10)';ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(W*.13,H*.33);ctx.lineTo(W*.87,H*.33);ctx.stroke();ctx.restore();
+  // v27: 画面周囲の黒いフチを非表示。
+  return;
 }
+
 function drawCatcherForeground(now,layout){drawCatcherMitt(now,layout);drawCatcherMaskFrame();}
 
 /* COMバッター：人物デザインを残した4コマ透過スイングを使用 */
