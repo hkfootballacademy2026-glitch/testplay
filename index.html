@@ -1930,7 +1930,7 @@ function fixedBatTarget(){
   const portrait=H>=W;
   const desiredH=clamp(H*(portrait?.29:.37),Math.min(165,H*.22),Math.min(350,H*.40));
   const centerX=S.batterHand==='left'?W*.42:W*.58;
-  const centerY=H*(portrait?.565:.515);
+  const centerY=H*(portrait?.585:.535);
   return{centerX,centerY,desiredH};
 }
 function getVirtualPlayerTransform(){
@@ -1968,7 +1968,7 @@ function getVirtualPlayerTransform(){
     const sourceX=(useFeet?c.feetX:c.bodyX)*W;
     const sourceY=(useFeet?c.feetY:c.bodyY)*H;
     const targetX=W*.50;
-    const targetY=H*(useFeet?(portrait?.91:.93):(portrait?.565:.54));
+    const targetY=H*(useFeet?(portrait?.925:.94):(portrait?.58:.555));
 
     return{
       scale,
@@ -3102,23 +3102,26 @@ function getUserFootPlacement(lm){
   };
 }
 function drawARMoundAt(x,y,span,alpha=.90){
-  const rx=clamp(span*1.10,46,W*.18), ry=clamp(span*.30,13,H*.038);
+  // v29: スマホ縦画面でマウンドが大きく被りすぎないよう縮小し、
+  // 足裏の少し下を接地点として配置する。
+  const rx=clamp(span*.92,40,W*.145), ry=clamp(span*.25,11,H*.031);
   ctx.save();
   ctx.globalAlpha=alpha;
   if(pitcherMoundReady){
-    const drawW=rx*2.75;
+    const drawW=rx*2.12;
     const drawH=drawW*(pitcherMoundImage.height/pitcherMoundImage.width);
-    ctx.drawImage(pitcherMoundImage,x-drawW/2,y-drawH*0.92,drawW,drawH);
+    const groundY=y+clamp(drawH*.075,3,10);
+    ctx.drawImage(pitcherMoundImage,x-drawW/2,groundY-drawH*.80,drawW,drawH);
   }else{
     const g=ctx.createRadialGradient(x,y-ry*.18,2,x,y,rx*1.08);
     g.addColorStop(0,'rgba(192,140,82,.92)');
     g.addColorStop(.70,'rgba(158,100,55,.86)');
     g.addColorStop(1,'rgba(112,69,38,.18)');
     ctx.fillStyle=g;
-    ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x,y+3,rx,ry,0,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='rgba(252,248,239,.76)';
     ctx.lineWidth=Math.max(2,rx*.022);
-    ctx.beginPath();ctx.moveTo(x-rx*.22,y-ry*.10);ctx.lineTo(x+rx*.22,y-ry*.10);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x-rx*.22,y);ctx.lineTo(x+rx*.22,y);ctx.stroke();
   }
   ctx.restore();
 }
@@ -3144,25 +3147,34 @@ function getVisiblePitchFeetPlacement(lm){
   };
 }
 function drawARBattersBoxAt(x,y,span,hand='right',alpha=.90){
-  const boxW=clamp(span*1.70,58,W*.22);
-  const boxH=clamp(span*1.16,44,H*.11);
-  const shift=(hand==='right'?-1:1)*boxW*.10;
-  const left=x-boxW*.5+shift, top=y-boxH;
+  // v29: 足幅だけを基準にすると小さくなりやすいため、
+  // スマホ画面上で実際の打席らしく見える最低サイズを確保する。
+  const boxW=clamp(span*2.28,82,W*.285);
+  const boxH=clamp(span*1.54,62,H*.145);
+  const shift=(hand==='right'?-1:1)*boxW*.055;
+  const left=x-boxW*.5+shift;
+  const top=y-boxH*.91;
   ctx.save();
   ctx.globalAlpha=alpha;
-  ctx.fillStyle='rgba(175,126,82,.08)';
-  ctx.strokeStyle='rgba(249,246,238,.88)';
-  ctx.lineWidth=Math.max(2,boxW*.032);
+  ctx.fillStyle='rgba(175,126,82,.055)';
+  ctx.strokeStyle='rgba(249,246,238,.90)';
+  ctx.lineWidth=Math.max(2,boxW*.027);
   ctx.beginPath();ctx.rect(left,top,boxW,boxH);ctx.fill();ctx.stroke();
-  ctx.strokeStyle='rgba(249,246,238,.44)';
-  ctx.lineWidth=Math.max(1.5,boxW*.018);
-  ctx.beginPath();ctx.moveTo(left+boxW*.18,top+boxH*.56);ctx.lineTo(left+boxW*.82,top+boxH*.56);ctx.stroke();
+  ctx.strokeStyle='rgba(249,246,238,.43)';
+  ctx.lineWidth=Math.max(1.5,boxW*.016);
+  ctx.beginPath();ctx.moveTo(left+boxW*.14,top+boxH*.57);ctx.lineTo(left+boxW*.86,top+boxH*.57);ctx.stroke();
   ctx.restore();
 }
 function drawUserBattersBoxFromPose(lm){
   const feet=getUserFootPlacement(lm);
   if(!feet) return;
-  drawARBattersBoxAt(feet.x,feet.y,feet.span,S.batterHand==='left'?'left':'right',.94);
+  drawARBattersBoxAt(
+    feet.x,
+    feet.y+clamp(feet.span*.08,3,9),
+    feet.span*1.06,
+    S.batterHand==='left'?'left':'right',
+    .94
+  );
 }
 function drawPitchVirtualFieldCleanup(layout){
   // v27: 背景の中央〜右側に被る大きな土色の円形オーバーレイを廃止。
@@ -3193,7 +3205,7 @@ function drawCalibratedPitchPosition(lm){
     }
   }
   if(feet){
-    drawARMoundAt(x,y+4,span,moved?.60:.78);
+    drawARMoundAt(x,y+8,span*.88,moved?.58:.82);
     ctx.save();
     ctx.strokeStyle=moved?'rgba(255,77,61,.60)':'rgba(55,214,122,.48)';
     ctx.fillStyle=moved?'rgba(255,77,61,.035)':'rgba(55,214,122,.030)';
@@ -3298,7 +3310,13 @@ function drawBatterImageFrame(layout,p,alpha=1,now=performance.now()){
 function drawComBatter(now,layout=pitchingSceneLayout()){
   const b=S.comBatter;
   if(virtualPitchBackgroundActive()){
-    drawARBattersBoxAt(layout.batter.x+layout.batter.w*.5,(layout.feetY??(layout.batter.y+layout.batter.h*.93))+4,layout.batter.w*.62,layout.hand,.92);
+    drawARBattersBoxAt(
+      layout.batter.x+layout.batter.w*.5,
+      (layout.feetY??(layout.batter.y+layout.batter.h*.93))+8,
+      layout.batter.w*.72,
+      layout.hand,
+      .92
+    );
   }
   let p=0;
   if(b.willSwing&&now>=b.swingT){
@@ -3327,7 +3345,7 @@ function drawComPitcher(now){
   ctx.save();
   // バッティングモードのCOMピッチャーも、背景固定の土ではなく
   // ピッチャーの足元にピッチャーマウンド画像を直接装着する。
-  drawARMoundAt(moundX,moundY,pose.w*.50,virtualBatBackgroundActive()?.98:.82);
+  drawARMoundAt(moundX,moundY+7,pose.w*.40,virtualBatBackgroundActive()?.96:.80);
   if(pitcherBackSpriteReady){
     ctx.shadowColor='rgba(0,0,0,.55)';
     ctx.shadowBlur=virtualBatBackgroundActive()?12:18;
