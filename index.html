@@ -1488,6 +1488,7 @@ const S = {
   batLeft:10, batHits:0, batHRs:0, batBases:0,
   // 進行中オブジェクト
   ball:null, hitBall:null, fieldPlay:null,
+  pitchImpact:null,
   cooldownUntil:0, paused:false,
   comBatter:{willSwing:false,contact:false,swingT:0,swingDuration:560,bob:0},
   comPitcher:{phase:'idle', t0:0, nextPitchAt:0, releasePoint:null},
@@ -3869,47 +3870,86 @@ function drawPitchTrajectory(ball,now,p){
   ctx.restore();
 }
 
-function drawPitchImpactMarker(ball,now){
-  if(!ball.arrivedAt)return;
-  const elapsed=now-ball.arrivedAt;
-  const hold=ball.impactHoldMs||620;
-  if(elapsed>hold)return;
-
-  const z=ball.zone;
+function registerPitchImpact(ball,now){
+  if(S.pitchImpact)return;
+  const z={...ball.zone};
   const col=clamp(Math.floor((ball.tx-z.x)/(z.w/3)),0,2);
   const row=clamp(Math.floor((ball.ty-z.y)/(z.h/3)),0,2);
-  const cellX=z.x+col*z.w/3;
-  const cellY=z.y+row*z.h/3;
-  const pulse=1+Math.sin(elapsed/70)*.08;
-  const fade=1-clamp((elapsed-hold*.68)/(hold*.32),0,1);
+  const inZone=ball.tx>=z.x&&ball.tx<=z.x+z.w&&ball.ty>=z.y&&ball.ty<=z.y+z.h;
+  S.pitchImpact={
+    x:ball.tx,y:ball.ty,zone:z,col,row,inZone,
+    startedAt:now,holdMs:1050,
+    pitchName:ball.pitchName||'',kmh:ball.kmh||0
+  };
+}
+
+function drawPitchImpactOverlay(now){
+  const impact=S.pitchImpact;
+  if(!impact)return;
+  const elapsed=now-impact.startedAt;
+  const hold=impact.holdMs||1050;
+  if(elapsed>hold){S.pitchImpact=null;return;}
+
+  const z=impact.zone;
+  const fade=1-clamp((elapsed-hold*.78)/(hold*.22),0,1);
+  const appear=smoothstep(clamp(elapsed/140,0,1));
+  const pulse=1+Math.sin(elapsed/75)*.06;
+  const cellW=z.w/3,cellH=z.h/3;
+  const cellX=z.x+impact.col*cellW,cellY=z.y+impact.row*cellH;
 
   ctx.save();
   ctx.globalAlpha=fade;
 
-  // 入った九分割セルを明確に点灯。
-  ctx.fillStyle='rgba(255,182,39,.26)';
-  ctx.strokeStyle='rgba(255,216,105,.98)';
-  ctx.lineWidth=Math.max(3,Math.min(W,H)*.006);
-  ctx.shadowColor='rgba(255,190,55,.95)';
+  ctx.fillStyle=impact.inZone?'rgba(255,196,45,.34)':'rgba(255,92,92,.26)';
+  ctx.shadowColor=impact.inZone?'rgba(255,196,45,.95)':'rgba(255,92,92,.90)';
+  ctx.shadowBlur=20;
+  ctx.fillRect(cellX+2,cellY+2,cellW-4,cellH-4);
+
+  ctx.strokeStyle=impact.inZone?'rgba(255,225,120,.98)':'rgba(255,125,125,.98)';
+  ctx.lineWidth=Math.max(4,Math.min(W,H)*.007);
+  ctx.strokeRect(cellX+2,cellY+2,cellW-4,cellH-4);
+
+  const baseR=clamp(Math.min(z.w,z.h)*.16,20,38);
+  const ringR=baseR*pulse*appear;
+
   ctx.shadowBlur=18;
-  ctx.fillRect(cellX+3,cellY+3,z.w/3-6,z.h/3-6);
-  ctx.strokeRect(cellX+2,cellY+2,z.w/3-4,z.h/3-4);
-
-  // 最終着弾点を円で示す。
-  const markerR=clamp(Math.min(z.w,z.h)*.10,12,25)*pulse;
-  ctx.beginPath();
-  ctx.arc(ball.tx,ball.ty,markerR,0,Math.PI*2);
   ctx.strokeStyle='rgba(255,255,255,.98)';
-  ctx.lineWidth=Math.max(3,markerR*.18);
+  ctx.lineWidth=Math.max(4,ringR*.16);
+  ctx.beginPath();ctx.arc(impact.x,impact.y,ringR,0,Math.PI*2);ctx.stroke();
+
+  ctx.strokeStyle=impact.inZone?'rgba(255,191,48,.95)':'rgba(255,83,83,.95)';
+  ctx.lineWidth=Math.max(3,ringR*.11);
+  ctx.beginPath();ctx.arc(impact.x,impact.y,ringR*.68,0,Math.PI*2);ctx.stroke();
+
+  ctx.shadowColor='rgba(220,245,255,1)';
+  ctx.shadowBlur=16;
+  drawBaseballSprite(
+    impact.x,impact.y,
+    clamp(Math.min(z.w,z.h)*.115,15,30)*appear,
+    1
+  );
+
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,255,255,.98)';
+  ctx.lineWidth=Math.max(2.5,ringR*.08);
+  ctx.beginPath();
+  ctx.moveTo(impact.x-ringR*.85,impact.y);
+  ctx.lineTo(impact.x+ringR*.85,impact.y);
+  ctx.moveTo(impact.x,impact.y-ringR*.85);
+  ctx.lineTo(impact.x,impact.y+ringR*.85);
   ctx.stroke();
 
-  ctx.beginPath();
-  ctx.moveTo(ball.tx-markerR*.65,ball.ty);
-  ctx.lineTo(ball.tx+markerR*.65,ball.ty);
-  ctx.moveTo(ball.tx,ball.ty-markerR*.65);
-  ctx.lineTo(ball.tx,ball.ty+markerR*.65);
-  ctx.lineWidth=Math.max(2,markerR*.12);
-  ctx.stroke();
+  const label=impact.inZone?'STRIKE ZONE':'BALL ZONE';
+  const labelY=clamp(z.y-28,H*.16,H*.82);
+  ctx.font=`900 ${clamp(Math.min(W,H)*.028,16,28)}px system-ui`;
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillStyle=impact.inZone?'rgba(255,207,72,.98)':'rgba(255,110,110,.98)';
+  ctx.strokeStyle='rgba(0,0,0,.78)';
+  ctx.lineWidth=5;
+  ctx.strokeText(label,z.x+z.w*.5,labelY);
+  ctx.fillText(label,z.x+z.w*.5,labelY);
+
   ctx.restore();
 }
 
@@ -3968,13 +4008,13 @@ function drawBall(now){
   drawBaseballSprite(pt.x,pt.y,Math.max(8,r*1.10),1);
   ctx.restore();
 
-  // ③ ゾーン到達時：最終位置を保持し、入った九分割セルを点灯。
+  // ③ ゾーン到達時：PowerPro風の着弾表示を別オーバーレイへ登録。
   if(p>=1){
-    if(!ball.arrivedAt)ball.arrivedAt=now;
-    drawPitchImpactMarker(ball,now);
-
-    const hold=ball.impactHoldMs||620;
-    if(now-ball.arrivedAt>=hold&&!ball.resolving&&!ball.resolved){
+    if(!ball.arrivedAt){
+      ball.arrivedAt=now;
+      registerPitchImpact(ball,now);
+    }
+    if(now-ball.arrivedAt>=180&&!ball.resolving&&!ball.resolved){
       ball.resolving=true;
       if(ball.dir==='toCom')resolveUserPitch();
       else resolveComPitch();
@@ -4038,13 +4078,13 @@ function loop(now,token=S.loopToken){
   }else if(S.mode==='analysis'){
     if(lastLm){drawSkeleton(lastLm);if(S.analysisType==='bat')drawARBat(lastLm,now);updateFormAnalysis(lastLm,now);hint(S.analysisType==='bat'?'構えから1回スイングしてください':'セットから1球投げる動作をしてください');}else hint('分析する全身が画面内に入るように立ってください');
   }
-  drawBall(now);if(catcherOverlayLayout)drawCatcherForeground(now,catcherOverlayLayout);drawHitBall();ctx.restore();updateReplayCapture();rotateReplayRecorder(now);
+  drawBall(now);if(catcherOverlayLayout)drawCatcherForeground(now,catcherOverlayLayout);drawHitBall();drawPitchImpactOverlay(now);ctx.restore();updateReplayCapture();rotateReplayRecorder(now);
 }
 
 /* ================= モード開始/画面遷移 ================= */
 function resetCommon(){
   resetVirtualPlayerTransform();
-  Object.assign(S,{balls:0,strikes:0,outs:0,ks:0,hitsAllowed:0,pitches:0,maxKmh:0,batLeft:10,batHits:0,batHRs:0,batBases:0,ball:null,hitBall:null,fieldPlay:null,cooldownUntil:0,paused:false,calibration:null,analysis:null});S.pitchView='catcher';S.comBatter={willSwing:false,contact:false,swingT:0,swingDuration:560,bob:0};S.comPitcher={phase:'idle',t0:0,nextPitchAt:performance.now()+2000,releasePoint:null,releaseAt:0};S.swing={lastAt:-9999,quality:null};arm.hist={L:[],R:[]};arm.cockedAt={L:0,R:0};arm.activeSide=null;gripState.history=[];gripState.locked=null;gripState.live={type:'fastball',name:'ストレート',confidence:0,side:null,features:null};Object.assign(battingAR,{side:1,sideScore:0,ready:false,lastSeen:0,gripX:0,gripY:0,dirX:-.34,dirY:-.94,length:180,zone:null,anchorMode:S.batControl==='one'?'wrist':'grip',oneHist:[]});
+  Object.assign(S,{balls:0,strikes:0,outs:0,ks:0,hitsAllowed:0,pitches:0,maxKmh:0,batLeft:10,batHits:0,batHRs:0,batBases:0,ball:null,hitBall:null,fieldPlay:null,pitchImpact:null,cooldownUntil:0,paused:false,calibration:null,analysis:null});S.pitchView='catcher';S.comBatter={willSwing:false,contact:false,swingT:0,swingDuration:560,bob:0};S.comPitcher={phase:'idle',t0:0,nextPitchAt:performance.now()+2000,releasePoint:null,releaseAt:0};S.swing={lastAt:-9999,quality:null};arm.hist={L:[],R:[]};arm.cockedAt={L:0,R:0};arm.activeSide=null;gripState.history=[];gripState.locked=null;gripState.live={type:'fastball',name:'ストレート',confidence:0,side:null,features:null};Object.assign(battingAR,{side:1,sideScore:0,ready:false,lastSeen:0,gripX:0,gripY:0,dirX:-.34,dirY:-.94,length:180,zone:null,anchorMode:S.batControl==='one'?'wrist':'grip',oneHist:[]});
 }
 async function startMode(mode,isMatch){
   const msgEl=isMatch?$('matchSetupMsg'):mode==='pitch'?$('pitchSetupMsg'):mode==='bat'?$('batSetupMsg'):mode==='analysis'?$('analysisSetupMsg'):$('homeMsg');
