@@ -2635,7 +2635,13 @@ function catcherViewSceneLayout(){
     feetY,
     batterAlpha:virtualPitchBackgroundActive()?.98:.94,
     plateY,
-    aimBounds:{x:W*.08,y:H*.15,w:W*.84,h:H*.76},
+    // 投球コースは画面全体ではなく、ゾーン周辺で完結させる。
+    aimBounds:{
+      x:clamp(zone.x-zone.w*.42,W*.12,W*.45),
+      y:clamp(zone.y-zone.h*.34,H*.25,H*.58),
+      w:clamp(zone.w*1.84,zone.w,W*.70),
+      h:clamp(zone.h*1.68,zone.h,H*.55)
+    },
     mittBase:{
       x:zone.x+zone.w*.50,
       y:clamp(plateY+zone.h*.30,H*.79,H*.94)
@@ -2649,31 +2655,91 @@ function comZone(){ return {...pitchingSceneLayout().zone}; }
 /* 手の通過位置と振り方向を、画面全体の着弾座標へ変換する。 */
 function fullScreenPitchTarget(side,lm,motion,z,bounds){
   const wr=screenPoint(lm[side==='L'?LM.Lwr:LM.Rwr]);
-  const ls=screenPoint(lm[LM.Lsh]),rs=screenPoint(lm[LM.Rsh]),lh=screenPoint(lm[LM.Lhip]),rh=screenPoint(lm[LM.Rhip]);
-  const shoulder=meanPoint(ls,rs)||wr||{x:W*.5,y:H*.34};const hip=meanPoint(lh,rh)||{x:shoulder.x,y:shoulder.y+H*.22};
-  const cal=calibrationData.pitch;const bodyX=cal?cal.bodyX*W:shoulder.x;const shoulderSpan=Math.max((cal?.shoulderSpanNorm||Math.abs((lm[LM.Lsh]?.x||0)-(lm[LM.Rsh]?.x||0)))*W,W*.11);const torsoH=Math.max((cal?.torsoNorm||Math.abs((lm[LM.Lhip]?.y||0)-(lm[LM.Lsh]?.y||0)))*H,H*.12);
-  const relX=wr?clamp((wr.x-bodyX)/(shoulderSpan*.92),-1.65,1.65):0;const relY=wr?clamp((wr.y-shoulder.y)/(torsoH*1.02),-.85,1.75):0;
-  const baseX=(z.x+z.w*.5-bounds.x)/bounds.w,baseY=(z.y+z.h*.48-bounds.y)/bounds.h;const nx=clamp(baseX+relX*.205+(motion.vx||0)*.031,.02,.98);const ny=clamp(baseY+relY*.155+((motion.vy||1)-1.2)*.024,.02,.98);return{x:bounds.x+bounds.w*nx,y:bounds.y+bounds.h*ny};
+  const ls=screenPoint(lm[LM.Lsh]),rs=screenPoint(lm[LM.Rsh]);
+  const lh=screenPoint(lm[LM.Lhip]),rh=screenPoint(lm[LM.Rhip]);
+
+  const shoulder=meanPoint(ls,rs)||wr||{x:W*.5,y:H*.34};
+  const hip=meanPoint(lh,rh)||{x:shoulder.x,y:shoulder.y+H*.22};
+  const cal=calibrationData.pitch;
+
+  const bodyX=cal?.bodyX
+    ?cal.bodyX*W
+    :shoulder.x;
+  const shoulderSpan=Math.max(
+    (cal?.shoulderSpanNorm||Math.abs((lm[LM.Lsh]?.x||0)-(lm[LM.Rsh]?.x||0)))*W,
+    W*.11
+  );
+  const torsoH=Math.max(
+    (cal?.torsoNorm||Math.abs((lm[LM.Lhip]?.y||0)-(lm[LM.Lsh]?.y||0)))*H,
+    H*.12
+  );
+
+  const relX=wr?clamp((wr.x-bodyX)/(shoulderSpan*.92),-1.25,1.25):0;
+  const relY=wr?clamp((wr.y-shoulder.y)/(torsoH*1.02),-.70,1.35):0;
+
+  // v41: 手の動きをゾーン中心から周辺1セル程度へ圧縮して反映。
+  // 画面端まで飛ばさず、投球先が常に見える範囲に収める。
+  const centerX=z.x+z.w*.5;
+  const centerY=z.y+z.h*.50;
+  const mappedX=centerX+relX*z.w*.46+(motion.vx||0)*z.w*.050;
+  const mappedY=centerY+relY*z.h*.34+((motion.vy||1)-1.2)*z.h*.045;
+
+  const minX=Math.max(bounds.x,z.x-z.w*.34);
+  const maxX=Math.min(bounds.x+bounds.w,z.x+z.w*1.34);
+  const minY=Math.max(bounds.y,z.y-z.h*.28);
+  const maxY=Math.min(bounds.y+bounds.h,z.y+z.h*1.28);
+
+  return{
+    x:clamp(mappedX,minX,maxX),
+    y:clamp(mappedY,minY,maxY)
+  };
 }
 
 /* ================= あなたの投球(ピッチングモード/試合の裏) ================= */
 function releaseUserPitch(side,lm,motion){
   const wr=lm[side==='L'?LM.Lwr:LM.Rwr];const pitch=inferPitchType(side,motion,lm);const profile=PITCH_TYPES[pitch.type]||PITCH_TYPES.fastball;const kmh=estimatePitchKmh(motion,pitch.type);S.maxKmh=Math.max(S.maxKmh,kmh);S.pitches++;
-  const release=handBallPoint(side,lm)||screenPoint(wr)||{x:(1-wr.x)*W,y:wr.y*H};const sx=release.x,sy=release.y;const layout=catcherViewSceneLayout(),z=layout.zone,aim=fullScreenPitchTarget(side,lm,motion,z,layout.aimBounds);const breakSign=side==='R'?-1:1;const strength=.72+(pitch.confidence||.3)*.36;const breakX=profile.breakX*z.w*breakSign*strength,breakY=profile.breakY*z.h*strength;const control=clamp((motion.speedNorm-1.15)/3.4,0,1);const missX=z.w*(.026+(1-control)*.065),missY=z.h*(.023+(1-control)*.060);const tx=clamp(aim.x+breakX+(Math.random()-.5)*missX*2,layout.aimBounds.x,layout.aimBounds.x+layout.aimBounds.w);const ty=clamp(aim.y+breakY+(Math.random()-.5)*missY*2,layout.aimBounds.y,layout.aimBounds.y+layout.aimBounds.h);const physicalFlight=18.44/(kmh/3.6)*1000;
+  const release=handBallPoint(side,lm)||screenPoint(wr)||{x:(1-wr.x)*W,y:wr.y*H};
+  const sx=clamp(release.x,W*.08,W*.92);
+  const sy=clamp(release.y,H*.08,H*.72);
+  const layout=catcherViewSceneLayout(),z=layout.zone;
+  const aim=fullScreenPitchTarget(side,lm,motion,z,layout.aimBounds);
+  const breakSign=side==='R'?-1:1;
+  const strength=.48+(pitch.confidence||.3)*.24;
+  const breakX=profile.breakX*z.w*breakSign*strength;
+  const breakY=profile.breakY*z.h*strength;
+  const control=clamp((motion.speedNorm-1.15)/3.4,0,1);
+  const missX=z.w*(.018+(1-control)*.038);
+  const missY=z.h*(.018+(1-control)*.036);
+
+  const courseMinX=z.x-z.w*.34;
+  const courseMaxX=z.x+z.w*1.34;
+  const courseMinY=z.y-z.h*.28;
+  const courseMaxY=z.y+z.h*1.28;
+
+  const tx=clamp(
+    aim.x+breakX+(Math.random()-.5)*missX*2,
+    courseMinX,
+    courseMaxX
+  );
+  const ty=clamp(
+    aim.y+breakY+(Math.random()-.5)*missY*2,
+    courseMinY,
+    courseMaxY
+  );const physicalFlight=18.44/(kmh/3.6)*1000;
   // 添付動画のように、投球の移動を目で追える最低表示時間を確保する。
   const flight=clamp(physicalFlight*1.18,820,1380),now=performance.now(),releaseDelay=0;
   // 最初の区間は手から前へ抜け、その後ゾーンへ収束させる。
   const screenVx=-(motion.vx||0);
   const screenVy=(motion.vy||0);
   const controlX=clamp(
-    sx+(tx-sx)*.20+screenVx*W*.035,
-    Math.min(sx,tx)-W*.08,
-    Math.max(sx,tx)+W*.08
+    sx+(tx-sx)*.28+screenVx*z.w*.035,
+    W*.08,
+    W*.92
   );
   const controlY=clamp(
-    sy+(ty-sy)*.16+screenVy*H*.018,
-    Math.min(sy,ty)-H*.08,
-    Math.max(sy,ty)+H*.08
+    sy+(ty-sy)*.22+screenVy*z.h*.025,
+    H*.08,
+    H*.82
   );
   const attachMs=135;
   S.ball={
@@ -3837,11 +3903,12 @@ function drawPitchTrajectory(ball,now,p){
   ctx.lineCap='round';
   ctx.lineJoin='round';
 
-  // リリース位置から現在位置まで、薄い軌道線を描く。
+  // 軌道線は全画面へ大きく伸ばさず、直近の飛翔区間を中心に描く。
   ctx.beginPath();
-  const samples=40;
+  const samples=34;
+  const startP=Math.max(0,currentP-.62);
   for(let i=0;i<=samples;i++){
-    const pp=currentP*(i/samples);
+    const pp=lerp(startP,currentP,i/samples);
     const q=ballFlightPoint(ball,pp);
     if(i===0)ctx.moveTo(q.x,q.y);
     else ctx.lineTo(q.x,q.y);
@@ -3853,10 +3920,10 @@ function drawPitchTrajectory(ball,now,p){
   ctx.stroke();
 
   // 動画のように、コース上へ大きさの異なるボールを配置する。
-  const count=9;
+  const count=7;
   for(let i=0;i<count;i++){
     const ratio=i/(count-1);
-    const pp=currentP*ratio;
+    const pp=lerp(startP,currentP,ratio);
     const q=ballFlightPoint(ball,pp);
     const rr=pitchBallRadius(ball,q.e);
     const alpha=.16+.70*ratio;
@@ -3982,14 +4049,14 @@ function drawBall(now){
     ball.sy=y;
     ball.t0=now;
     ball.controlX=clamp(
-      x+(ball.tx-x)*.22,
-      Math.min(x,ball.tx)-W*.07,
-      Math.max(x,ball.tx)+W*.07
+      x+(ball.tx-x)*.30,
+      W*.08,
+      W*.92
     );
     ball.controlY=clamp(
-      y+(ball.ty-y)*.16,
-      Math.min(y,ball.ty)-H*.07,
-      Math.max(y,ball.ty)+H*.07
+      y+(ball.ty-y)*.24,
+      H*.08,
+      H*.82
     );
   }
 
