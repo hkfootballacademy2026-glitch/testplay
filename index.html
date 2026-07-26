@@ -2674,15 +2674,23 @@ function releaseUserPitch(side,lm,motion){
     Math.min(sy,ty)-H*.08,
     Math.max(sy,ty)+H*.08
   );
+  const attachMs=135;
   S.ball={
     dir:'toCom',
     sx,sy,tx,ty,
     controlX,controlY,
     startR:clamp(Math.min(W,H)*.017,8,14),
-    t0:now+releaseDelay,
+    // 最初の135msは選択腕の手元へボールを保持する。
+    attached:true,
+    attachStartedAt:now,
+    detachAt:now+attachMs,
+    lastHandX:sx,
+    lastHandY:sy,
+    t0:now+attachMs,
     dur:flight,
     kmh,
     resolved:false,
+    resolving:false,
     releaseSide:side,
     zone:{...z},
     pitchView:'catcher',
@@ -2691,9 +2699,10 @@ function releaseUserPitch(side,lm,motion){
     pitchConfidence:pitch.confidence||.3,
     breakX,breakY,
     spin:(pitch.type==='curve'||pitch.type==='slider')?1.1:.55,
-    trailStartedAt:now,
-    trailPersistUntil:now+flight+720
-  };S.cooldownUntil=now+releaseDelay+flight+900;S.lastPitch={...pitch,kmh};gripState.locked={...pitch};updatePitchTypeHUD();showGun(kmh);
+    trailStartedAt:now+attachMs,
+    trailPersistUntil:now+attachMs+flight+760,
+    impactHoldMs:620
+  };S.cooldownUntil=now+attachMs+flight+1050;S.lastPitch={...pitch,kmh};gripState.locked={...pitch};updatePitchTypeHUD();showGun(kmh);
   const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;const b=S.comBatter;b.willSwing=inZone?Math.random()<.78:Math.random()<.22;b.swingDuration=560;if(b.willSwing){let p=.66-(kmh-80)*.0048;if(pitch.type!=='fastball')p-=.05;if(!inZone)p-=.30;b.contact=Math.random()<Math.max(.06,p);b.swingT=S.ball.t0+flight*.63;}else{b.contact=false;b.swingT=0;}S.ball.inZone=inZone;arm.hist[side]=[];SFX.whoosh(sx);beep(120,.08,'sine',.12);
 }
 
@@ -3377,6 +3386,7 @@ function drawBaseballSprite(x,y,r,alpha=1){
 }
 
 function drawUserHeldBall(lm,now){
+  // 投球オブジェクト生成後は drawBall 側で手中のボールを描く。
   if(S.ball||!lm)return;
   // 選択した投球腕の手元だけにボールを表示する。
   const side=selectedPitchArmSide();
@@ -3810,46 +3820,96 @@ function ballFlightPoint(ball,p){
   y+=curveFactor*(ball.breakY||0)*.90-Math.sin(p*Math.PI)*H*(ball.dir==='toCom'?.010:.025);
   return{x,y,e};
 }
+function currentReleaseHandPoint(ball){
+  if(!lastLm||!ball?.releaseSide)return null;
+  return handBallPoint(ball.releaseSide,lastLm)
+    ||screenPoint(lastLm[ball.releaseSide==='L'?LM.Lwr:LM.Rwr]);
+}
+
 function drawPitchTrajectory(ball,now,p){
-  if(ball.dir!=='toCom')return;
+  if(ball.dir!=='toCom'||ball.attached)return;
 
   const currentP=clamp(p,0,1);
-  const pathEnd=currentP;
-  if(pathEnd<=.003)return;
+  if(currentP<=.003)return;
 
-  // 軌道全体を細い白線で表示。
   ctx.save();
   ctx.lineCap='round';
   ctx.lineJoin='round';
+
+  // リリース位置から現在位置まで、薄い軌道線を描く。
   ctx.beginPath();
-  const samples=36;
+  const samples=40;
   for(let i=0;i<=samples;i++){
-    const pp=pathEnd*(i/samples);
+    const pp=currentP*(i/samples);
     const q=ballFlightPoint(ball,pp);
     if(i===0)ctx.moveTo(q.x,q.y);
     else ctx.lineTo(q.x,q.y);
   }
-  ctx.strokeStyle='rgba(255,255,255,.48)';
-  ctx.lineWidth=Math.max(3,Math.min(W,H)*.006);
-  ctx.shadowColor='rgba(190,235,255,.95)';
-  ctx.shadowBlur=12;
+  ctx.strokeStyle='rgba(255,255,255,.34)';
+  ctx.lineWidth=Math.max(2.5,Math.min(W,H)*.005);
+  ctx.shadowColor='rgba(190,235,255,.90)';
+  ctx.shadowBlur=10;
   ctx.stroke();
 
-  // 動画と同様、リリースから現在位置まで連続したボールを並べる。
-  const count=10;
+  // 動画のように、コース上へ大きさの異なるボールを配置する。
+  const count=9;
   for(let i=0;i<count;i++){
     const ratio=i/(count-1);
-    const pp=pathEnd*ratio;
+    const pp=currentP*ratio;
     const q=ballFlightPoint(ball,pp);
     const rr=pitchBallRadius(ball,q.e);
-    const fade=.24+.70*ratio;
+    const alpha=.16+.70*ratio;
     ctx.save();
-    ctx.globalAlpha=fade;
-    ctx.shadowColor='rgba(160,225,255,.95)';
-    ctx.shadowBlur=12;
-    drawBaseballSprite(q.x,q.y,Math.max(6,rr*(.62+.18*ratio)),1);
+    ctx.globalAlpha=alpha;
+    ctx.shadowColor='rgba(175,230,255,.92)';
+    ctx.shadowBlur=8+ratio*7;
+    drawBaseballSprite(q.x,q.y,Math.max(5,rr*(.60+.22*ratio)),1);
     ctx.restore();
   }
+  ctx.restore();
+}
+
+function drawPitchImpactMarker(ball,now){
+  if(!ball.arrivedAt)return;
+  const elapsed=now-ball.arrivedAt;
+  const hold=ball.impactHoldMs||620;
+  if(elapsed>hold)return;
+
+  const z=ball.zone;
+  const col=clamp(Math.floor((ball.tx-z.x)/(z.w/3)),0,2);
+  const row=clamp(Math.floor((ball.ty-z.y)/(z.h/3)),0,2);
+  const cellX=z.x+col*z.w/3;
+  const cellY=z.y+row*z.h/3;
+  const pulse=1+Math.sin(elapsed/70)*.08;
+  const fade=1-clamp((elapsed-hold*.68)/(hold*.32),0,1);
+
+  ctx.save();
+  ctx.globalAlpha=fade;
+
+  // 入った九分割セルを明確に点灯。
+  ctx.fillStyle='rgba(255,182,39,.26)';
+  ctx.strokeStyle='rgba(255,216,105,.98)';
+  ctx.lineWidth=Math.max(3,Math.min(W,H)*.006);
+  ctx.shadowColor='rgba(255,190,55,.95)';
+  ctx.shadowBlur=18;
+  ctx.fillRect(cellX+3,cellY+3,z.w/3-6,z.h/3-6);
+  ctx.strokeRect(cellX+2,cellY+2,z.w/3-4,z.h/3-4);
+
+  // 最終着弾点を円で示す。
+  const markerR=clamp(Math.min(z.w,z.h)*.10,12,25)*pulse;
+  ctx.beginPath();
+  ctx.arc(ball.tx,ball.ty,markerR,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,.98)';
+  ctx.lineWidth=Math.max(3,markerR*.18);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(ball.tx-markerR*.65,ball.ty);
+  ctx.lineTo(ball.tx+markerR*.65,ball.ty);
+  ctx.moveTo(ball.tx,ball.ty-markerR*.65);
+  ctx.lineTo(ball.tx,ball.ty+markerR*.65);
+  ctx.lineWidth=Math.max(2,markerR*.12);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -3857,6 +3917,43 @@ function drawBall(now){
   const ball=S.ball;
   if(!ball)return;
 
+  // ① リリース直前〜瞬間：選択した手の中にボールを保持。
+  if(ball.dir==='toCom'&&ball.attached){
+    const hand=currentReleaseHandPoint(ball);
+    if(hand){
+      ball.lastHandX=hand.x;
+      ball.lastHandY=hand.y;
+    }
+    const x=ball.lastHandX??ball.sx;
+    const y=ball.lastHandY??ball.sy;
+    const heldR=clamp(Math.min(W,H)*.020,9,16);
+
+    ctx.save();
+    ctx.shadowColor='rgba(210,240,255,.95)';
+    ctx.shadowBlur=14;
+    drawBaseballSprite(x,y,heldR,1);
+    ctx.restore();
+
+    if(now<ball.detachAt)return;
+
+    // 離れた瞬間の手位置を飛翔の始点として確定。
+    ball.attached=false;
+    ball.sx=x;
+    ball.sy=y;
+    ball.t0=now;
+    ball.controlX=clamp(
+      x+(ball.tx-x)*.22,
+      Math.min(x,ball.tx)-W*.07,
+      Math.max(x,ball.tx)+W*.07
+    );
+    ball.controlY=clamp(
+      y+(ball.ty-y)*.16,
+      Math.min(y,ball.ty)-H*.07,
+      Math.max(y,ball.ty)+H*.07
+    );
+  }
+
+  // ② 手を離れた後：コースに沿って徐々に拡大。
   const rawP=(now-ball.t0)/ball.dur;
   const p=clamp(rawP,0,1);
   const pt=ballFlightPoint(ball,p);
@@ -3864,17 +3961,24 @@ function drawBall(now){
 
   drawPitchTrajectory(ball,now,p);
 
-  // 主ボールは残像より明るく大きく表示。
   ctx.save();
   ctx.globalAlpha=1;
   ctx.shadowColor='rgba(185,235,255,1)';
   ctx.shadowBlur=18;
-  drawBaseballSprite(pt.x,pt.y,Math.max(8,r*1.08),1);
+  drawBaseballSprite(pt.x,pt.y,Math.max(8,r*1.10),1);
   ctx.restore();
 
-  if(p>=1&&!ball.resolved){
-    if(ball.dir==='toCom')resolveUserPitch();
-    else resolveComPitch();
+  // ③ ゾーン到達時：最終位置を保持し、入った九分割セルを点灯。
+  if(p>=1){
+    if(!ball.arrivedAt)ball.arrivedAt=now;
+    drawPitchImpactMarker(ball,now);
+
+    const hold=ball.impactHoldMs||620;
+    if(now-ball.arrivedAt>=hold&&!ball.resolving&&!ball.resolved){
+      ball.resolving=true;
+      if(ball.dir==='toCom')resolveUserPitch();
+      else resolveComPitch();
+    }
   }
 }
 
