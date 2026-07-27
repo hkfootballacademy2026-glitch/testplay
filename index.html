@@ -1063,12 +1063,30 @@ function updateVirtualSegmentation(result,now){
     if(coverage>.012&&coverage<.78){rawSegmentationCtx.putImageData(image,0,0);segmentationMaskReady=true;segmentationCoverage=coverage;lastSegmentationAt=now;}
   }catch(err){console.warn('Virtual background mask update failed',err);}finally{try{mask.close?.();}catch(_err){}}
 }
+function drawPitchBackgroundZoom(img){
+  // v43: キャラクターとストライクゾーンの大きさに合わせ、
+  // ピッチング背景を約14%拡大し、わずかに下へ移動する。
+  // 外野・バックスクリーンを大きく見せつつ、土の面を画面下側へ寄せる。
+  const portrait=H>=W;
+  const scale=portrait?1.14:1.11;
+  const shiftY=H*(portrait?.032:.022);
+
+  ctx.save();
+  ctx.translate(W*.5,H*.5+shiftY);
+  ctx.scale(scale,scale);
+  ctx.translate(-W*.5,-H*.5);
+  drawCover(ctx,img,W,H,false);
+  ctx.restore();
+}
+
 function drawVirtualBackground(now){
   const current=currentVirtualBackground();
   if(!current)return false;
   const {bg,img,mode}=current;
   if(!bg||!img||!img.complete||!img.naturalWidth)return false;
-  drawCover(ctx,img,W,H,false);
+
+  if(mode==='pitch')drawPitchBackgroundZoom(img);
+  else drawCover(ctx,img,W,H,false);
   if(video.readyState>=2){
     const pc=virtualPersonCtx;pc.clearRect(0,0,W,H);drawCover(pc,video,W,H,true);
     pc.globalCompositeOperation='destination-in';
@@ -1088,7 +1106,8 @@ function drawVirtualBackground(now){
     ctx.drawImage(virtualPersonCanvas,0,0,W,H);
     ctx.restore();
   }
-  const vignette=ctx.createRadialGradient(W*.5,H*.48,Math.min(W,H)*.18,W*.5,H*.48,Math.max(W,H)*.72);
+  const vignetteCenterY=mode==='pitch'?H*.54:H*.48;
+  const vignette=ctx.createRadialGradient(W*.5,vignetteCenterY,Math.min(W,H)*.18,W*.5,vignetteCenterY,Math.max(W,H)*.72);
   vignette.addColorStop(0,'rgba(0,0,0,0)');
   vignette.addColorStop(1,mode==='bat'?'rgba(0,0,0,.16)':'rgba(0,0,0,.20)');
   ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
@@ -2604,7 +2623,7 @@ function catcherViewSceneLayout(){
   const zoneH=clamp(H*(portrait?.275:.315),170,Math.min(360,H*.38));
   const zoneW=zoneH*.68;
   const zoneCenterX=W*.50;
-  const zoneCenterY=H*(portrait?.605:.585);
+  const zoneCenterY=H*(portrait?.625:.600);
   const zoneX=clamp(zoneCenterX-zoneW*.5,W*.12,W*.88-zoneW);
   const zoneY=clamp(zoneCenterY-zoneH*.5,H*.37,H*.79-zoneH);
   const zone={x:zoneX,y:zoneY,w:zoneW,h:zoneH};
@@ -2613,7 +2632,7 @@ function catcherViewSceneLayout(){
   // 画像自体を画面外へ飛ばしすぎず、身体が必ず十分見える位置へ固定する。
   const batterH=clamp(H*(portrait?.700:.735),Math.min(390,H*.56),Math.min(760,H*.82));
   const batterW=batterH*(902/1324)*.90;
-  const feetY=clamp(H*(portrait?.925:.940),H*.78,H*.965);
+  const feetY=clamp(H*(portrait?.940:.948),H*.80,H*.972);
   const batterY=feetY-batterH;
 
   const pivotX=hand==='right'?W*.145:W*.855;
@@ -2866,6 +2885,17 @@ function getComPitcherPose(now){
   const releaseFrame={x:x+w*handNorm.x,y:y+h*handNorm.y};
   return{x,y,w,h,feetY,frame,progress,hand:releaseFrame};
 }
+
+function getComPitcherReleasePoint(now){
+  const pose=getComPitcherPose(now);
+  // 背面投手画像のリリースフレームで、前方へ伸びた投球腕の先端。
+  // body中央や背中側ではなく、必ず画像上の手元からボールを出す。
+  return{
+    x:pose.x+pose.w*.775,
+    y:pose.y+pose.h*.145
+  };
+}
+
 function comPitchStart(now){
   const p=S.comPitcher;p.phase='windup';p.t0=now;p.releaseAt=now+1000;p.releasePoint=null;
   setTimeout(()=>{if(S.running&&S.mode==='bat'&&!S.paused)comRelease();else{S.comPitcher.phase='idle';S.comPitcher.nextPitchAt=performance.now()+1500;}},1000);
@@ -2888,7 +2918,7 @@ function pickComPitchTarget(z,wantsStrike){
   return {x:alongX,y:z.y+z.h+gapY};                // 低めボール
 }
 function comRelease(){
-  const now=performance.now();const pitchRoll=Math.random();const pitchType=pitchRoll<.58?'fastball':pitchRoll<.72?'slider':pitchRoll<.83?'curve':pitchRoll<.92?'changeup':'splitter';const profile=PITCH_TYPES[pitchType];const baseKmh=78+Math.random()*62;const kmh=Math.round(clamp(baseKmh*profile.speed,68,148));const z=userZone(),wantsStrike=Math.random()<.67,target=pickComPitchTarget(z,wantsStrike),pose=getComPitcherPose(now),sx=pose.hand.x,sy=pose.hand.y;const sign=Math.random()<.5?-1:1,breakX=profile.breakX*z.w*sign,breakY=profile.breakY*z.h;const tx=clamp(target.x+breakX,8,W-8),ty=clamp(target.y+breakY,H*.05,H*.88);const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;const flight=clamp(18.44/(kmh/3.6)*1000,450,1320),releaseDelay=55;S.comPitcher.releasePoint={x:sx,y:sy};S.comPitcher.releaseAt=now;S.ball={dir:'toYou',sx,sy,tx,ty,breakX,breakY,pitchType,pitchName:profile.name,zone:{...z},t0:now+releaseDelay,dur:flight,kmh,resolved:false,inZone,swungAt:0,quality:null};S.comPitcher.phase='follow';showGun(kmh);SFX.whoosh(sx);beep(120,.08,'sine',.12);
+  const now=performance.now();const pitchRoll=Math.random();const pitchType=pitchRoll<.58?'fastball':pitchRoll<.72?'slider':pitchRoll<.83?'curve':pitchRoll<.92?'changeup':'splitter';const profile=PITCH_TYPES[pitchType];const baseKmh=78+Math.random()*62;const kmh=Math.round(clamp(baseKmh*profile.speed,68,148));const z=userZone(),wantsStrike=Math.random()<.67,target=pickComPitchTarget(z,wantsStrike),release=getComPitcherReleasePoint(now),sx=release.x,sy=release.y;const sign=Math.random()<.5?-1:1,breakX=profile.breakX*z.w*sign,breakY=profile.breakY*z.h;const tx=clamp(target.x+breakX,8,W-8),ty=clamp(target.y+breakY,H*.05,H*.88);const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;const flight=clamp(18.44/(kmh/3.6)*1000,450,1320),releaseDelay=55;S.comPitcher.releasePoint={x:sx,y:sy};S.comPitcher.releaseAt=now;S.ball={dir:'toYou',sx,sy,tx,ty,breakX,breakY,pitchType,pitchName:profile.name,zone:{...z},t0:now+releaseDelay,dur:flight,kmh,resolved:false,inZone,swungAt:0,quality:null};S.comPitcher.phase='follow';showGun(kmh);SFX.whoosh(sx);beep(120,.08,'sine',.12);
 }
 function onUserSwing(now){
   const ball=S.ball;
@@ -3864,11 +3894,12 @@ function drawComPitcher(now){
 
 function pitchBallRadius(ball,e){
   if(ball.dir==='toCom'){
-    const start=ball.startR||7;
-    return start+Math.pow(e,1.48)*(34-start); // ピッチング: 奥の投手→手前の打者
+    // v44: 参考ゲームと同じ拡大カーブ。
+    // 手元側では小さく、終盤だけ自然に大きくして着弾先を読みやすくする。
+    return 5+Math.pow(e,1.58)*29;
   }
   // バッティング: 手前のCOM投手→奥のユーザーバッター
-  return Math.max(4,24-Math.pow(e,.82)*19);
+  return 21-e*16;
 }
 function ballFlightPoint(ball,p){
   const e=smoothstep(p);
@@ -3897,43 +3928,23 @@ function drawPitchTrajectory(ball,now,p){
   if(ball.dir!=='toCom'||ball.attached)return;
 
   const currentP=clamp(p,0,1);
-  if(currentP<=.003)return;
+  if(currentP<=.015)return;
 
+  // v44: 参考ゲーム方式。
+  // 発光ラインや多数のボール画像は使わず、直前位置に薄い丸を3つだけ残す。
   ctx.save();
-  ctx.lineCap='round';
-  ctx.lineJoin='round';
+  ctx.fillStyle='rgba(242,239,230,.15)';
 
-  // 軌道線は全画面へ大きく伸ばさず、直近の飛翔区間を中心に描く。
-  ctx.beginPath();
-  const samples=34;
-  const startP=Math.max(0,currentP-.62);
-  for(let i=0;i<=samples;i++){
-    const pp=lerp(startP,currentP,i/samples);
-    const q=ballFlightPoint(ball,pp);
-    if(i===0)ctx.moveTo(q.x,q.y);
-    else ctx.lineTo(q.x,q.y);
-  }
-  ctx.strokeStyle='rgba(255,255,255,.34)';
-  ctx.lineWidth=Math.max(2.5,Math.min(W,H)*.005);
-  ctx.shadowColor='rgba(190,235,255,.90)';
-  ctx.shadowBlur=10;
-  ctx.stroke();
-
-  // 動画のように、コース上へ大きさの異なるボールを配置する。
-  const count=7;
-  for(let i=0;i<count;i++){
-    const ratio=i/(count-1);
-    const pp=lerp(startP,currentP,ratio);
+  for(let i=1;i<=3;i++){
+    const pp=Math.max(0,currentP-i*.045);
     const q=ballFlightPoint(ball,pp);
     const rr=pitchBallRadius(ball,q.e);
-    const alpha=.16+.70*ratio;
-    ctx.save();
-    ctx.globalAlpha=alpha;
-    ctx.shadowColor='rgba(175,230,255,.92)';
-    ctx.shadowBlur=8+ratio*7;
-    drawBaseballSprite(q.x,q.y,Math.max(5,rr*(.60+.22*ratio)),1);
-    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(q.x,q.y,Math.max(2,rr*.80),0,Math.PI*2);
+    ctx.fill();
   }
+
   ctx.restore();
 }
 
@@ -4070,9 +4081,10 @@ function drawBall(now){
 
   ctx.save();
   ctx.globalAlpha=1;
-  ctx.shadowColor='rgba(185,235,255,1)';
-  ctx.shadowBlur=18;
-  drawBaseballSprite(pt.x,pt.y,Math.max(8,r*1.10),1);
+  // 主ボールは輪郭が読める程度に留め、軌道演出を過剰にしない。
+  ctx.shadowColor='rgba(220,240,255,.34)';
+  ctx.shadowBlur=4;
+  drawBaseballSprite(pt.x,pt.y,r,1);
   ctx.restore();
 
   // ③ ゾーン到達時：PowerPro風の着弾表示を別オーバーレイへ登録。
