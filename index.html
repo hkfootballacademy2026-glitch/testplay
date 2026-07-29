@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#0B1026" />
-<title>1VS1 CHALLENGE — KICK INTENT · INSIDE GUARD v80</title>
+<title>1VS1 CHALLENGE — MICRO INSIDE · SOLE PULL v81</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=M+PLUS+1:wght@500;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
@@ -1504,7 +1504,7 @@
   <section id="screen-start" class="screen" aria-label="スタートメニュー">
     <div class="eyebrow">AI FOOTBALL TRAINING</div>
     <h1 class="title">1VS1<br /><span class="gold">CHALLENGE</span></h1>
-    <div class="build-badge">KICK INTENT · INSIDE GUARD v80</div>
+    <div class="build-badge">MICRO INSIDE · SOLE PULL v81</div>
     <p class="subtitle">ゴールなし／リアルボールでは、DFを左右に揺さぶって画面左下・右下の突破エリアへボールごと運びます。ゴールありではフィールドDFを置かず、手前に配置したゴールのキーパーと直接1対1でシュートを競います。</p>
 
     <div class="mode-grid" aria-label="トレーニングモード">
@@ -1822,7 +1822,7 @@
     </div>
 
     <div class="feint-analysis" id="feint-analysis-box">
-      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · KICK INTENT · INSIDE GUARD v80</span></div>
+      <div class="feint-analysis-title">AI FEINT ANALYSIS <span>TOUCH-SEQUENCE ENGINE · MICRO INSIDE · SOLE PULL v81</span></div>
       <div class="feint-summary" id="feint-summary"></div>
       <div class="feint-analysis-note" id="feint-analysis-note"></div>
     </div>
@@ -2343,6 +2343,27 @@ const DRIBBLE_CONTROL = {
   soleMaxT: 0.88,
   soleRollResponse: 22,
   soleRollPositionAssist: 0.23,
+
+  // v81：短いインサイドは低い横速度でも接触面を作り、足裏は厳密なt位置だけでなく
+  // 「ボール上面付近＋水平ドラッグ」の包絡領域で拾う。画面端から内側へ引く際は短時間ラッチする。
+  insidePhysicalMedialness: 0.075,
+  insideMicroMinFootSpeed: 0.030,
+  insideMicroMinHorizontalSpeed: 0.022,
+  insideMicroHorizontalDominance: 0.68,
+  insideMicroMinPenetrationRatio: 0.012,
+  insideMicroPulseMs: 92,
+  insideMicroDirectionResetMs: 62,
+  insideMicroMaxSpeed: 0.24,
+  soleAssistReachRatio: 0.62,
+  soleAssistTopnessMin: 0.10,
+  soleAssistHorizontalSpeed: 0.020,
+  soleAssistHorizontalDominance: 0.72,
+  soleAssistGroundTolerance: 0.72,
+  soleAssistMinT: 0.02,
+  soleAssistMaxT: 0.98,
+  soleRollLatchMs: 260,
+  soleRollPositionResponse: 18,
+  soleRollInwardEdgeBoost: 1.35,
 
   // v20: 正面通過タックル、DF難易度に加え、キックフェイントとシュートのコミット判定を分離。
   // 接触が外れたら短時間で補助を切り、慣性・摩擦・回転へ戻す。
@@ -4258,6 +4279,12 @@ function makeFootState() {
     maxOutsideBallGap: 0,
     lastSurfaceKey: 'instep',
     soleContactSince: 0,
+    soleRollUntil: -Infinity,
+    soleRollDirection: 0,
+    soleRollLastAt: -Infinity,
+    lastInsidePulseAt: -Infinity,
+    lastInsidePulseDirection: 0,
+    lastInsidePulsePoseFrameId: -1,
     touchEpisode: null,
     lastRecognizedTouchAt: -Infinity,
     poseFrameId: 0,
@@ -7778,7 +7805,7 @@ const shotState = {
 };
 let stealTime = 0;
 
-// ===== 距離反転キック意図＋部分足補完シュート判定 v80 =====
+// ===== 足自身の距離反転＋短いインサイド保護＋足裏ロール判定 v81 =====
 // 通常タッチではシュート判定を開始しない。膝の谷、同じ脚の伸展、インパクト観測窓、
 // 複数姿勢のフォロースルーを時系列で確認し、最後まで成立した場合だけ発射する。
 // 軸足は完全静止ではなく横位置の維持率を評価し、単眼カメラの自然な上下動・腰回転を許容する。
@@ -7882,8 +7909,17 @@ const SHOT_TAKEBACK_RULES = {
   kickPhaseHardScore: 0.58,
   kickPhasePartialHardScore: 0.67,
   kickPhaseSoftScore: 0.43,
-  lateralCarryHorizontalDominance: 0.92,
-  lateralCarryMinHorizontalSpeedRatio: 0.058,
+  // v81：足ボール間距離が増えても、ボールが先に転がっただけならテイクバックにしない。
+  kickPhaseMinFootOwnedAwayRatio: 0.016,
+  kickPhaseSoftMinFootOwnedAwayRatio: 0.012,
+  kickPhaseMinFootTravelRatio: 0.022,
+  kickPhaseSoftMinFootTravelRatio: 0.016,
+  kickPhaseQuietBallAwayRatio: 0.010,
+  kickPhaseSoftQuietBallAwayRatio: 0.008,
+  kickPhaseFootBallAwayDominance: 1.15,
+  kickPhaseSoftFootBallAwayDominance: 1.28,
+  lateralCarryHorizontalDominance: 0.72,
+  lateralCarryMinHorizontalSpeedRatio: 0.028,
 
   plausiblePlantHipShiftRatio: 0.175,
   plausiblePlantSupportShiftRatio: 0.120,
@@ -8674,7 +8710,7 @@ function recoverShotTakebackAtImpact(side, now = performance.now()) {
 }
 
 
-// v80：足とボールの距離を時系列で追い、
+// v81：足とボールの距離を時系列で追い、
 // 「近い／通常位置 → 一度離れる → 反転して高速接近」というキック固有の2相運動を抽出する。
 // ボールも動くため、各足サンプル時刻のボール位置を使い、単純な横運びをテイクバックと誤認しない。
 function evaluateKickIntentPhase({
@@ -8696,6 +8732,10 @@ function evaluateKickIntentPhase({
       y: sample.y,
       speed: Number(sample.speed) || 0,
       partial: Boolean(sample.partial),
+      ballX: Number(ballSample.x) || 0,
+      ballY: Number(ballSample.y) || 0,
+      ballVx: Number(ballSample.vx) || 0,
+      ballVy: Number(ballSample.vy) || 0,
       distance: Math.hypot(sample.x - ballSample.x, sample.y - ballSample.y),
     });
   }
@@ -8710,6 +8750,10 @@ function evaluateKickIntentPhase({
     y: foot?.center?.y || 0,
     speed: Number(footSpeed) || Number(foot?.speed) || 0,
     partial: Boolean(foot?.partiallyObserved),
+    ballX: Number(currentBall.x) || 0,
+    ballY: Number(currentBall.y) || 0,
+    ballVx: Number(currentBall.vx) || 0,
+    ballVy: Number(currentBall.vy) || 0,
     distance: resolvedCurrentDistance,
   };
   if (!samples.length || now - samples[samples.length - 1].t > 5) {
@@ -8724,6 +8768,7 @@ function evaluateKickIntentPhase({
     return {
       pass: false,
       softPass: false,
+      selfTakebackPass: false,
       enoughSamples: false,
       reason: 'テイクバック反転の姿勢不足',
       score: 0,
@@ -8780,23 +8825,54 @@ function evaluateKickIntentPhase({
       virtualBall.radius * 1.45,
     );
 
+    // prior時点でボールから足へ向かう単位ベクトルを作り、距離増加を
+    // 「足が自分で離れた量」と「ボールが先に転がって離れた量」に分解する。
+    const priorDx = prior.x - prior.ballX;
+    const priorDy = prior.y - prior.ballY;
+    const priorLength = Math.hypot(priorDx, priorDy) || 1;
+    const awayUnitX = priorDx / priorLength;
+    const awayUnitY = priorDy / priorLength;
+    const footTakebackDx = pivot.x - prior.x;
+    const footTakebackDy = pivot.y - prior.y;
+    const ballTakebackDx = pivot.ballX - prior.ballX;
+    const ballTakebackDy = pivot.ballY - prior.ballY;
+    const takebackFootTravel = Math.hypot(footTakebackDx, footTakebackDy);
+    const takebackBallTravel = Math.hypot(ballTakebackDx, ballTakebackDy);
+    const footOwnedAway = Math.max(0, footTakebackDx * awayUnitX + footTakebackDy * awayUnitY);
+    const ballInducedAway = Math.max(0, -(ballTakebackDx * awayUnitX + ballTakebackDy * awayUnitY));
+    const hardSelfTakebackPass = footOwnedAway >= unit * rules.kickPhaseMinFootOwnedAwayRatio
+      && takebackFootTravel >= unit * rules.kickPhaseMinFootTravelRatio
+      && (ballInducedAway <= unit * rules.kickPhaseQuietBallAwayRatio
+        || footOwnedAway >= ballInducedAway * rules.kickPhaseFootBallAwayDominance);
+    const softSelfTakebackPass = footOwnedAway >= unit * rules.kickPhaseSoftMinFootOwnedAwayRatio
+      && takebackFootTravel >= unit * rules.kickPhaseSoftMinFootTravelRatio
+      && (ballInducedAway <= unit * rules.kickPhaseSoftQuietBallAwayRatio
+        || footOwnedAway >= ballInducedAway * rules.kickPhaseSoftFootBallAwayDominance);
+
     const awayQuality = clamp(awayGain / Math.max(1, unit * rules.kickPhaseMinAwayGainRatio), 0, 1.45);
     const closureQuality = clamp(closure / Math.max(1, unit * rules.kickPhaseMinClosureRatio), 0, 1.45);
     const awayRateQuality = clamp(maxAwayRate / Math.max(1, unit * rules.kickPhaseMinAwayRateRatio), 0, 1.45);
     const approachQuality = clamp(maxApproachRate / Math.max(1, unit * rules.kickPhaseMinApproachRateRatio), 0, 1.45);
     const driveQuality = clamp(drivePeakSpeed / Math.max(1, unit * rules.kickPhaseMinDrivePeakRatio), 0, 1.45);
     const speedGainQuality = clamp(speedGain / Math.max(1, unit * rules.kickPhaseMinSpeedGainRatio), 0, 1.35);
-    const score = awayQuality * 0.22
-      + closureQuality * 0.25
-      + awayRateQuality * 0.14
-      + approachQuality * 0.19
-      + driveQuality * 0.12
-      + speedGainQuality * 0.08;
+    const selfTakebackQuality = clamp(
+      footOwnedAway / Math.max(1, unit * rules.kickPhaseMinFootOwnedAwayRatio),
+      0,
+      1.45,
+    );
+    const score = awayQuality * 0.18
+      + closureQuality * 0.23
+      + awayRateQuality * 0.11
+      + approachQuality * 0.18
+      + driveQuality * 0.11
+      + speedGainQuality * 0.07
+      + selfTakebackQuality * 0.12;
 
     const hardThreshold = partialRatio > 0.42
       ? rules.kickPhasePartialHardScore
       : rules.kickPhaseHardScore;
-    const hardPass = finalDistancePass
+    const hardPass = hardSelfTakebackPass
+      && finalDistancePass
       && awayGain >= unit * rules.kickPhaseMinAwayGainRatio
       && closure >= unit * rules.kickPhaseMinClosureRatio
       && maxAwayRate >= unit * rules.kickPhaseMinAwayRateRatio
@@ -8805,7 +8881,8 @@ function evaluateKickIntentPhase({
       && (speedGain >= unit * rules.kickPhaseMinSpeedGainRatio
         || drivePeakSpeed >= unit * rules.trajectoryMinPeakSpeedRatio)
       && score >= hardThreshold;
-    const softPass = finalDistancePass
+    const softPass = softSelfTakebackPass
+      && finalDistancePass
       && awayGain >= unit * rules.kickPhaseSoftAwayGainRatio
       && closure >= unit * rules.kickPhaseSoftClosureRatio
       && maxApproachRate >= unit * rules.kickPhaseSoftApproachRateRatio
@@ -8815,6 +8892,9 @@ function evaluateKickIntentPhase({
     const candidate = {
       pass: hardPass,
       softPass,
+      selfTakebackPass: hardPass ? hardSelfTakebackPass : softSelfTakebackPass,
+      hardSelfTakebackPass,
+      softSelfTakebackPass,
       enoughSamples: true,
       score,
       samples: samples.length,
@@ -8832,11 +8912,21 @@ function evaluateKickIntentPhase({
       drivePeakSpeed,
       preMeanSpeed,
       speedGain,
+      takebackFootTravel,
+      takebackBallTravel,
+      footOwnedAway,
+      ballInducedAway,
       takebackDistance: pivot.distance,
       finalDistance: finalSample.distance,
       finalDistancePass,
       evaluatedAt: now,
-      reason: hardPass ? '' : softPass ? '弱い距離反転' : '足がボールから離れて戻る動作なし',
+      reason: hardPass
+        ? ''
+        : softPass
+          ? '弱い距離反転'
+          : !softSelfTakebackPass
+            ? 'ボール移動をテイクバックとして除外'
+            : '足がボールから離れて戻る動作なし',
     };
     if (!best
       || (candidate.pass && !best.pass)
@@ -8850,6 +8940,7 @@ function evaluateKickIntentPhase({
     return {
       pass: false,
       softPass: false,
+      selfTakebackPass: false,
       enoughSamples: true,
       reason: '足の方向反転なし',
       score: 0,
@@ -8877,22 +8968,27 @@ function evaluateKickIntentPhase({
 function evaluateLateralCarryShotVeto({
   touchMetrics, surface, footVelocity, footSpeed, kickPhase, unit,
 }) {
-  if (kickPhase?.pass) return { veto: false, reason: '' };
+  const hardKickIntent = Boolean(kickPhase?.pass && kickPhase?.selfTakebackPass !== false);
+  if (hardKickIntent) return { veto: false, reason: '' };
   const key = surface?.key || 'instep';
   const lateralSurface = ['inside', 'infront', 'outside', 'outfront', 'heel'].includes(key);
-  const geometryLateral = Math.abs(Number(touchMetrics?.medialness) || 0) >= 0.08
-    || Math.abs(Number(touchMetrics?.exteriorness) || 0) >= 0.08;
+  const medialness = Number(touchMetrics?.medialness) || 0;
+  const exteriorness = Number(touchMetrics?.exteriorness) || 0;
+  const geometryLateral = Math.abs(medialness) >= 0.065 || Math.abs(exteriorness) >= 0.065;
   const horizontalDominance = Number(touchMetrics?.horizontalDominance) || 0;
   const horizontalSpeed = Math.abs(Number(footVelocity?.x) || 0);
   const movingLaterally = horizontalDominance >= SHOT_TAKEBACK_RULES.lateralCarryHorizontalDominance
     && horizontalSpeed >= unit * SHOT_TAKEBACK_RULES.lateralCarryMinHorizontalSpeedRatio
-    && footSpeed >= unit * SHOT_TAKEBACK_RULES.minKneeRouteRecentSpeedRatio;
-  const veto = movingLaterally && (lateralSurface || geometryLateral) && !kickPhase?.softPass;
-  const insideLike = key === 'inside' || key === 'infront'
-    || (Number(touchMetrics?.medialness) || 0) > 0.08;
+    && footSpeed >= unit * 0.050;
+  const compactSideTouch = horizontalDominance >= 0.62
+    && horizontalSpeed >= unit * DRIBBLE_CONTROL.insideMicroMinHorizontalSpeed
+    && footSpeed >= unit * DRIBBLE_CONTROL.insideMicroMinFootSpeed;
+  // softPassは低FPS救済に過ぎないため、横タッチの拒否を解除しない。
+  const veto = (movingLaterally || compactSideTouch) && (lateralSurface || geometryLateral);
+  const insideLike = key === 'inside' || key === 'infront' || medialness > 0.065;
   return {
     veto,
-    reason: insideLike ? 'インサイド搬送（テイクバック反転なし）' : '横ドリブル（テイクバック反転なし）',
+    reason: insideLike ? 'インサイド搬送（足自身のテイクバックなし）' : '横ドリブル（足自身のテイクバックなし）',
   };
 }
 
@@ -9128,6 +9224,26 @@ function observeShotImpactProbe({
         footSpeed, approach,
       }));
 
+  // 観測窓の開始後に接触面がヒール→インサイドへ揺れた場合も、
+  // 足自身の大きなテイクバックがなければ即座にドリブルへ戻す。
+  const liveInsideMicro = evaluateInsideMicroTouch({
+    surface: provisionalSurface,
+    metrics: touchMetrics,
+    footVelocity,
+    footSpeed,
+    approach,
+    penetration,
+    ballRadius: virtualBall.radius,
+    sweptHit,
+    kickPhase,
+    unit,
+  });
+  if (liveInsideMicro.pass) {
+    if (shotImpactProbe.active && shotImpactProbe.side === side) resetShotImpactProbe();
+    if (isShotTakebackArmed(side, now)) consumeShotTakeback(side, now);
+    return false;
+  }
+
   if (!shotImpactProbe.active) {
     let kneeReady = isShotTakebackArmed(side, now);
     if (!kneeReady) kneeReady = recoverShotTakebackAtImpact(side, now);
@@ -9146,6 +9262,27 @@ function observeShotImpactProbe({
       kickPhase,
       unit,
     });
+    const insideMicro = evaluateInsideMicroTouch({
+      surface: provisionalSurface,
+      metrics: touchMetrics,
+      footVelocity,
+      footSpeed,
+      approach,
+      penetration,
+      ballRadius: virtualBall.radius,
+      sweptHit,
+      kickPhase,
+      unit,
+    });
+    if (insideMicro.pass) {
+      if (kneeReady) consumeShotTakeback(side, now);
+      if (now - lastShotPromptAt > 520) {
+        lastShotPromptAt = now;
+        CUE.textContent = '';
+        SUB.textContent = 'ドリブル判定：短いインサイドタッチ';
+      }
+      return false;
+    }
 
     if (trajectoryCandidate.pass) {
       trajectory = trajectoryCandidate;
@@ -9158,7 +9295,14 @@ function observeShotImpactProbe({
         && !kickPhase?.enoughSamples
         && (Number(kneeState?.armedDepth) || 0) >= SHOT_TAKEBACK_RULES.relativeDepthDeg
         && footSpeed >= unit * SHOT_TAKEBACK_RULES.trajectoryMinPeakSpeedRatio;
-      const kneeIntentPass = kneeReady && (Boolean(kickPhase?.softPass) || deepLowFpsFallback);
+      const lateralSurface = ['inside', 'infront', 'outside', 'outfront', 'heel'].includes(provisionalSurface.key)
+        || Math.abs(Number(touchMetrics?.medialness) || 0) >= 0.065
+        || Math.abs(Number(touchMetrics?.exteriorness) || 0) >= 0.065;
+      const kneeIntentPass = kneeReady && (
+        Boolean(kickPhase?.pass)
+        || (!lateralSurface && Boolean(kickPhase?.softPass))
+        || (!lateralSurface && deepLowFpsFallback)
+      );
       if (!kneeIntentPass || lateralCarry.veto) {
         if (kneeReady) consumeShotTakeback(side, now);
         if (lateralCarry.veto && now - lastShotPromptAt > 620) {
@@ -9994,7 +10138,6 @@ function computeTouchSurfaceMetrics(foot, side, contact, ball, footVelocity, cur
   const ballDy = ball.y - contact.y;
   const radius = Math.max(1, ball.radius || virtualBall.radius || 1);
 
-  // 身体中心側をインサイドとするため、左右の足で自動的に符号が反転する。
   let bodyDirectionX = Math.sign(playerControlX() - foot.center.x);
   if (!bodyDirectionX) {
     const other = feet[side === 'left' ? 'right' : 'left'];
@@ -10029,22 +10172,31 @@ function computeTouchSurfaceMetrics(foot, side, contact, ball, footVelocity, cur
     : 0;
   const axisDrive = Math.abs(axisSignedDrive);
   const crossDrive = Math.abs(crossSignedDrive);
-  const axisAngle = Number.isFinite(foot.axisAngle)
-    ? foot.axisAngle
-    : Math.atan2(axisY, axisX);
+  const axisAngle = Number.isFinite(foot.axisAngle) ? foot.axisAngle : Math.atan2(axisY, axisX);
   const rotationRate = Number(foot.axisAngularVelocity) || 0;
   const ankleAngle = angleAtVertex(foot.heel, foot.ankle, foot.toe);
   const normalDistance = Math.max(0.001, Math.hypot(ballDx, ballDy));
   const normalX = ballDx / normalDistance;
   const normalY = ballDy / normalDistance;
   const approach = footVelocity.x * normalX + footVelocity.y * normalY;
-  const soleCandidate = currentInside
+
+  const soleMotion = horizontalSpeed >= unit * DRIBBLE_CONTROL.soleHorizontalSpeed
+    && horizontalDominance >= DRIBBLE_CONTROL.soleHorizontalDominance;
+  const soleStrictCandidate = currentInside
     && topness >= DRIBBLE_CONTROL.soleTopContactMin
-    && horizontalSpeed >= unit * DRIBBLE_CONTROL.soleHorizontalSpeed
-    && horizontalDominance >= DRIBBLE_CONTROL.soleHorizontalDominance
+    && soleMotion
     && contact.t >= DRIBBLE_CONTROL.soleMinT
     && contact.t <= DRIBBLE_CONTROL.soleMaxT
     && groundGap <= DRIBBLE_CONTROL.soleGroundTolerance;
+  const soleAssistCandidate = topness >= DRIBBLE_CONTROL.soleAssistTopnessMin
+    && horizontalSpeed >= unit * DRIBBLE_CONTROL.soleAssistHorizontalSpeed
+    && horizontalDominance >= DRIBBLE_CONTROL.soleAssistHorizontalDominance
+    && contact.t >= DRIBBLE_CONTROL.soleAssistMinT
+    && contact.t <= DRIBBLE_CONTROL.soleAssistMaxT
+    && groundGap <= DRIBBLE_CONTROL.soleAssistGroundTolerance
+    && contact.distance <= radius * 1.82
+    && Math.abs(footVelocity.y) <= Math.max(horizontalSpeed * 1.35, unit * 0.060);
+  const soleCandidate = soleStrictCandidate || soleAssistCandidate;
 
   return {
     t: contact.t,
@@ -10055,6 +10207,8 @@ function computeTouchSurfaceMetrics(foot, side, contact, ball, footVelocity, cur
     horizontalDominance,
     groundGap,
     soleCandidate,
+    soleStrictCandidate,
+    soleAssistCandidate,
     axisX: axisUnitX,
     axisY: axisUnitY,
     axisAngle,
@@ -10113,7 +10267,19 @@ function touchSurfaceScoreMap(metrics, power = 0.5, options = {}) {
     scores.infront *= 0.84;
   }
 
-  if (metrics.soleCandidate && !isShot) scores.sole += 0.62;
+  if (metrics.soleCandidate && !isShot) scores.sole += metrics.soleAssistCandidate ? 0.88 : 0.62;
+  if (metrics.soleAssistCandidate && !isShot) {
+    scores.heel *= 0.42;
+    scores.toe *= 0.58;
+    scores.instep *= 0.72;
+  }
+  // 短いインサイドは接触点tがヒール側へ揺れても、身体側の位置関係と横運びを優先する。
+  if (!isShot && medial >= 0.08 && horizontalRoll >= 0.18 && topness < 0.28) {
+    scores.inside += medial * (0.30 + crossDrive * 0.18 + horizontalRoll * 0.20);
+    scores.heel *= 0.56;
+    scores.outside *= 0.72;
+    if (t > 0.56) scores.infront += medial * forefoot * 0.18;
+  }
   if (t > 0.58 && medial > 0.20) {
     scores.infront += forefoot * medial * 0.34;
     scores.inside *= 0.88;
@@ -11781,6 +11947,12 @@ function resetFootShotInput(now = performance.now()) {
     foot.maxOutsideBallGap = 0;
     foot.lastSurfaceKey = 'instep';
     foot.soleContactSince = 0;
+    foot.soleRollUntil = -Infinity;
+    foot.soleRollDirection = 0;
+    foot.soleRollLastAt = -Infinity;
+    foot.lastInsidePulseAt = -Infinity;
+    foot.lastInsidePulseDirection = 0;
+    foot.lastInsidePulsePoseFrameId = -1;
     foot.touchEpisode = null;
     foot.lastRecognizedTouchAt = -Infinity;
     foot.poseFrameId = 0;
@@ -11965,25 +12137,101 @@ function stabilizedContactNormal(foot, side, normal, enteredContact, now = perfo
   return { x, y };
 }
 
+function isPhysicalInsideTouch(surface, metrics, footVelocity, unit) {
+  const key = surface?.key || 'instep';
+  const labeledInside = key === 'inside' || key === 'infront';
+  const medialness = Number(metrics?.medialness) || 0;
+  const horizontalDominance = Number(metrics?.horizontalDominance) || 0;
+  const horizontalSpeed = Math.abs(Number(footVelocity?.x) || 0);
+  const geometryInside = key !== 'sole'
+    && medialness >= DRIBBLE_CONTROL.insidePhysicalMedialness
+    && horizontalDominance >= 0.52
+    && horizontalSpeed >= unit * DRIBBLE_CONTROL.insideMicroMinHorizontalSpeed * 0.72;
+  return labeledInside || geometryInside;
+}
+
+function evaluateInsideMicroTouch({
+  surface, metrics, footVelocity, footSpeed, approach = 0, penetration = 0,
+  ballRadius = 1, sweptHit = false, kickPhase = null, unit,
+}) {
+  const insideLike = isPhysicalInsideTouch(surface, metrics, footVelocity, unit);
+  const horizontalSpeed = Math.abs(Number(footVelocity?.x) || 0);
+  const horizontalDominance = Number(metrics?.horizontalDominance) || 0;
+  const hardKickIntent = Boolean(kickPhase?.pass && kickPhase?.selfTakebackPass !== false);
+  const contactEvidence = sweptHit
+    || penetration >= Math.max(1, ballRadius) * DRIBBLE_CONTROL.insideMicroMinPenetrationRatio
+    || approach > -unit * 0.012;
+  const pass = insideLike
+    && !hardKickIntent
+    && horizontalSpeed >= unit * DRIBBLE_CONTROL.insideMicroMinHorizontalSpeed
+    && horizontalDominance >= DRIBBLE_CONTROL.insideMicroHorizontalDominance
+    && footSpeed >= unit * DRIBBLE_CONTROL.insideMicroMinFootSpeed
+    && contactEvidence;
+  return {
+    pass,
+    insideLike,
+    horizontalSpeed,
+    horizontalDominance,
+    hardKickIntent,
+    reason: pass ? '短いインサイドタッチ' : '',
+  };
+}
+
+function evaluateSoleRollEnvelope({
+  foot, side, contact, ball, footVelocity, collisionDistance, unit,
+}) {
+  const radius = Math.max(1, ball.radius || virtualBall.radius || 1);
+  const topness = (ball.y - contact.y) / radius;
+  const horizontalSpeed = Math.abs(footVelocity.x);
+  const horizontalDominance = horizontalSpeed / Math.max(unit * 0.012, Math.abs(footVelocity.y));
+  const groundCenter = (ball.groundY ?? virtualBall.groundY) - radius;
+  const groundGap = Math.abs(ball.y - groundCenter) / radius;
+  const near = contact.distance <= collisionDistance + radius * DRIBBLE_CONTROL.soleAssistReachRatio;
+  const broadSpan = contact.t >= DRIBBLE_CONTROL.soleAssistMinT
+    && contact.t <= DRIBBLE_CONTROL.soleAssistMaxT;
+  const verticalQuiet = Math.abs(footVelocity.y) <= Math.max(horizontalSpeed * 1.35, unit * 0.060);
+  const pass = near
+    && broadSpan
+    && topness >= DRIBBLE_CONTROL.soleAssistTopnessMin
+    && horizontalSpeed >= unit * DRIBBLE_CONTROL.soleAssistHorizontalSpeed
+    && horizontalDominance >= DRIBBLE_CONTROL.soleAssistHorizontalDominance
+    && groundGap <= DRIBBLE_CONTROL.soleAssistGroundTolerance
+    && verticalQuiet;
+  const relation = exteriorBallRelation(side, foot, ball);
+  const direction = Math.sign(footVelocity.x) || 0;
+  const inward = relation.exteriorness > 0.02
+    && direction && direction * relation.outwardSign < 0;
+  return {
+    pass,
+    near,
+    contact,
+    topness,
+    horizontalSpeed,
+    horizontalDominance,
+    groundGap,
+    direction,
+    inward,
+    exteriorness: relation.exteriorness,
+    outwardSign: relation.outwardSign,
+  };
+}
+
 function applyLateralContactBarrier(ball, foot, side, info, normal, penetration, footVelocity, dt, unit, metrics = null) {
   const relation = exteriorBallRelation(side, foot, ball);
   const outwardSign = Number(metrics?.outwardSign) || relation.outwardSign;
   const exteriorness = Number.isFinite(metrics?.exteriorness) ? metrics.exteriorness : relation.exteriorness;
   const outwardFootSpeed = footVelocity.x * outwardSign;
   const classifiedOutsideLike = info.key === 'outside' || info.key === 'outfront';
-  // 単眼推定では足が身体と重なる瞬間に、アウトサイドがインステップ／ヒールへ揺れることがある。
-  // 物理だけは「外側にあるボール＋外向きの足運び」を優先し、表示ラベルの一瞬の誤差で止めない。
+  const physicalInsideLike = isPhysicalInsideTouch(info, metrics, footVelocity, unit);
   const exteriorCarryLike = info.key !== 'sole'
+    && !physicalInsideLike
     && exteriorness >= DRIBBLE_CONTROL.outsideContactAssistStart
     && outwardFootSpeed > unit * DRIBBLE_CONTROL.outsideCarryMinFootSpeed;
-  const outsideLike = classifiedOutsideLike || exteriorCarryLike;
-  const insideLike = !outsideLike && (info.key === 'inside' || info.key === 'infront');
+  const outsideLike = (classifiedOutsideLike || exteriorCarryLike) && !physicalInsideLike;
+  const insideLike = !outsideLike && physicalInsideLike;
   if (!insideLike && !outsideLike) return false;
 
   let effectiveNormal = { x: normal.x, y: normal.y };
-
-  // 外側のボールへアウトサイドで触れているのに、低FPSで足中心を越えたフレームだけが取得されると
-  // 幾何法線が身体側へ反転する。外側面が成立している間は水平法線を外方向へ固定する。
   if (outsideLike && exteriorness >= DRIBBLE_CONTROL.outsideContactAssistStart
     && effectiveNormal.x * outwardSign < DRIBBLE_CONTROL.outsideDirectionLockThreshold) {
     effectiveNormal.x = outwardSign * Math.max(0.62, Math.abs(effectiveNormal.x));
@@ -11993,15 +12241,22 @@ function applyLateralContactBarrier(ball, foot, side, info, normal, penetration,
     effectiveNormal.y /= length;
   }
 
+  // インサイドも同様に、身体側へ押す接触法線を保持する。
+  if (insideLike) {
+    const inwardSign = -outwardSign;
+    if (effectiveNormal.x * inwardSign < 0.12) {
+      effectiveNormal.x = inwardSign * Math.max(0.54, Math.abs(effectiveNormal.x));
+      effectiveNormal.y *= 0.56;
+      const length = Math.hypot(effectiveNormal.x, effectiveNormal.y) || 1;
+      effectiveNormal.x /= length;
+      effectiveNormal.y /= length;
+    }
+  }
+
   const minimumPenetration = ball.radius * DRIBBLE_CONTROL.barrierMinPenetrationRatio;
   const effectivePenetration = Math.max(penetration, minimumPenetration);
-  const strength = insideLike
-    ? DRIBBLE_CONTROL.insideBarrierStrength
-    : DRIBBLE_CONTROL.outsideBarrierStrength;
-  const correction = Math.min(
-    ball.radius * DRIBBLE_CONTROL.barrierMaxCorrectionRatio,
-    effectivePenetration * strength,
-  );
+  const strength = insideLike ? DRIBBLE_CONTROL.insideBarrierStrength : DRIBBLE_CONTROL.outsideBarrierStrength;
+  const correction = Math.min(ball.radius * DRIBBLE_CONTROL.barrierMaxCorrectionRatio, effectivePenetration * strength);
   ball.x += effectiveNormal.x * correction;
   ball.y += effectiveNormal.y * correction * 0.30;
 
@@ -12013,7 +12268,6 @@ function applyLateralContactBarrier(ball, foot, side, info, normal, penetration,
     ball.vy += effectiveNormal.y * closingSpeed * DRIBBLE_CONTROL.barrierVelocityShare * 0.27;
   }
 
-  // 接線方向は完全追従させず、足で運ぶ速度の一部だけを共有する。
   const tangentX = -effectiveNormal.y;
   const tangentY = effectiveNormal.x;
   const footTangent = footVelocity.x * tangentX + footVelocity.y * tangentY;
@@ -12022,8 +12276,6 @@ function applyLateralContactBarrier(ball, foot, side, info, normal, penetration,
   ball.vx += tangentX * tangentDelta;
   ball.vy += tangentY * tangentDelta * 0.21;
 
-  // 身体外側のボールを外足で押した時は、シューズの外側面とボールの間に一方向の搬送レーンを作る。
-  // 身体移動だけでは作動せず、足そのものが外方向へ動いている接触中だけ速度と位置を補助する。
   if (outsideLike
     && exteriorness >= DRIBBLE_CONTROL.outsideContactAssistStart
     && outwardFootSpeed > unit * DRIBBLE_CONTROL.outsideCarryMinFootSpeed) {
@@ -12037,20 +12289,26 @@ function applyLateralContactBarrier(ball, foot, side, info, normal, penetration,
     if (currentOutwardSpeed < desiredOutwardSpeed) {
       ball.vx = lerp(ball.vx, outwardSign * desiredOutwardSpeed, velocityBlend);
     }
-
-    const desiredGap = ball.radius * (
-      DRIBBLE_CONTROL.outsideCarryGapRatio + clamp(exteriorness, 0, 1) * 0.14
-    );
+    const desiredGap = ball.radius * (DRIBBLE_CONTROL.outsideCarryGapRatio + clamp(exteriorness, 0, 1) * 0.14);
     const currentGap = (ball.x - foot.center.x) * outwardSign;
     if (currentGap < desiredGap) {
-      ball.x += outwardSign * Math.min(
-        desiredGap - currentGap,
-        ball.radius * 0.24,
-      );
+      ball.x += outwardSign * Math.min(desiredGap - currentGap, ball.radius * 0.24);
     }
   }
 
-  const maxBarrierSpeed = unit * (insideLike ? 0.72 : 0.86);
+  // 短いインサイドでは速度閾値を下げ、足が身体側へ動いた分を小さく共有する。
+  if (insideLike) {
+    const inwardSign = -outwardSign;
+    const inwardFootSpeed = footVelocity.x * inwardSign;
+    if (inwardFootSpeed > unit * DRIBBLE_CONTROL.insideMicroMinHorizontalSpeed * 0.72) {
+      const target = clamp(inwardFootSpeed * 0.74 + unit * 0.020, unit * 0.035, unit * 0.30);
+      const current = ball.vx * inwardSign;
+      const blend = 1 - Math.exp(-20 * Math.max(1 / 240, dt));
+      if (current < target) ball.vx = lerp(ball.vx, inwardSign * target, blend);
+    }
+  }
+
+  const maxBarrierSpeed = unit * (insideLike ? 0.58 : 0.86);
   const speed = Math.hypot(ball.vx, ball.vy);
   if (speed > maxBarrierSpeed) {
     ball.vx *= maxBarrierSpeed / speed;
@@ -12093,33 +12351,55 @@ function classifyTouchSurface(metrics, power = 0.5, options = {}) {
   return chooseTouchSurfaceFromScores(scores, metrics);
 }
 
-function applyGuidedDribble(ball, footVelocity, approach, normal, penetration, dt, unit, surface = TOUCH_SURFACE_INFO.instep, metrics = null) {
+function applyGuidedDribble(ball, foot, side, footVelocity, approach, normal, penetration, dt, unit, surface = TOUCH_SURFACE_INFO.instep, metrics = null, now = performance.now()) {
   const info = normalizeTouchSurface(surface);
   const footSpeed = Math.hypot(footVelocity.x, footVelocity.y);
   const groundCenter = ball.groundY - ball.radius;
 
   if (info.key === 'sole') {
     const horizontalDrive = footVelocity.x;
-    const movingEnough = Math.abs(horizontalDrive) > unit * DRIBBLE_CONTROL.soleHorizontalSpeed;
-    if (!movingEnough) return false;
-    const direction = Math.sign(horizontalDrive) || 1;
+    const movingEnough = Math.abs(horizontalDrive) > unit * DRIBBLE_CONTROL.soleAssistHorizontalSpeed;
+    const latched = foot.soleRollUntil >= now;
+    if (!movingEnough && !latched) return false;
+    const direction = Math.sign(horizontalDrive) || foot.soleRollDirection || Math.sign(ball.vx) || 1;
+    if (movingEnough) {
+      foot.soleRollDirection = direction;
+      foot.soleRollUntil = now + DRIBBLE_CONTROL.soleRollLatchMs;
+      foot.soleRollLastAt = now;
+    }
+    const relation = exteriorBallRelation(side, foot, ball);
+    const inwardPull = relation.exteriorness > 0.02 && direction * relation.outwardSign < 0;
+    const edgeGap = Math.min(ball.x - ball.radius, FW - (ball.x + ball.radius));
+    const nearEdge = clamp(1 - edgeGap / Math.max(1, ball.radius * 2.4), 0, 1);
+    const edgeBoost = inwardPull ? 1 + nearEdge * (DRIBBLE_CONTROL.soleRollInwardEdgeBoost - 1) : 1;
     const targetSpeed = clamp(
-      Math.abs(horizontalDrive) * 0.88 + unit * 0.035,
-      unit * 0.055,
-      unit * 0.82,
+      (Math.abs(horizontalDrive) * 0.92 + unit * 0.032) * edgeBoost,
+      unit * 0.050,
+      unit * 0.68,
     );
     const blend = 1 - Math.exp(-DRIBBLE_CONTROL.soleRollResponse * Math.max(1 / 240, dt));
-    ball.vx = lerp(ball.vx, direction * targetSpeed, blend);
-    ball.vy = lerp(ball.vy, 0, Math.min(0.88, blend * 3.4));
-    // 足裏でもボール位置を足へ寄せない。摩擦による速度変化だけを与える。
-    ball.y = lerp(ball.y, groundCenter, Math.min(0.62, blend * 1.8));
-    const rollSpin = direction * targetSpeed / Math.max(1, ball.radius) * 1.35;
-    ball.spin = lerp(ball.spin, rollSpin, Math.min(0.72, blend * 1.8));
+    ball.vx = lerp(ball.vx, direction * targetSpeed, Math.min(0.94, blend * edgeBoost));
+    ball.vy = lerp(ball.vy, 0, Math.min(0.92, blend * 3.6));
+
+    // v81：足裏だけは、足中心の真下へ限定的に位置結合する。身体中心には追従させない。
+    // これにより画面端のボールを足裏で内側へ引けるが、足を離すと直ちに慣性へ戻る。
+    const targetX = clamp(
+      foot.center.x + direction * ball.radius * 0.04,
+      ball.radius,
+      FW - ball.radius,
+    );
+    const positionBlend = (1 - Math.exp(-DRIBBLE_CONTROL.soleRollPositionResponse * Math.max(1 / 240, dt)))
+      * (inwardPull ? edgeBoost : 1);
+    const maxCorrection = ball.radius * (inwardPull ? 0.34 : 0.20);
+    ball.x += clamp((targetX - ball.x) * positionBlend, -maxCorrection, maxCorrection);
+    ball.y = lerp(ball.y, groundCenter, Math.min(0.78, blend * 2.2));
+    const rollSpin = direction * targetSpeed / Math.max(1, ball.radius) * 1.45;
+    ball.spin = lerp(ball.spin, rollSpin, Math.min(0.80, blend * 2.0));
     return true;
   }
 
   const outsideLike = info.key === 'outside' || info.key === 'outfront';
-  const insideLike = info.key === 'inside' || info.key === 'infront';
+  const insideLike = isPhysicalInsideTouch(info, metrics, footVelocity, unit);
   const forwardLike = ['instep', 'toe', 'infront', 'outfront'].includes(info.key);
   const rearfoot = info.key === 'heel';
   const driveFootWeight = info.key === 'outfront' ? 0.89
@@ -12129,18 +12409,19 @@ function applyGuidedDribble(ball, footVelocity, approach, normal, penetration, d
           : info.key === 'instep' ? 0.80
             : rearfoot ? 0.68 : 0.76;
   const driveNormalWeight = forwardLike ? 0.59 : rearfoot ? 0.42 : 0.50;
-  const horizontalDrive = footVelocity.x * driveFootWeight
-    + normal.x * Math.max(0, approach) * driveNormalWeight;
-  const movingEnough = footSpeed > unit * DRIBBLE_CONTROL.minContinuousFootSpeed
-    && (Math.abs(horizontalDrive) > unit * DRIBBLE_CONTROL.minHorizontalIntent || approach > unit * 0.008);
+  const horizontalDrive = footVelocity.x * driveFootWeight + normal.x * Math.max(0, approach) * driveNormalWeight;
+  const minFootSpeed = insideLike ? DRIBBLE_CONTROL.insideMicroMinFootSpeed : DRIBBLE_CONTROL.minContinuousFootSpeed;
+  const minHorizontal = insideLike ? DRIBBLE_CONTROL.insideMicroMinHorizontalSpeed : DRIBBLE_CONTROL.minHorizontalIntent;
+  const movingEnough = footSpeed > unit * minFootSpeed
+    && (Math.abs(horizontalDrive) > unit * minHorizontal || approach > unit * 0.008);
   if (!movingEnough) return false;
 
   const fallbackSign = Math.sign(normal.x || footVelocity.x || 1);
   const direction = Math.abs(horizontalDrive) > unit * 0.008 ? Math.sign(horizontalDrive) : fallbackSign;
   const rearfootScale = rearfoot ? 0.78 : 1;
   const targetSpeed = clamp(
-    (Math.abs(horizontalDrive) * 0.82 + unit * 0.075) * info.tapSpeed * rearfootScale,
-    unit * (rearfoot ? 0.052 : 0.070),
+    (Math.abs(horizontalDrive) * 0.82 + unit * (insideLike ? 0.052 : 0.075)) * info.tapSpeed * rearfootScale,
+    unit * (insideLike ? 0.042 : rearfoot ? 0.052 : 0.070),
     unit * DRIBBLE_CONTROL.guidedMaxSpeed * Math.max(0.72, info.tapSpeed),
   );
   const blend = 1 - Math.exp(-DRIBBLE_CONTROL.guidedResponse * info.controlVelocity * Math.max(1 / 240, dt));
@@ -12157,17 +12438,9 @@ function applyGuidedDribble(ball, footVelocity, approach, normal, penetration, d
       : info.key === 'infront' ? 1.72
         : info.key === 'outside' ? 1.52 : 1.18;
     const curveSign = outsideLike ? 1 : -1;
-    ball.spin = clamp(
-      ball.spin + direction * curveSign * curveMagnitude * blend,
-      -BALL_PHYSICS.maxSpin,
-      BALL_PHYSICS.maxSpin,
-    );
+    ball.spin = clamp(ball.spin + direction * curveSign * curveMagnitude * blend, -BALL_PHYSICS.maxSpin, BALL_PHYSICS.maxSpin);
   } else if (rearfoot) {
-    ball.spin = clamp(
-      ball.spin - direction * 1.05 * blend,
-      -BALL_PHYSICS.maxSpin,
-      BALL_PHYSICS.maxSpin,
-    );
+    ball.spin = clamp(ball.spin - direction * 1.05 * blend, -BALL_PHYSICS.maxSpin, BALL_PHYSICS.maxSpin);
   }
   return true;
 }
@@ -12253,20 +12526,37 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const sweptHit = !currentInside
     && sweptContact.distance <= collisionDistance + assistDistance
     && (sweptContact.relativeSwept || sweepSpeed > unitForOcclusion * DRIBBLE_CONTROL.minImpactFootSpeed);
+  const currentFootVelocityForSole = velocityAtFootPoint(foot, currentContact.t);
+  const currentSoleEnvelope = evaluateSoleRollEnvelope({
+    foot, side, contact: currentContact, ball, footVelocity: currentFootVelocityForSole, collisionDistance, unit,
+  });
+  const sweptSoleEnvelope = evaluateSoleRollEnvelope({
+    foot, side, contact: sweptContact, ball: sweptBallForNormal, footVelocity: footVelocityForSweep, collisionDistance, unit,
+  });
+  let soleEnvelope = currentSoleEnvelope.pass ? currentSoleEnvelope : sweptSoleEnvelope;
+  if (currentSoleEnvelope.pass && sweptSoleEnvelope.pass
+    && sweptSoleEnvelope.contact.distance < currentSoleEnvelope.contact.distance) soleEnvelope = sweptSoleEnvelope;
+  const soleLatchNear = foot.soleRollUntil >= now
+    && (currentSoleEnvelope.near || sweptSoleEnvelope.near)
+    && Math.max(currentSoleEnvelope.topness, sweptSoleEnvelope.topness) >= 0.02
+    && Math.max(currentSoleEnvelope.horizontalSpeed, sweptSoleEnvelope.horizontalSpeed) >= unit * 0.012;
+  const soleAssistHit = soleEnvelope.pass || soleLatchNear;
   // 通常は実接触を優先するが、インパクト瞬間が遮蔽された明確な大振りだけは、
   // ボール位置付近を横切った軌跡を接触として補完する。最終確定はフォロースルーで行う。
   const inferredOccludedImpact = occludedImpactCandidate
     && sweptContact.distance <= collisionDistance + occludedAssistDistance;
   const shotContactCertain = currentInside || sweptContact.distance <= collisionDistance * 1.02 || inferredOccludedImpact;
-  if (!currentInside && !sweptHit) {
+  if (!currentInside && !sweptHit && !soleAssistHit) {
     foot.ballContactLatched = false;
     releaseTouchEpisode(side, foot, now);
     return;
   }
 
-  const contact = sweptHit ? sweptContact : currentContact;
+  const contact = soleAssistHit && !currentInside && !sweptHit
+    ? (soleEnvelope.contact || currentContact)
+    : (sweptHit ? sweptContact : currentContact);
   const enteredContact = sweptHit || !foot.ballContactLatched;
-  foot.ballContactLatched = currentInside;
+  foot.ballContactLatched = currentInside || soleAssistHit;
   const shotTakebackGap = previousShotTakebackGap;
   const shotOutsideDuration = previousShotOutsideDuration;
   if (enteredContact) {
@@ -12295,11 +12585,32 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   const dribbleStableInput = baseStableInput
     && (!foot.predicted || trackingAge <= DRIBBLE_CONTROL.predictedDribbleGraceMs);
   const shotStableInput = baseStableInput && shotObservation.ready;
-  const penetration = Math.max(0, collisionDistance - contact.distance);
-  const touchMetrics = touchSurfaceMetrics(foot, side, contact, ball, footVelocity, currentInside, unit);
+  const penetration = Math.max(0, collisionDistance + (soleAssistHit ? ball.radius * 0.18 : 0) - contact.distance);
+  const touchMetrics = touchSurfaceMetrics(foot, side, contact, ball, footVelocity, currentInside || soleAssistHit, unit);
   touchMetrics.contactX = contact.x;
   touchMetrics.contactY = contact.y;
-  const continuousSurface = classifyTouchSurface(touchMetrics, 0.5, { isShot: false });
+  if (soleAssistHit) {
+    touchMetrics.soleCandidate = true;
+    touchMetrics.soleAssistCandidate = true;
+    touchMetrics.topness = Math.max(touchMetrics.topness, soleEnvelope.topness || 0);
+  }
+  let continuousSurface = classifyTouchSurface(touchMetrics, 0.5, { isShot: false });
+  if (soleAssistHit || (foot.soleRollUntil >= now && touchMetrics.soleCandidate)) {
+    continuousSurface = normalizeTouchSurface('sole');
+  }
+  const insideMicroIntent = evaluateInsideMicroTouch({
+    surface: continuousSurface,
+    metrics: touchMetrics,
+    footVelocity,
+    footSpeed,
+    approach,
+    penetration,
+    ballRadius: ball.radius,
+    sweptHit,
+    kickPhase: preImpactKickPhase,
+    unit,
+  });
+  if (insideMicroIntent.pass && isShotTakebackArmed(side, now)) consumeShotTakeback(side, now);
   foot.lastSurfaceKey = continuousSurface.key;
   if (continuousSurface.key === 'sole') {
     if (!foot.soleContactSince) foot.soleContactSince = now;
@@ -12397,11 +12708,11 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   // 足裏ロールだけは例外として、位置固定を伴わない短時間の摩擦力を許可する。
   let guidedApplied = false;
   const pendingFollowThrough = pendingShot.active && pendingShot.side === side;
-  if (currentInside && dribbleStableInput && !pendingFollowThrough && continuousSurface.key === 'sole') {
+  if ((currentInside || soleAssistHit) && dribbleStableInput && !pendingFollowThrough && continuousSurface.key === 'sole') {
     guidedApplied = applyGuidedDribble(
-      ball, footVelocity, approach, normal, penetration, dt, unit, continuousSurface, touchMetrics,
+      ball, foot, side, footVelocity, approach, normal, penetration, dt, unit, continuousSurface, touchMetrics, now,
     );
-  } else if ((currentInside || sweptHit) && dribbleStableInput && !pendingFollowThrough) {
+  } else if ((currentInside || sweptHit || soleAssistHit) && dribbleStableInput && !pendingFollowThrough) {
     // v78：インサイド／アウトサイドは位置固定ではなく、一方向の接触面と相対速度だけを共有する。
     // これによりボールは物理的に押し出される一方、足を離せば直ちに慣性運動へ戻る。
     guidedApplied = applyLateralContactBarrier(
@@ -12417,18 +12728,25 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
     ball.y += normal.y * penetration * 0.035;
   }
 
-  const horizontalIntent = Math.abs(footVelocity.x) > unit * 0.045;
+  const horizontalIntent = Math.abs(footVelocity.x) > unit * (insideMicroIntent.pass ? DRIBBLE_CONTROL.insideMicroMinHorizontalSpeed : 0.045);
   const penetrationRatio = penetration / Math.max(1, ball.radius);
   const lateralContactIntent = horizontalIntent
-    && penetrationRatio >= 0.045
-    && (sweptHit || Math.abs(normal.x) >= 0.16);
+    && penetrationRatio >= (insideMicroIntent.pass ? DRIBBLE_CONTROL.insideMicroMinPenetrationRatio : 0.045)
+    && (sweptHit || soleAssistHit || Math.abs(normal.x) >= 0.12);
   const outsideContinuousIntent = continuousSurface.key !== 'sole'
     && touchMetrics.exteriorness >= DRIBBLE_CONTROL.outsideContactAssistStart
     && footVelocity.x * touchMetrics.outwardSign > unit * DRIBBLE_CONTROL.outsideCarryMinFootSpeed
     && penetrationRatio >= 0.025;
+  const soleContinuousIntent = continuousSurface.key === 'sole' && (soleAssistHit || foot.soleRollUntil >= now);
+  const minimumTouchSpeedRatio = soleContinuousIntent
+    ? DRIBBLE_CONTROL.soleAssistHorizontalSpeed
+    : insideMicroIntent.pass
+      ? DRIBBLE_CONTROL.insideMicroMinFootSpeed
+      : outsideContinuousIntent ? 0.050 : DRIBBLE_CONTROL.minImpactFootSpeed;
   const playerDrivenTouch = dribbleStableInput
-    && footSpeed > unit * (outsideContinuousIntent ? 0.050 : DRIBBLE_CONTROL.minImpactFootSpeed)
-    && (approach > unit * DRIBBLE_CONTROL.minImpactApproach || lateralContactIntent || outsideContinuousIntent);
+    && footSpeed > unit * minimumTouchSpeedRatio
+    && (approach > unit * DRIBBLE_CONTROL.minImpactApproach
+      || lateralContactIntent || outsideContinuousIntent || insideMicroIntent.pass || soleContinuousIntent);
   const trackContinuousTouch = dribbleStableInput && (playerDrivenTouch || guidedApplied)
     && (enteredContact || foot.touchEpisode || now - foot.lastRecognizedTouchAt > 135);
 
@@ -12459,17 +12777,34 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
     });
   }
 
-  // 新しいインパクトでない場合は、継続ドリブルと複数フレーム収集だけを適用して終了する。
-  if (!enteredContact || !playerDrivenTouch) return;
+  // 短いインサイドは接触開始フレームで速度が不足しても、同じ姿勢更新内の最初の有効横速度で1回だけ反応させる。
+  const insideDirection = Math.sign(footVelocity.x) || foot.lastInsidePulseDirection || 0;
+  const insideDirectionChanged = insideDirection && foot.lastInsidePulseDirection
+    && insideDirection !== foot.lastInsidePulseDirection
+    && now - foot.lastInsidePulseAt >= DRIBBLE_CONTROL.insideMicroDirectionResetMs;
+  const insidePulseDue = insideMicroIntent.pass
+    && (enteredContact
+      || insideDirectionChanged
+      || foot.lastInsidePulsePoseFrameId !== foot.poseFrameId
+        && now - foot.lastInsidePulseAt >= DRIBBLE_CONTROL.insideMicroPulseMs);
+  const impulseEntry = enteredContact || insidePulseDue;
+  if (!impulseEntry || !playerDrivenTouch) return;
   const sameEpisodeAlreadyImpulsed = Boolean(foot.touchEpisode?.postBall)
     && !foot.touchEpisode.isShot
-    && now - (foot.touchEpisode.impactAt || 0) < DRIBBLE_CONTROL.sameTouchImpulseLockMs;
+    && now - (foot.touchEpisode.impactAt || 0) < DRIBBLE_CONTROL.sameTouchImpulseLockMs
+    && !insidePulseDue;
   if (sameEpisodeAlreadyImpulsed) {
     foot.lastContactAt = now;
     return;
   }
-  if (now - foot.lastContactAt < BALL_PHYSICS.contactCooldown) return;
+  const contactCooldown = insideMicroIntent.pass ? 62 : BALL_PHYSICS.contactCooldown;
+  if (now - foot.lastContactAt < contactCooldown) return;
   foot.lastContactAt = now;
+  if (insideMicroIntent.pass) {
+    foot.lastInsidePulseAt = now;
+    foot.lastInsidePulseDirection = insideDirection;
+    foot.lastInsidePulsePoseFrameId = foot.poseFrameId;
+  }
   recentFootImpacts[side] = now;
   const oppositeSide = side === 'left' ? 'right' : 'left';
   if (pendingShot.active && pendingShot.side !== side && now - pendingShot.queuedAt <= DOUBLE_TOUCH_WINDOW_MS) {
@@ -12488,7 +12823,12 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   // 物理反応には接触時点の暫定分類を使用し、表示・履歴・フェイント判定は
   // 接触終了後の複数フレーム確定分類を使用する。
   // 新しい膝シーケンス判定を通らなかった接触は、旧shotContactArmedの影響を受けない通常タッチ。
-  const surface = classifyTouchSurface(touchMetrics, power, { isShot: false });
+  let surface = classifyTouchSurface(touchMetrics, power, { isShot: false });
+  if (soleAssistHit || touchMetrics.soleAssistCandidate) {
+    surface = normalizeTouchSurface('sole');
+  } else if (insideMicroIntent.pass && !['inside', 'infront'].includes(surface.key)) {
+    surface = normalizeTouchSurface(contact.t > 0.58 ? 'infront' : 'inside');
+  }
   const info = normalizeTouchSurface(surface);
   foot.lastSurfaceKey = info.key;
 
@@ -12509,8 +12849,9 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
   }
 
   const outsideLike = info.key === 'outside' || info.key === 'outfront';
-  const insideLike = info.key === 'inside' || info.key === 'infront';
-  const physicalOutsideLike = info.key !== 'sole'
+  const physicalInsideLike = isPhysicalInsideTouch(info, touchMetrics, footVelocity, unit);
+  const insideLike = info.key === 'inside' || info.key === 'infront' || physicalInsideLike;
+  const physicalOutsideLike = info.key !== 'sole' && !physicalInsideLike
     && touchMetrics.exteriorness >= DRIBBLE_CONTROL.outsideContactAssistStart
     && footVelocity.x * (touchMetrics.outwardSign || exteriorRelation.outwardSign)
       > unit * DRIBBLE_CONTROL.outsideCarryMinFootSpeed;
@@ -12547,12 +12888,14 @@ function resolveFootBallCollision(foot, side, now, dt = 1 / 120) {
     unit * (DRIBBLE_CONTROL.tapBaseSpeed + power * DRIBBLE_CONTROL.tapPowerSpeed)
       + Math.abs(footVelocity.x) * 0.075
   ) * info.tapSpeed * DRIBBLE_CONTROL.dribbleImpulseScale;
-  const dribbleMaxSpeed = unit * (info.key === 'sole' ? 0.22 : tierMaxRatio);
+  const dribbleMaxSpeed = unit * (info.key === 'sole'
+    ? 0.22
+    : insideMicroIntent.pass ? Math.min(tierMaxRatio, DRIBBLE_CONTROL.insideMicroMaxSpeed) : tierMaxRatio);
   // v77：旧式のshotContactArmedはシュート判定には使わない。
   // これが通常ドリブルへ1.42倍・上限2倍を残していたため、動画では1タッチで画面端まで飛んでいた。
-  const tapSpeed = clamp(rawTapSpeed, unit * 0.045, dribbleMaxSpeed);
-  const opposingOutsideVelocity = (outsideLike || physicalOutsideLike) && ball.vx * directionX < 0;
-  const retainedVx = ball.vx * (opposingOutsideVelocity ? 0.08 : Math.min(info.retain, 0.32));
+  const tapSpeed = clamp(rawTapSpeed, unit * (insideMicroIntent.pass ? 0.034 : 0.045), dribbleMaxSpeed);
+  const opposingLateralVelocity = (outsideLike || physicalOutsideLike || insideLike) && ball.vx * directionX < 0;
+  const retainedVx = ball.vx * (opposingLateralVelocity ? 0.08 : Math.min(info.retain, 0.32));
   ball.vx = clamp(
     retainedVx + directionX * tapSpeed,
     -dribbleMaxSpeed,
@@ -13731,7 +14074,7 @@ function loop(time) {
   if (!recordingFrameTimer) renderRecordingFrame();
 }
 
-window.__HKFA_BUILD__ = 'v80-kick-intent-inside-guard-partial-foot-rescue';
+window.__HKFA_BUILD__ = 'v81-micro-inside-self-takeback-sole-pull';
 window.__HKFA_TEST__ = {
   renderVisualStage,
   updateVisualStageSetup,
