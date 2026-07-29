@@ -887,6 +887,208 @@ button:focus-visible{outline:4px solid #fff;outline-offset:3px}
   color:#71899a;
   border-color:#fff;
 }
+
+/* =========================================================
+   v66: コンテストモード
+   ========================================================= */
+.modeBtn.contest.contestWide{
+  width:100%;
+  height:94px;
+  min-height:94px;
+  flex-direction:row;
+  justify-content:flex-start;
+  text-align:left;
+  padding:12px 44px 12px 72px;
+  color:#fff;
+  border-color:#fff;
+  background:linear-gradient(110deg,#ff7b20,#ffb126 62%,#ffe25d);
+  box-shadow:0 7px 0 #b84a00,0 10px 18px rgba(128,64,0,.26);
+}
+.modeBtn.contest.contestWide::after{
+  content:"";
+  position:absolute;
+  right:14%;
+  top:-52%;
+  width:125px;
+  height:185%;
+  background:rgba(255,255,255,.16);
+  transform:rotate(20deg);
+}
+.modeBtn.contest.contestWide .icon{
+  position:absolute;
+  left:20px;
+  font-size:39px;
+}
+.modeBtn.contest.contestWide .modeBadge{
+  background:#e43b2f;
+  color:#fff;
+}
+.modeBtn.contest.contestWide .wideCopy{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.modeBtn.contest.contestWide strong{font-size:24px}
+.modeBtn.contest.contestWide small{color:#fff9d9}
+.modeBtn.contest.contestWide .goMark{
+  background:#fff;
+  color:#e95d10;
+  right:14px;
+  bottom:auto;
+}
+
+#contestSetup{
+  display:none;
+  overflow-y:auto;
+  justify-content:flex-start;
+  padding-top:max(24px,env(safe-area-inset-top));
+  padding-bottom:38px;
+}
+#contestSetup h2{
+  color:#fff;
+  text-shadow:3px 3px 0 #8b3500;
+  font-weight:900;
+  background:linear-gradient(90deg,#f25b19,#ffad20);
+  border:4px solid #fff;
+  border-radius:18px;
+  padding:8px 22px;
+  box-shadow:0 6px 0 #9e3b00;
+  font-size:min(8vw,40px);
+}
+.contestLead{
+  z-index:1;
+  width:min(94vw,680px);
+  padding:10px 14px;
+  border:3px solid #fff;
+  border-radius:16px;
+  background:rgba(255,255,255,.93);
+  color:#365a75;
+  box-shadow:0 5px 0 rgba(15,75,125,.22);
+  font-size:11px;
+  line-height:1.7;
+  font-weight:800;
+}
+.contestChoice{
+  z-index:1;
+  width:min(94vw,680px);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+}
+.contestCard{
+  position:relative;
+  overflow:hidden;
+  min-height:245px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:18px 14px 16px;
+  border:4px solid #fff;
+  border-radius:22px;
+  color:#17385f;
+  text-align:center;
+  box-shadow:0 7px 0 #7aa9c5,0 11px 22px rgba(25,72,105,.22);
+  transition:transform .1s,filter .1s;
+}
+.contestCard:active{
+  transform:translateY(5px);
+  box-shadow:0 2px 0 #7aa9c5;
+}
+.contestCard.speed{
+  background:linear-gradient(145deg,#f8fcff 0 55%,#a9e5ff 56%);
+}
+.contestCard.homerun{
+  background:linear-gradient(145deg,#fffdf4 0 55%,#ffe06e 56%);
+}
+.contestCard .contestBadge{
+  position:absolute;
+  left:10px;
+  top:10px;
+  padding:4px 9px;
+  border-radius:999px;
+  background:#1769ca;
+  color:#fff;
+  font-family:'Oswald',sans-serif;
+  font-size:10px;
+  letter-spacing:.1em;
+}
+.contestCard.homerun .contestBadge{background:#ef5a24}
+.contestIcon{
+  font-size:55px;
+  line-height:1;
+  filter:drop-shadow(0 4px 0 rgba(20,65,100,.18));
+}
+.contestCard strong{
+  font-size:23px;
+  line-height:1.2;
+  font-weight:900;
+}
+.contestRule{
+  color:#486c84;
+  font-size:11px;
+  line-height:1.6;
+  font-weight:800;
+}
+.contestSummary{
+  width:100%;
+  min-height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px 8px;
+  border-radius:12px;
+  background:rgba(255,255,255,.78);
+  color:#315a72;
+  font-size:9px;
+  line-height:1.45;
+  font-weight:800;
+}
+.contestStartMark{
+  margin-top:3px;
+  padding:8px 18px;
+  border-radius:999px;
+  background:#ffb400;
+  color:#573700;
+  border:2px solid #fff2a5;
+  box-shadow:0 4px 0 #c97800;
+  font-size:12px;
+  font-weight:900;
+}
+.contestCard.speed .contestStartMark{
+  background:#39c77b;
+  color:#103d28;
+  border-color:#dcfff0;
+  box-shadow:0 4px 0 #16864b;
+}
+.contestRecord{
+  font-family:'Oswald',sans-serif;
+  font-size:11px;
+  font-weight:700;
+  color:#d24b20;
+}
+#contestSetupMsg{
+  color:#9a3513;
+  font-size:11px;
+  font-weight:800;
+  min-height:1.3em;
+  z-index:1;
+}
+@media(max-width:560px){
+  .contestChoice{grid-template-columns:1fr}
+  .contestCard{min-height:185px}
+}
+@media(max-width:430px){
+  .modeBtn.contest.contestWide{height:78px;min-height:78px}
+  .modeBtn.contest.contestWide strong{font-size:20px}
+  .modeBtn.contest.contestWide .icon{font-size:32px}
+}
+@media(max-height:720px){
+  .modeBtn.contest.contestWide{height:72px;min-height:72px}
+  .contestCard{min-height:175px;padding:12px}
+}
+
 </style>
 </head>
 <body>
@@ -932,6 +1134,12 @@ button:focus-visible{outline:4px solid #fff;outline-offset:3px}
     <button class="modeBtn match" id="btnMatch">
       <span class="modeBadge">GAME</span><span class="icon">🏆</span>
       <span class="wideCopy"><strong>試合モード</strong><small>攻守を切り替えて勝利をつかめ！</small></span>
+      <span class="goMark">▶</span>
+    </button>
+
+    <button class="modeBtn contest contestWide" id="btnContest">
+      <span class="modeBadge">CONTEST</span><span class="icon">🔥</span>
+      <span class="wideCopy"><strong>コンテストモード</strong><small>球速とホームランの自己ベストに挑戦！</small></span>
       <span class="goMark">▶</span>
     </button>
 
@@ -1088,6 +1296,41 @@ button:focus-visible{outline:4px solid #fff;outline-offset:3px}
   <div id="matchSetupMsg" class="setupMsg"></div>
 </div>
 
+
+<!-- ============ コンテスト設定 ============ -->
+<div id="contestSetup" class="screen nightBg">
+  <h2>コンテストモード</h2>
+
+  <div class="contestLead">
+    既存のピッチング・バッティングエンジンを使った短時間チャレンジです。<br>
+    スピードガンは5球、ホームランコンテストは10球で自己ベストを競います。
+  </div>
+
+  <div class="contestChoice">
+    <button class="contestCard speed" id="speedContestStartBtn" type="button">
+      <span class="contestBadge">SPEED GUN</span>
+      <span class="contestIcon">⚾💨</span>
+      <strong>スピードガン<br>コンテスト</strong>
+      <span class="contestRule">5球の全力投球<br>最高球速で勝負</span>
+      <span class="contestSummary" id="speedContestSummary"></span>
+      <span class="contestRecord" id="speedContestRecord"></span>
+      <span class="contestStartMark">コンテスト開始 ▶</span>
+    </button>
+
+    <button class="contestCard homerun" id="homeRunContestStartBtn" type="button">
+      <span class="contestBadge">HOME RUN</span>
+      <span class="contestIcon">💥🏟️</span>
+      <strong>ホームラン<br>コンテスト</strong>
+      <span class="contestRule">10球の打撃勝負<br>本数と最長飛距離を記録</span>
+      <span class="contestSummary" id="homeRunContestSummary"></span>
+      <span class="contestRecord" id="homeRunContestRecord"></span>
+      <span class="contestStartMark">コンテスト開始 ▶</span>
+    </button>
+  </div>
+
+  <div id="contestSetupMsg"></div>
+  <button class="subBtn" id="contestSetupBackBtn" type="button">ホームへ戻る</button>
+</div>
 
 <!-- ============ フォーム分析設定 ============ -->
 <div id="analysisSetup" class="screen nightBg">
@@ -2158,6 +2401,9 @@ const S = {
   running:false,
   mode:null,            // 'pitch' | 'bat'
   isMatch:false,
+  isContest:false,
+  contestType:null,
+  contest:null,
   batterHand:savedBatterHand, // COM打者: 'right' | 'left'
   pitchView:savedPitchView,   // 'pitcher' | 'catcher'
   pitchDistance:savedPitchDistance, // 'normal' | 'near'
@@ -2212,6 +2458,175 @@ function pitchArmLabel(){ return S.pitchArm==='left'?'左投げ':'右投げ'; }
 function selectedPitchArmSide(){ return S.pitchArm==='left'?'L':'R'; }
 function batControlLabel(){ return '両手モード'; }
 function comPitcherHandLabel(){ return S.comPitcherHand==='left'?'左投げ':'右投げ'; }
+
+const CONTEST_RULES=Object.freeze({
+  speed:{attempts:5,label:'スピードガンコンテスト'},
+  homerun:{attempts:10,label:'ホームランコンテスト'}
+});
+
+function isSpeedContest(){
+  return S.isContest&&S.contestType==='speed';
+}
+
+function isHomeRunContest(){
+  return S.isContest&&S.contestType==='homerun';
+}
+
+function readNumberRecord(key){
+  try{
+    const value=Number(localStorage.getItem(key));
+    return Number.isFinite(value)&&value>0?value:0;
+  }catch(_err){
+    return 0;
+  }
+}
+
+function readHomeRunRecord(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem('arBaseballHomeRunContestRecord')||'{}');
+    return{
+      homeRuns:Number.isFinite(Number(parsed.homeRuns))?Number(parsed.homeRuns):0,
+      longest:Number.isFinite(Number(parsed.longest))?Number(parsed.longest):0
+    };
+  }catch(_err){
+    return{homeRuns:0,longest:0};
+  }
+}
+
+function updateContestSetupSummary(){
+  const speedSummary=$('speedContestSummary');
+  const homeSummary=$('homeRunContestSummary');
+  const speedRecord=$('speedContestRecord');
+  const homeRecord=$('homeRunContestRecord');
+
+  if(speedSummary){
+    speedSummary.textContent=
+      `${pitchArmLabel()} ／ ${pitchBackgroundLabel()} ／ 5球`;
+  }
+  if(homeSummary){
+    homeSummary.textContent=
+      `${batterHandLabel()} ／ 相手${comPitcherHandLabel()} ／ ${batBackgroundLabel()}`;
+  }
+
+  const bestSpeed=readNumberRecord('arBaseballSpeedContestBest');
+  if(speedRecord){
+    speedRecord.textContent=
+      bestSpeed?`自己ベスト ${bestSpeed} km/h`:'自己ベスト 未記録';
+  }
+
+  const homeBest=readHomeRunRecord();
+  if(homeRecord){
+    homeRecord.textContent=
+      homeBest.homeRuns||homeBest.longest
+        ?`自己ベスト ${homeBest.homeRuns}本 ／ 最長 ${homeBest.longest||'-'}m`
+        :'自己ベスト 未記録';
+  }
+}
+
+function initializeContest(type){
+  const rule=CONTEST_RULES[type];
+  if(!rule)throw new Error('コンテスト種別が不正です。');
+
+  S.isContest=true;
+  S.contestType=type;
+  S.contest={
+    type,
+    label:rule.label,
+    attempts:0,
+    maxAttempts:rule.attempts,
+    speeds:[],
+    bestSpeed:0,
+    homeRuns:0,
+    distances:[],
+    longestDistance:0,
+    totalDistance:0
+  };
+
+  if(type==='speed'){
+    S.pitches=0;
+    S.maxKmh=0;
+  }else{
+    S.batLeft=rule.attempts;
+    S.batHits=0;
+    S.batHRs=0;
+    S.batBases=0;
+  }
+}
+
+function estimateContestHomeRunDistance(evaluation){
+  if(!evaluation)return 0;
+
+  const score=clamp(evaluation.combined||0,0,100);
+  const speed=clamp(evaluation.plane?.speed||0,0,4.5);
+  const angle=Number(evaluation.plane?.angle)||0;
+  const angleBonus=
+    angle>=14&&angle<=28
+      ?12
+      :angle>=8&&angle<=34
+        ?6
+        :0;
+
+  return Math.round(
+    clamp(
+      72+
+      score*.43+
+      speed*7.2+
+      angleBonus,
+      88,
+      162
+    )
+  );
+}
+
+function saveSpeedContestRecord(best){
+  const previous=readNumberRecord('arBaseballSpeedContestBest');
+  const record=Math.max(previous,best||0);
+  try{
+    localStorage.setItem('arBaseballSpeedContestBest',String(record));
+  }catch(_err){}
+  return{previous,record,isNew:record>previous};
+}
+
+function saveHomeRunContestRecord(homeRuns,longest){
+  const previous=readHomeRunRecord();
+  const next={
+    homeRuns:Math.max(previous.homeRuns,homeRuns||0),
+    longest:Math.max(previous.longest,longest||0)
+  };
+  try{
+    localStorage.setItem(
+      'arBaseballHomeRunContestRecord',
+      JSON.stringify(next)
+    );
+  }catch(_err){}
+  return{
+    previous,
+    record:next,
+    isNew:
+      homeRuns>previous.homeRuns||
+      (homeRuns===previous.homeRuns&&longest>previous.longest)
+  };
+}
+
+async function startContest(type){
+  const button=
+    type==='speed'
+      ?$('speedContestStartBtn')
+      :$('homeRunContestStartBtn');
+  const message=$('contestSetupMsg');
+
+  if(button?.disabled)return;
+  if(button)button.disabled=true;
+  if(message)message.textContent='カメラとコンテストを準備しています…';
+
+  try{
+    const mode=type==='speed'?'pitch':'bat';
+    await startMode(mode,false,{contestType:type});
+  }finally{
+    if(button)button.disabled=false;
+    if(message)message.textContent='';
+  }
+}
 function setComPitcherHand(hand){
   S.comPitcherHand=hand==='left'?'left':'right';
   try{localStorage.setItem('arBaseballComPitcherHand',S.comPitcherHand);}catch(_err){}
@@ -2322,11 +2737,26 @@ function visiblePitchArmSide(lm){
 }
 
 function updatePitchViewBadge(){
-  const el=$('pitchViewBadge');if(!el)return;
+  const el=$('pitchViewBadge');
+  if(!el)return;
+
   const hudVisible=$('board').style.display!=='none';
   const visible=hudVisible&&(S.mode==='pitch'||S.mode==='bat');
   el.style.display=visible?'block':'none';
   if(!visible)return;
+
+  if(isSpeedContest()){
+    el.textContent=
+      `スピードガンコンテスト ・ ${pitchArmLabel()} ・ ${pitchBackgroundLabel()}`;
+    return;
+  }
+
+  if(isHomeRunContest()){
+    el.textContent=
+      `ホームランコンテスト ・ 相手${comPitcherHandLabel()} ・ ${batterHandLabel()}`;
+    return;
+  }
+
   el.textContent=S.mode==='pitch'
     ?`キャッチャー視点 ・ ${pitchArmLabel()} ・ ${pitchBackgroundLabel()} ・ ${batterHandLabel()}`
     :`投手背面視点 ・ 相手${comPitcherHandLabel()} ・ ${batterHandLabel()} ・ ${batBackgroundLabel()}`;
@@ -2345,8 +2775,15 @@ function showHUD(on){
   $('hint').style.display=on?'block':'none';
   $('lineScore').style.display=(on&&S.isMatch)?'block':'none';
   $('diamond').style.display=S.isMatch?'block':'none';
-  document.querySelectorAll('.boardDivider')[1].style.display=
-    S.isMatch?'block':'none';
+
+  const lampGroups=document.querySelectorAll('#board .lampGroup');
+  lampGroups.forEach(group=>{
+    group.style.display=S.isContest?'none':'flex';
+  });
+
+  const dividers=document.querySelectorAll('#board .boardDivider');
+  if(dividers[0])dividers[0].style.display=S.isContest?'none':'block';
+  if(dividers[1])dividers[1].style.display=S.isMatch?'block':'none';
 
   updateReplayButtons();
   updatePitchViewBadge();
@@ -2355,6 +2792,27 @@ function updateBoard(){
   document.querySelectorAll('.lamp.b').forEach((el,i)=>el.classList.toggle('on',i<S.balls));
   document.querySelectorAll('.lamp.s').forEach((el,i)=>el.classList.toggle('on',i<S.strikes));
   document.querySelectorAll('.lamp.o').forEach((el,i)=>el.classList.toggle('on',i<S.outs));
+
+  if(isSpeedContest()){
+    const contest=S.contest;
+    const remaining=Math.max(0,(contest?.maxAttempts||5)-(contest?.attempts||0));
+    $('stat1').textContent=remaining;
+    $('stat1cap').textContent='残り投球';
+    $('stat2').textContent=contest?.bestSpeed||0;
+    $('stat2cap').textContent='最速 km/h';
+    return;
+  }
+
+  if(isHomeRunContest()){
+    const contest=S.contest;
+    const remaining=Math.max(0,(contest?.maxAttempts||10)-(contest?.attempts||0));
+    $('stat1').textContent=remaining;
+    $('stat1cap').textContent='残り球数';
+    $('stat2').textContent=contest?.homeRuns||0;
+    $('stat2cap').textContent='ホームラン';
+    return;
+  }
+
   if(S.isMatch){
     $('stat1').textContent = M.scoreYou.reduce((a,b)=>a+(b||0),0);
     $('stat1cap').textContent = 'あなた';
@@ -2366,11 +2824,15 @@ function updateBoard(){
     b[2].classList.toggle('on',M.bases[2]);
     renderLineScore();
   }else if(S.mode==='pitch'){
-    $('stat1').textContent=S.ks; $('stat1cap').textContent='奪三振';
-    $('stat2').textContent=S.hitsAllowed; $('stat2cap').textContent='被安打';
+    $('stat1').textContent=S.ks;
+    $('stat1cap').textContent='奪三振';
+    $('stat2').textContent=S.hitsAllowed;
+    $('stat2cap').textContent='被安打';
   }else{
-    $('stat1').textContent=S.batLeft; $('stat1cap').textContent='残り球数';
-    $('stat2').textContent=S.batHits+S.batHRs; $('stat2cap').textContent='ヒット';
+    $('stat1').textContent=S.batLeft;
+    $('stat1cap').textContent='残り球数';
+    $('stat2').textContent=S.batHits+S.batHRs;
+    $('stat2cap').textContent='ヒット';
   }
 }
 function renderLineScore(){
@@ -3444,6 +3906,24 @@ function incomplete(type,action){
     status:`分析できませんでした：${reasonText}。もう一度、1回の動作を最後まで行ってください。`
   };
 };
+
+
+/* v67: 欠落していた分析結果・履歴表示ロジックを復元 */
+function calculatePitchAnalysis(frames){const action=analyseFormSequence(frames,'pitch');if(!action.valid)return incomplete('pitch',action);const phases=pitchPhases(action),current=estimatePitch(action,phases),item=primaryImprovement(phases),delta=item?Math.max(1,Math.round(item.potential)):1,improved=Math.min(160,current+delta),seed=Date.now()+Math.round(action.peakSpeed*100)+(item?.phaseIndex||0);return{valid:true,type:'pitch',confidence:action.confidence,estimate:{label:'推定球速',value:current,unit:'km/h',note:'※実測球速ではありません。関節角度・腕の加速・重心移動・タイミングから算出した理論上の推定値です。'},phases,advice:{text:advice('pitch',item,delta,seed)},prediction:{current,improved,unit:'km/h'},status:''}}
+function calculateBatAnalysis(frames){const action=analyseFormSequence(frames,'bat');if(!action.valid)return incomplete('bat',action);const phases=batPhases(action),current=estimateBat(action,phases),item=primaryImprovement(phases),delta=item?Math.max(2,Math.round(item.potential)):2,improved=Math.min(145,current+delta),seed=Date.now()+Math.round(action.peakSpeed*100)+(item?.phaseIndex||0);return{valid:true,type:'bat',confidence:action.confidence,estimate:{label:'推定飛距離',value:current,unit:'m',note:'※実測飛距離ではありません。理想的にミートした場合を想定し、関節角度・回転速度・移動量・タイミングから推定しています。'},phases,advice:{text:advice('bat',item,delta,seed)},prediction:{current,improved,unit:'m'},status:''}}
+function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+function phaseHtml(p,open=false){const score=Number.isFinite(p.score)?p.score:'--',width=Number.isFinite(p.score)?p.score:0,details=p.criteria.map(c=>`<div class="analysisCriterion"><div class="analysisCriterionHead"><span class="analysisCriterionName">${esc(c.name)}</span><span class="analysisCriterionScore">${c.available?c.score:'--'}</span></div><div class="analysisCriterionObservation">${esc(c.observation)}${c.value?`<br><b>${esc(c.value)}</b>`:''}</div><div class="analysisCriterionCue">改善ポイント：${esc(c.cue)}</div></div>`).join('');return`<article class="analysisPhaseCard ${phaseClass(p.score)}${open?' open':''}"><button class="analysisPhaseToggle" type="button" aria-expanded="${open?'true':'false'}"><span class="analysisPhaseIndex">${p.index}</span><span><span class="analysisPhaseName">${esc(p.name)}</span><span class="analysisPhaseSummary">${esc(p.summary)}</span></span><span class="analysisPhaseScore">${score}</span><span class="analysisPhaseChevron">▼</span></button><div class="analysisPhaseBar"><span style="width:${width}%"></span></div><div class="analysisPhaseDetails">${details}</div></article>`}
+function renderAnalysisResult(result){$('analysisResultTitle').textContent=result.type==='pitch'?'ピッチングフォーム分析':'バッティングフォーム分析';$('analysisEstimateLabel').textContent=result.estimate.label;$('analysisEstimateValue').textContent=Number.isFinite(result.estimate.value)?result.estimate.value:'--';$('analysisEstimateUnit').textContent=result.estimate.unit||'';$('analysisEstimateNote').textContent=result.estimate.note||'';$('analysisConfidenceValue').textContent=Math.round(result.confidence||0);const status=$('analysisResultStatus');status.style.display=result.valid?'none':'block';status.textContent=result.status||'';const scored=result.phases.filter(p=>Number.isFinite(p.score)),weak=scored.length?[...scored].sort((a,b)=>a.score-b.score)[0]:null;$('analysisPhaseCards').innerHTML=result.phases.map(p=>phaseHtml(p,p===weak)).join('');$('analysisAdviceText').textContent=result.advice?.text||'改善ポイントを計測できませんでした。';$('analysisCurrentValue').textContent=Number.isFinite(result.prediction.current)?result.prediction.current:'--';$('analysisImprovedValue').textContent=Number.isFinite(result.prediction.improved)?result.prediction.improved:'--';$('analysisCurrentUnit').textContent=result.prediction.unit||'';$('analysisImprovedUnit').textContent=result.prediction.unit||''}
+function loadAnalysisHistory(){try{const data=JSON.parse(localStorage.getItem(ANALYSIS_HISTORY_KEY)||'[]');return Array.isArray(data)?data:[]}catch(_e){return[]}}
+function saveAnalysisHistory(result){const history=loadAnalysisHistory();history.unshift({id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,savedAt:Date.now(),type:result.type,valid:result.valid,confidence:Math.round(result.confidence||0),estimate:{value:Number.isFinite(result.estimate.value)?result.estimate.value:null,unit:result.estimate.unit},phases:result.phases.map(p=>({name:p.name,score:Number.isFinite(p.score)?p.score:null})),advice:result.advice?.text||''});try{localStorage.setItem(ANALYSIS_HISTORY_KEY,JSON.stringify(history.slice(0,ANALYSIS_HISTORY_LIMIT)))}catch(_e){}}
+function renderAnalysisHistory(){const history=loadAnalysisHistory(),list=$('analysisHistoryList');if(!history.length){list.innerHTML='<div class="analysisHistoryEmpty">まだ分析履歴はありません。<br>フォームを分析すると自動保存されます。</div>';return}list.innerHTML=history.map(r=>{const date=new Date(r.savedAt).toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),estimate=Number.isFinite(r.estimate?.value)?`${r.estimate.value}<small>${esc(r.estimate.unit)}</small>`:'--<small>動作未成立</small>',chips=(r.phases||[]).map(p=>`<span class="analysisHistoryPhase ${Number.isFinite(p.score)?p.score>=90?'good':p.score>=70?'warn':'bad':'bad'}">${esc(p.name)} ${Number.isFinite(p.score)?p.score:'--'}</span>`).join('');return`<article class="analysisHistoryItem"><div class="analysisHistoryTop"><span class="analysisHistoryMode">${r.type==='pitch'?'⚾ ピッチング':'🏏 バッティング'}</span><span class="analysisHistoryDate">${date} / 信頼度 ${r.confidence}%</span></div><div class="analysisHistoryEstimate">${estimate}</div><div class="analysisHistoryPhases">${chips}</div><div class="analysisHistoryAdvice">${esc(r.advice)}</div></article>`}).join('')}
+function openAnalysisHistory(){renderAnalysisHistory();$('analysisHistoryOverlay').classList.add('show');$('analysisHistoryOverlay').setAttribute('aria-hidden','false')}
+function closeAnalysisHistory(){$('analysisHistoryOverlay').classList.remove('show');$('analysisHistoryOverlay').setAttribute('aria-hidden','true')}
+function clearAnalysisHistory(){try{localStorage.removeItem(ANALYSIS_HISTORY_KEY)}catch(_e){}renderAnalysisHistory()}
+function finishFormAnalysis(){const a=S.analysis;if(!a||a.phase!=='recording')return;a.phase='done';S.paused=true;$('analysisPanel').style.display='none';const result=a.type==='bat'?calculateBatAnalysis(a.frames):calculatePitchAnalysis(a.frames);S.lastAnalysisResult=result;renderAnalysisResult(result);saveAnalysisHistory(result);showHUD(false);$('recalibrateBtn').style.display='none';$('pitchTypeHUD').style.display='none';$('analysisResult').style.display='flex';S.running=false}
+
+const arm={hist:{L:[],R:[]},cockedAt:{L:0,R:0},activeSide:null};
+const pitchHandVisualState={side:null,x:0,y:0,ready:false,lastAt:0,rotation:0};
 function resetPitchHandVisual(){
   pitchHandVisualState.side=null;
   pitchHandVisualState.x=0;
@@ -4436,6 +4916,13 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
   S.maxKmh=Math.max(S.maxKmh,kmh);
   S.pitches++;
 
+  if(isSpeedContest()&&S.contest){
+    S.contest.attempts=S.pitches;
+    S.contest.speeds.push(kmh);
+    S.contest.bestSpeed=Math.max(S.contest.bestSpeed,kmh);
+    updateBoard();
+  }
+
   const rawRelease=
     detectedReleasePoint||
     handBallPoint(side,lm,'release')||
@@ -4532,17 +5019,24 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
 
   const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;
   const b=S.comBatter;
-  b.willSwing=inZone?Math.random()<.78:Math.random()<.22;
-  b.swingDuration=560;
-  if(b.willSwing){
-    let contactChance=.66-(kmh-80)*.0048;
-    if(pitch.type!=='fastball')contactChance-=.05;
-    if(!inZone)contactChance-=.30;
-    b.contact=Math.random()<Math.max(.06,contactChance);
-    b.swingT=now+flight*.63;
-  }else{
+
+  if(isSpeedContest()){
+    b.willSwing=false;
     b.contact=false;
     b.swingT=0;
+  }else{
+    b.willSwing=inZone?Math.random()<.78:Math.random()<.22;
+    b.swingDuration=560;
+    if(b.willSwing){
+      let contactChance=.66-(kmh-80)*.0048;
+      if(pitch.type!=='fastball')contactChance-=.05;
+      if(!inZone)contactChance-=.30;
+      b.contact=Math.random()<Math.max(.06,contactChance);
+      b.swingT=now+flight*.63;
+    }else{
+      b.contact=false;
+      b.swingT=0;
+    }
   }
 
   S.ball.inZone=inZone;
@@ -4565,25 +5059,165 @@ function settlePitchOutcome(outcome,youBatting,visual={}){
   setTimeout(()=>{ if(!S.fieldPlay) S.ball=null; },600);
 }
 
-function resolveUserPitch(){
-  const ball=S.ball, b=S.comBatter;
+
+function resolveSpeedContestPitch(){
+  const ball=S.ball;
+  if(!ball||!S.contest)return;
+
   ball.resolved=true;
+  SFX.mitt(ball.tx);
+  addCall(`${ball.kmh} km/h!`,'#ffb627');
+  shake(ball.kmh>=140?9:ball.kmh>=120?6:4);
+  updateBoard();
+
+  const done=S.contest.attempts>=S.contest.maxAttempts;
+
+  setTimeout(()=>{
+    S.ball=null;
+    if(done){
+      showSpeedContestResult();
+    }else{
+      S.cooldownUntil=performance.now()+420;
+      addCall(
+        `残り ${S.contest.maxAttempts-S.contest.attempts} 球`,
+        '#37d67a'
+      );
+    }
+  },620);
+}
+
+function showSpeedContestResult(){
+  if(!S.contest)return;
+
+  S.running=false;
+  const speeds=S.contest.speeds;
+  const best=S.contest.bestSpeed||0;
+  const average=speeds.length
+    ?Math.round(speeds.reduce((sum,value)=>sum+value,0)/speeds.length)
+    :0;
+  const record=saveSpeedContestRecord(best);
+
+  $('resultTitle').textContent=
+    record.isNew?'自己ベスト更新!!':'スピードガン結果';
+  $('resultScore').innerHTML='';
+  $('resultStats').innerHTML=
+    `最高球速 <b>${best} km/h</b><br>`+
+    `平均球速 <b>${average} km/h</b><br>`+
+    `5球の記録<br>${speeds.map((value,index)=>`${index+1}球目 ${value} km/h`).join(' ／ ')}<br>`+
+    `自己ベスト <b>${record.record||best} km/h</b>`;
+
+  if(record.isNew)SFX.fanfare();
+  showHUD(false);
+  $('recalibrateBtn').style.display='none';
+  $('pitchTypeHUD').style.display='none';
+  $('result').style.display='flex';
+  updateReplayButtons();
+}
+
+function settleHomeRunContestPitch(outcome,visual,evaluation){
+  const contest=S.contest;
+  if(!contest)return;
+
+  contest.attempts++;
+  S.batLeft=Math.max(0,contest.maxAttempts-contest.attempts);
+
+  let distance=0;
+  if(outcome==='hr'){
+    distance=estimateContestHomeRunDistance(evaluation);
+    contest.homeRuns++;
+    contest.distances.push(distance);
+    contest.longestDistance=Math.max(contest.longestDistance,distance);
+    contest.totalDistance+=distance;
+    S.batHRs=contest.homeRuns;
+
+    addCall(`${distance}m ホームラン!!!`,'#ffb627');
+    if(visual?.hitDir)launchHitBall(visual.hitDir,visual);
+    SFX.fanfare();
+    shake(16);
+    requestInstantReplay('ホームランコンテスト');
+  }else{
+    addCall(visual?.text||'ノーホームラン',visual?.color||'#c7d5e2');
+    if(visual?.hitDir)launchHitBall(visual.hitDir,visual);
+  }
+
+  updateBoard();
+  const done=contest.attempts>=contest.maxAttempts;
+
+  setTimeout(()=>{
+    S.ball=null;
+    if(done){
+      showHomeRunContestResult();
+    }else{
+      S.comPitcher.nextPitchAt=performance.now()+850;
+    }
+  },outcome==='hr'?1050:650);
+}
+
+function showHomeRunContestResult(){
+  if(!S.contest)return;
+
+  S.running=false;
+  const homeRuns=S.contest.homeRuns||0;
+  const longest=S.contest.longestDistance||0;
+  const total=S.contest.totalDistance||0;
+  const record=saveHomeRunContestRecord(homeRuns,longest);
+
+  $('resultTitle').textContent=
+    record.isNew?'自己ベスト更新!!':'ホームランコンテスト結果';
+  $('resultScore').innerHTML='';
+  $('resultStats').innerHTML=
+    `ホームラン <b>${homeRuns} / 10 本</b><br>`+
+    `最長飛距離 <b>${longest||'-'} m</b><br>`+
+    `ホームラン合計飛距離 <b>${total} m</b><br>`+
+    `自己ベスト <b>${record.record.homeRuns} 本</b> ／ 最長 <b>${record.record.longest||'-'} m</b>`;
+
+  if(record.isNew)SFX.fanfare();
+  showHUD(false);
+  $('recalibrateBtn').style.display='none';
+  $('result').style.display='flex';
+  updateReplayButtons();
+}
+
+function resolveUserPitch(){
+  if(isSpeedContest()){
+    resolveSpeedContestPitch();
+    return;
+  }
+
+  const ball=S.ball;
+  const b=S.comBatter;
+  ball.resolved=true;
+
   let outcome=null;
-  let visual={text:'',color:'var(--chalk)',hitDir:null,style:'line',direction:(Math.random()-.5)*1.4};
-  if(b.willSwing && b.contact){
+  let visual={
+    text:'',
+    color:'var(--chalk)',
+    hitDir:null,
+    style:'line',
+    direction:(Math.random()-.5)*1.4
+  };
+
+  if(b.willSwing&&b.contact){
     SFX.crack();
     visual.hitDir='up';
     const r=Math.random();
+
     if(r<0.14){
       outcome='hr';
       visual={...visual,text:'ホームラン…!',color:'#ff6b5e',style:'deep'};
-      SFX.boo(); shake(14);
+      SFX.boo();
+      shake(14);
     }else if(r<0.32){
       outcome='double';
       visual={...visual,text:'二塁打を打たれた',color:'#ff9d8a',style:'deep'};
     }else if(r<0.50){
       outcome='single';
-      visual={...visual,text:'ヒットを打たれた',color:'#ff9d8a',style:Math.random()<.55?'ground':'line'};
+      visual={
+        ...visual,
+        text:'ヒットを打たれた',
+        color:'#ff9d8a',
+        style:Math.random()<.55?'ground':'line'
+      };
     }else if(r<0.72){
       outcome='out';
       const plays=[
@@ -4592,26 +5226,34 @@ function resolveUserPitch(){
         {text:'センターフライ アウト!',style:'fly',direction:0},
         {text:'サードゴロ アウト!',style:'ground',direction:-.46}
       ];
-      visual={...visual,...plays[Math.floor(Math.random()*plays.length)],color:'#ffb627'};
+      visual={
+        ...visual,
+        ...plays[Math.floor(Math.random()*plays.length)],
+        color:'#ffb627'
+      };
     }else{
       outcome='foul';
       visual={...visual,text:'ファール!',color:'#c7d5e2'};
     }
   }else if(b.willSwing){
-    SFX.whiff(); setTimeout(()=>SFX.mitt(ball?.tx),90);
+    SFX.whiff();
+    setTimeout(()=>SFX.mitt(ball?.tx),90);
     outcome='strike';
     visual.text=S.strikes>=2?'空振り三振!!':'スイング ストライク!';
     visual.color='#ffb627';
   }else if(ball.inZone){
-    SFX.mitt(ball?.tx); outcome='strike';
+    SFX.mitt(ball?.tx);
+    outcome='strike';
     visual.text=S.strikes>=2?'見逃し三振!!':'ストライク!';
     visual.color='#ffb627';
   }else{
-    SFX.mitt(ball?.tx); outcome='ballCall';
+    SFX.mitt(ball?.tx);
+    outcome='ballCall';
     visual.text=S.balls>=3?'フォアボール…':'ボール';
     visual.color='#37d67a';
   }
-  settlePitchOutcome(outcome,/*youBatting=*/false,visual);
+
+  settlePitchOutcome(outcome,false,visual);
 }
 
 /* ================= COMの投球(バッティングモード/試合の表) ================= */
@@ -4681,9 +5323,85 @@ function pickComPitchTarget(z,wantsStrike){
 }
 function comRelease(){
   const now=performance.now();
+
   battingAR.path=[];
   S.batJudge=null;
-  hideBattingJudge();const pitchRoll=Math.random();const pitchType=pitchRoll<.58?'fastball':pitchRoll<.72?'slider':pitchRoll<.83?'curve':pitchRoll<.92?'changeup':'splitter';const profile=PITCH_TYPES[pitchType];const baseKmh=78+Math.random()*62;const kmh=Math.round(clamp(baseKmh*profile.speed,68,148));const z=userZone(),wantsStrike=Math.random()<.67,target=pickComPitchTarget(z,wantsStrike),release=getComPitcherReleasePoint(now),sx=release.x,sy=release.y;const sign=Math.random()<.5?-1:1,breakX=profile.breakX*z.w*sign,breakY=profile.breakY*z.h;const tx=clamp(target.x+breakX,8,W-8),ty=clamp(target.y+breakY,H*.05,H*.88);const inZone=tx>z.x&&tx<z.x+z.w&&ty>z.y&&ty<z.y+z.h;const flight=clamp(18.44/(kmh/3.6)*1000,450,1320),releaseDelay=55;S.comPitcher.releasePoint={x:sx,y:sy};S.comPitcher.releaseAt=now;S.ball={dir:'toYou',sx,sy,tx,ty,breakX,breakY,pitchType,pitchName:profile.name,zone:{...z},t0:now+releaseDelay,dur:flight,kmh,resolved:false,inZone,swungAt:0,releaseSide:S.comPitcherHand==='left'?'L':'R',spinStartAngle:Math.random()*Math.PI*2,quality:null};S.comPitcher.phase='follow';showGun(kmh);SFX.whoosh(sx);beep(120,.08,'sine',.12);
+  hideBattingJudge();
+
+  const contest=isHomeRunContest();
+
+  const pitchRoll=contest?0:Math.random();
+  const pitchType=contest
+    ?'fastball'
+    :pitchRoll<.58
+      ?'fastball'
+      :pitchRoll<.72
+        ?'slider'
+        :pitchRoll<.83
+          ?'curve'
+          :pitchRoll<.92
+            ?'changeup'
+            :'splitter';
+
+  const profile=PITCH_TYPES[pitchType];
+  const baseKmh=contest
+    ?100+Math.random()*18
+    :78+Math.random()*62;
+  const kmh=Math.round(
+    clamp(baseKmh*profile.speed,68,148)
+  );
+
+  const z=userZone();
+  const wantsStrike=contest?true:Math.random()<.67;
+  const target=contest
+    ?{
+      x:z.x+z.w*(.24+Math.random()*.52),
+      y:z.y+z.h*(.24+Math.random()*.52)
+    }
+    :pickComPitchTarget(z,wantsStrike);
+
+  const release=getComPitcherReleasePoint(now);
+  const sx=release.x;
+  const sy=release.y;
+  const sign=Math.random()<.5?-1:1;
+  const breakX=contest?0:profile.breakX*z.w*sign;
+  const breakY=contest?0:profile.breakY*z.h;
+  const tx=clamp(target.x+breakX,8,W-8);
+  const ty=clamp(target.y+breakY,H*.05,H*.88);
+  const inZone=
+    tx>z.x&&tx<z.x+z.w&&
+    ty>z.y&&ty<z.y+z.h;
+  const flight=clamp(
+    18.44/(kmh/3.6)*1000,
+    contest?520:450,
+    contest?980:1320
+  );
+  const releaseDelay=55;
+
+  S.comPitcher.releasePoint={x:sx,y:sy};
+  S.comPitcher.releaseAt=now;
+  S.ball={
+    dir:'toYou',
+    sx,sy,tx,ty,
+    breakX,breakY,
+    pitchType,
+    pitchName:profile.name,
+    zone:{...z},
+    t0:now+releaseDelay,
+    dur:flight,
+    kmh,
+    resolved:false,
+    inZone,
+    swungAt:0,
+    releaseSide:S.comPitcherHand==='left'?'L':'R',
+    spinStartAngle:Math.random()*Math.PI*2,
+    quality:null
+  };
+
+  S.comPitcher.phase='follow';
+  showGun(kmh);
+  SFX.whoosh(sx);
+  beep(120,.08,'sine',.12);
 }
 function onUserSwing(now){
   const ball=S.ball;
@@ -4694,13 +5412,29 @@ function onUserSwing(now){
 function resolveComPitch(){
   const ball=S.ball;
   ball.resolved=true;
+
   let outcome=null;
-  let visual={text:'',color:'var(--chalk)',hitDir:null,style:'line',direction:(Math.random()-.5)*1.4};
+  let evaluation=null;
+  let visual={
+    text:'',
+    color:'var(--chalk)',
+    hitDir:null,
+    style:'line',
+    direction:(Math.random()-.5)*1.4
+  };
 
   if(ball.swungAt){
-    const evaluation=evaluateBattingSwing(ball);
+    evaluation=evaluateBattingSwing(ball);
     ball.swingEval=evaluation;
-    ball.quality=evaluation.combined>=90?'perfect':evaluation.combined>=72?'good':evaluation.combined>=48?'weak':'miss';
+    ball.quality=
+      evaluation.combined>=90
+        ?'perfect'
+        :evaluation.combined>=72
+          ?'good'
+          :evaluation.combined>=48
+            ?'weak'
+            :'miss';
+
     showBattingJudge(evaluation);
     const result=battingVisualFromEvaluation(ball,evaluation);
     outcome=result.outcome;
@@ -4722,15 +5456,27 @@ function resolveComPitch(){
       }
     }
   }else if(ball.inZone){
-    SFX.mitt(ball?.tx); outcome='strike';
-    visual.text=S.strikes>=2?'見逃し三振…':'ストライク!';
+    SFX.mitt(ball?.tx);
+    outcome='strike';
+    visual.text=isHomeRunContest()
+      ?'見送り'
+      :S.strikes>=2
+        ?'見逃し三振…'
+        :'ストライク!';
     visual.color='#ffb627';
   }else{
-    SFX.mitt(ball?.tx); outcome='ballCall';
+    SFX.mitt(ball?.tx);
+    outcome='ballCall';
     visual.text=S.balls>=3?'フォアボール!':'ボール';
     visual.color='#37d67a';
   }
-  settlePitchOutcome(outcome,/*youBatting=*/true,visual);
+
+  if(isHomeRunContest()){
+    settleHomeRunContestPitch(outcome,visual,evaluation);
+    return;
+  }
+
+  settlePitchOutcome(outcome,true,visual);
 }
 
 /* ================= 結果の反映(カウント/塁/得点) ================= */
@@ -6093,13 +6839,13 @@ function loop(now,token=S.loopToken){
     const movedFromMound=drawCalibratedPitchPosition(lastLm);
     drawHomePlate(layout.zone.x+layout.zone.w/2,layout.plateY,layout.zone.w*.46);
     drawZoneRect(layout.zone);
-    drawComBatter(now,layout);
-    if(lastLm){hint(S.ball?'':(now<S.cooldownUntil?'返球を待っています…':movedFromMound?'緑の投球位置へ戻ってください':virtualPitchBackgroundActive()?(S.pitchDistance==='near'?'中央やや下部のストライクゾーンへ向けて投げてください':'中央やや下部のストライクゾーンへ向けて投げてください'):'握りを見せてから、画面奥の自分からミットへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
+    if(!isSpeedContest())drawComBatter(now,layout);
+    if(lastLm){hint(S.ball?'':isSpeedContest()?`全力投球! 残り ${Math.max(0,(S.contest?.maxAttempts||5)-(S.contest?.attempts||0))} 球`:(now<S.cooldownUntil?'返球を待っています…':movedFromMound?'緑の投球位置へ戻ってください':virtualPitchBackgroundActive()?(S.pitchDistance==='near'?'中央やや下部のストライクゾーンへ向けて投げてください':'中央やや下部のストライクゾーンへ向けて投げてください'):'握りを見せてから、画面奥の自分からミットへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
   }else if(S.mode==='bat'){
     if(!virtualBatBackgroundActive())drawBattingPitcherBackViewBase();
     if(lastLm){
       updateBattingAR(lastLm,now);
-      hint(S.ball?'今だ! スイング!!':virtualBatBackgroundActive()?'画面奥のバッターボックスへ自動配置されています。手前のCOM投手に向かって構えてください':'確定したゾーンの横で半身に構えてください');
+      hint(S.ball?(isHomeRunContest()?'ホームランを狙え! フルスイング!!':'今だ! スイング!!'):isHomeRunContest()?`ホームランコンテスト 残り ${Math.max(0,(S.contest?.maxAttempts||10)-(S.contest?.attempts||0))} 球`:virtualBatBackgroundActive()?'画面奥のバッターボックスへ自動配置されています。手前のCOM投手に向かって構えてください':'確定したゾーンの横で半身に構えてください');
       if(!S.paused)trackSwing(lastLm,now);
     }else hint('半身の上半身と両手が映る位置へ立ってください');
     const z=userZone();
@@ -6128,35 +6874,149 @@ function loop(now,token=S.loopToken){
 function resetCommon(){
   resetVirtualPlayerTransform();
   resetPitchHandVisual();
-  Object.assign(S,{balls:0,strikes:0,outs:0,ks:0,hitsAllowed:0,pitches:0,maxKmh:0,batLeft:10,batHits:0,batHRs:0,batBases:0,ball:null,hitBall:null,fieldPlay:null,pitchImpact:null,batJudge:null,cooldownUntil:0,paused:false,calibration:null,analysis:null});S.pitchView='catcher';S.comBatter={willSwing:false,contact:false,swingT:0,swingDuration:560,bob:0};S.comPitcher={phase:'idle',t0:0,nextPitchAt:performance.now()+2000,releasePoint:null,releaseAt:0};S.swing={lastAt:-9999,quality:null};arm.hist={L:[],R:[]};arm.cockedAt={L:0,R:0};arm.activeSide=null;gripState.history=[];gripState.locked=null;gripState.live={type:'fastball',name:'ストレート',confidence:0,side:null,features:null};Object.assign(battingAR,{side:1,sideScore:0,ready:false,lastSeen:0,gripX:0,gripY:0,dirX:-.34,dirY:-.94,length:180,zone:null,anchorMode:'grip',oneHist:[],path:[]});hideBattingJudge();
+  Object.assign(S,{balls:0,strikes:0,outs:0,ks:0,hitsAllowed:0,pitches:0,maxKmh:0,batLeft:10,batHits:0,batHRs:0,batBases:0,ball:null,hitBall:null,fieldPlay:null,pitchImpact:null,batJudge:null,cooldownUntil:0,paused:false,calibration:null,analysis:null,isContest:false,contestType:null,contest:null});S.pitchView='catcher';S.comBatter={willSwing:false,contact:false,swingT:0,swingDuration:560,bob:0};S.comPitcher={phase:'idle',t0:0,nextPitchAt:performance.now()+2000,releasePoint:null,releaseAt:0};S.swing={lastAt:-9999,quality:null};arm.hist={L:[],R:[]};arm.cockedAt={L:0,R:0};arm.activeSide=null;gripState.history=[];gripState.locked=null;gripState.live={type:'fastball',name:'ストレート',confidence:0,side:null,features:null};Object.assign(battingAR,{side:1,sideScore:0,ready:false,lastSeen:0,gripX:0,gripY:0,dirX:-.34,dirY:-.94,length:180,zone:null,anchorMode:'grip',oneHist:[],path:[]});hideBattingJudge();
 }
-async function startMode(mode,isMatch){
+async function startMode(mode,isMatch,options={}){
   await requestPortraitLock();
-  const msgEl=isMatch?$('matchSetupMsg'):mode==='pitch'?$('pitchSetupMsg'):mode==='bat'?$('batSetupMsg'):mode==='analysis'?$('analysisSetupMsg'):$('homeMsg');
+
+  const contestType=options?.contestType||null;
+  const msgEl=contestType
+    ?$('contestSetupMsg')
+    :isMatch
+      ?$('matchSetupMsg')
+      :mode==='pitch'
+        ?$('pitchSetupMsg')
+        :mode==='bat'
+          ?$('batSetupMsg')
+          :mode==='analysis'
+            ?$('analysisSetupMsg')
+            :$('homeMsg');
+
   try{
     if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();
-    const audioReady=initRealAudio().catch(err=>console.warn('リアル音源の初期化に失敗したため、内蔵効果音を使用します。',err));
+
+    const audioReady=initRealAudio().catch(error=>{
+      console.warn(
+        'リアル音源の初期化に失敗したため、内蔵効果音を使用します。',
+        error
+      );
+    });
+
     await initEngine(msgEl);
-    void audioReady.then(()=>{if(S.running)startModeAmbience();});
-  }catch(err){
-    console.error(err);
-    const cameraMessage=err?.name==='NotAllowedError'||err?.name==='SecurityError'
-      ?'カメラが拒否されています。ブラウザのサイト設定でカメラを「許可」にして再読み込みしてください。'
-      :err?.name==='NotFoundError'
-        ?'使用できるカメラが見つかりません。'
-        :err?.name==='NotReadableError'
-          ?'カメラを他のアプリが使用中です。他のカメラアプリを閉じてください。'
-          :(err?.message||'カメラまたはAIモデルを開始できませんでした。');
+    void audioReady.then(()=>{
+      if(S.running)startModeAmbience();
+    });
+  }catch(error){
+    console.error(error);
+
+    const cameraMessage=
+      error?.name==='NotAllowedError'||error?.name==='SecurityError'
+        ?'カメラが拒否されています。ブラウザのサイト設定でカメラを「許可」にして再読み込みしてください。'
+        :error?.name==='NotFoundError'
+          ?'使用できるカメラが見つかりません。'
+          :error?.name==='NotReadableError'
+            ?'カメラを他のアプリが使用中です。他のカメラアプリを閉じてください。'
+            :(error?.message||'カメラまたはAIモデルを開始できませんでした。');
+
     msgEl.textContent='エラー: '+cameraMessage;
     return;
   }
-  ['home','pitchSetup','batSetup','matchSetup','analysisSetup','analysisResult','result','replayOverlay'].forEach(id=>{$(id).style.display='none';});setThemeMusicScene('game',.18);$('soundBtn').classList.remove('titleSoundButton');clearReplayLibrary();resetCommon();S.mode=mode;S.isMatch=isMatch;S.pitchView='catcher';resize();showHUD(false);$('homeBtn').style.display='block';$('soundBtn').style.display='block';startModeAmbience();S.loopToken=(S.loopToken||0)+1;S.running=true;{const token=S.loopToken;requestAnimationFrame(t=>loop(t,token));}if(replayRecordingEnabled)setTimeout(startReplayRecorder,350);
-  const profile=mode==='bat'?'bat':mode==='pitch'?'pitch':S.analysisType==='pitch'?'analysisPitch':'analysisBat';const ok=await beginCalibration(profile);if(!ok||!S.running)return;
-  if(mode==='analysis'){beginFormRecording();return;}
-  showHUD(true);$('recalibrateBtn').style.display='block';updateBoard();
-  if(isMatch){M.on=true;await banner('1回表 プレイボール!',`背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>投手の背後からボールを見て、確定したゾーンへスイング!`);S.comPitcher.nextPitchAt=performance.now()+1300;}
-  else if(mode==='bat'){await banner('10球勝負!',`相手: <b style="color:var(--green)">${comPitcherHandLabel()}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>手前のCOMピッチャーが、画面奥の打席へ投げます。ゾーンでスイング!`);S.comPitcher.nextPitchAt=performance.now()+1300;}
-  else if(mode==='pitch'){await banner(`キャッチャー視点 / ${batterHandLabel()}`,`背景: <b style="color:var(--green)">${pitchBackgroundLabel()}</b><br>投球位置を固定し、握りと腕の振りから球種・球速を計算します`,1750);}
+
+  [
+    'home','pitchSetup','batSetup','matchSetup',
+    'contestSetup','analysisSetup','analysisResult',
+    'result','replayOverlay'
+  ].forEach(id=>{
+    $(id).style.display='none';
+  });
+
+  setThemeMusicScene('game',.18);
+  $('soundBtn').classList.remove('titleSoundButton');
+  clearReplayLibrary();
+  resetCommon();
+
+  S.mode=mode;
+  S.isMatch=isMatch;
+  S.pitchView='catcher';
+
+  if(contestType)initializeContest(contestType);
+
+  resize();
+  showHUD(false);
+  $('homeBtn').style.display='block';
+  $('soundBtn').style.display='block';
+  startModeAmbience();
+
+  S.loopToken=(S.loopToken||0)+1;
+  S.running=true;
+
+  {
+    const token=S.loopToken;
+    requestAnimationFrame(time=>loop(time,token));
+  }
+
+  if(replayRecordingEnabled)setTimeout(startReplayRecorder,350);
+
+  const profile=
+    mode==='bat'
+      ?'bat'
+      :mode==='pitch'
+        ?'pitch'
+        :S.analysisType==='pitch'
+          ?'analysisPitch'
+          :'analysisBat';
+
+  const ok=await beginCalibration(profile);
+  if(!ok||!S.running)return;
+
+  if(mode==='analysis'){
+    beginFormRecording();
+    return;
+  }
+
+  showHUD(true);
+  $('recalibrateBtn').style.display='block';
+  updateBoard();
+
+  if(isSpeedContest()){
+    await banner(
+      'スピードガンコンテスト!',
+      `<b style="color:var(--amber)">5球の最高球速で勝負</b><br>${pitchArmLabel()}で全力投球!`,
+      1750
+    );
+    return;
+  }
+
+  if(isHomeRunContest()){
+    await banner(
+      'ホームランコンテスト!',
+      `<b style="color:var(--amber)">10球で何本打てるか挑戦</b><br>すべてストライク中心の投球です`,
+      1750
+    );
+    S.comPitcher.nextPitchAt=performance.now()+1300;
+    return;
+  }
+
+  if(isMatch){
+    M.on=true;
+    await banner(
+      '1回表 プレイボール!',
+      `背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>投手の背後からボールを見て、確定したゾーンへスイング!`
+    );
+    S.comPitcher.nextPitchAt=performance.now()+1300;
+  }else if(mode==='bat'){
+    await banner(
+      '10球勝負!',
+      `相手: <b style="color:var(--green)">${comPitcherHandLabel()}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>手前のCOMピッチャーが、画面奥の打席へ投げます。ゾーンでスイング!`
+    );
+    S.comPitcher.nextPitchAt=performance.now()+1300;
+  }else if(mode==='pitch'){
+    await banner(
+      `キャッチャー視点 / ${batterHandLabel()}`,
+      `背景: <b style="color:var(--green)">${pitchBackgroundLabel()}</b><br>投球位置を固定し、握りと腕の振りから球種・球速を計算します`,
+      1750
+    );
+  }
 }
 function goHome(){
   closeAnalysisHistory();
@@ -6171,6 +7031,9 @@ function goHome(){
   S.calibration=null;
   S.analysis=null;
   M.on=false;
+  S.isContest=false;
+  S.contestType=null;
+  S.contest=null;
 
   hideCalibration();
   showHUD(false);
@@ -6183,11 +7046,11 @@ function goHome(){
 
   [
     'result','analysisResult','banner',
-    'pitchSetup','batSetup','matchSetup','analysisSetup'
+    'pitchSetup','batSetup','matchSetup','contestSetup','analysisSetup'
   ].forEach(id=>{$(id).style.display='none';});
 
   [
-    'pitchSetupMsg','batSetupMsg','matchSetupMsg','analysisSetupMsg'
+    'pitchSetupMsg','batSetupMsg','matchSetupMsg','contestSetupMsg','analysisSetupMsg'
   ].forEach(id=>{
     if($(id))$(id).textContent='';
   });
@@ -6235,7 +7098,7 @@ async function startMatchModeFromSetup(){
 }
 
 /* ===== イベント（v9: メニューはAI読込前に即時バインド） ===== */
-$('btnPitch').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='none';$('pitchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setPitchArm(S.pitchArm);setBatControl(S.batControl);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);setBatBackground(S.batBackground);});
+$('btnPitch').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='none';$('contestSetup').style.display='none';$('pitchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setPitchArm(S.pitchArm);setBatControl(S.batControl);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);setBatBackground(S.batBackground);});
 $('pitchStartBtn').addEventListener('click',()=>startMode('pitch',false));
 $('pitchSetupBackBtn').addEventListener('click',goHome);
 document.querySelectorAll('.handBtn[data-hand]').forEach(btn=>btn.addEventListener('click',()=>setBatterHand(btn.dataset.hand)));
@@ -6248,10 +7111,23 @@ document.querySelectorAll('.batControlBtn').forEach(btn=>btn.addEventListener('c
 document.querySelectorAll('[data-stadium]').forEach(btn=>btn.addEventListener('click',()=>setPitchBackground(btn.dataset.stadium)));
 document.querySelectorAll('[data-bat-stadium]').forEach(btn=>btn.addEventListener('click',()=>setBatBackground(btn.dataset.batStadium)));
 document.querySelectorAll('[data-match-stadium]').forEach(btn=>btn.addEventListener('click',()=>setMatchBackground(btn.dataset.matchStadium)));
-$('btnBat').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='none';$('batSetup').style.display='flex';applyStadiumThumbnails();setComPitcherHand(S.comPitcherHand);setBatterHand(S.batterHand);setBatBackground(S.batBackground);setBatControl(S.batControl);});
+$('btnBat').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='none';$('contestSetup').style.display='none';$('batSetup').style.display='flex';applyStadiumThumbnails();setComPitcherHand(S.comPitcherHand);setBatterHand(S.batterHand);setBatBackground(S.batBackground);setBatControl(S.batControl);});
 $('batStartBtn').addEventListener('click',()=>startMode('bat',false));
 $('batSetupBackBtn').addEventListener('click',goHome);
-$('btnAnalysis').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('analysisSetup').style.display='flex';});
+$('btnContest').addEventListener('click',()=>{
+  enterSetupMusic();
+  $('home').style.display='none';
+  $('pitchSetup').style.display='none';
+  $('batSetup').style.display='none';
+  $('matchSetup').style.display='none';
+  $('analysisSetup').style.display='none';
+  $('contestSetup').style.display='flex';
+  updateContestSetupSummary();
+});
+$('speedContestStartBtn').addEventListener('click',()=>startContest('speed'));
+$('homeRunContestStartBtn').addEventListener('click',()=>startContest('homerun'));
+$('contestSetupBackBtn').addEventListener('click',goHome);
+$('btnAnalysis').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('contestSetup').style.display='none';$('analysisSetup').style.display='flex';});
 document.querySelectorAll('.analysisBtn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.analysisBtn').forEach(x=>x.classList.remove('sel'));btn.classList.add('sel');S.analysisType=btn.dataset.analysis==='pitch'?'pitch':'bat';}));
 $('analysisStartBtn').addEventListener('click',()=>{const sel=document.querySelector('.analysisBtn.sel');S.analysisType=sel?.dataset.analysis==='pitch'?'pitch':'bat';startMode('analysis',false);});
 $('analysisSetupBackBtn').addEventListener('click',goHome);
@@ -6261,7 +7137,7 @@ $('analysisHistoryCloseBtn').addEventListener('click',closeAnalysisHistory);
 $('analysisHistoryClearBtn').addEventListener('click',clearAnalysisHistory);
 $('analysisHistoryOverlay').addEventListener('click',event=>{if(event.target===$('analysisHistoryOverlay'))closeAnalysisHistory();});
 $('analysisPhaseCards').addEventListener('click',event=>{const toggle=event.target.closest('.analysisPhaseToggle');if(!toggle)return;const card=toggle.closest('.analysisPhaseCard'),open=!card.classList.contains('open');card.classList.toggle('open',open);toggle.setAttribute('aria-expanded',String(open));});
-$('btnMatch').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('analysisSetup').style.display='none';$('matchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setPitchArm(S.pitchArm);setBatControl(S.batControl);setMatchBackground(S.matchBackground);});
+$('btnMatch').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('analysisSetup').style.display='none';$('contestSetup').style.display='none';$('matchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setPitchArm(S.pitchArm);setBatControl(S.batControl);setMatchBackground(S.matchBackground);});
 document.querySelectorAll('.inningsBtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.inningsBtn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');}));
 $('matchStartBtn').addEventListener('click',startMatchModeFromSetup);
 $('replayCloseBtn').addEventListener('click',closeReplayOverlay);
@@ -6278,35 +7154,16 @@ $('resultReplayBtn').addEventListener('click',()=>openReplayLibrary(S.isMatch&&r
 $('replayShareBtn').addEventListener('click',shareReplay);
 $('replaySaveBtn').addEventListener('click',saveReplay);
 $('soundBtn').addEventListener('click',async()=>{
-  const onTitle=titleScreenVisible();
-
-  if(
-    onTitle&&
-    soundEnabled&&
-    (!titleAudioActivated||!gameAudio.currentMusic||ac?.state!=='running')
-  ){
-    await activateThemeMusic('title');
-    updateSoundButton();
-    return;
-  }
-
+  // ボタンは常にON/OFFを切り替える。タイトルBGMの開始はホーム画面のタップでも行う。
   soundEnabled=!soundEnabled;
   try{
     localStorage.setItem('arBaseballSoundEnabled',String(soundEnabled));
   }catch(_error){}
 
-  if(gameAudio.master&&ac){
-    gameAudio.master.gain.cancelScheduledValues(ac.currentTime);
-    gameAudio.master.gain.setTargetAtTime(
-      soundEnabled?.92:0,
-      ac.currentTime,
-      .03
-    );
-  }
-
   if(soundEnabled){
     try{
       await initRealAudio({resume:true});
+      titleAudioActivated=true;
       const scene=currentThemeMusicScene();
       setThemeMusicScene(scene,.08);
       startThemeMusic();
@@ -6314,15 +7171,58 @@ $('soundBtn').addEventListener('click',async()=>{
       if(S.running){
         startStadiumAmbience(selectedStadiumId());
       }
-    }catch(_error){}
+    }catch(error){
+      console.warn('音声を開始できませんでした。画面をもう一度タップしてください。',error);
+    }
   }else{
+    if(gameAudio.master&&ac){
+      const now=ac.currentTime;
+      try{
+        gameAudio.master.gain.cancelScheduledValues(now);
+        gameAudio.master.gain.setTargetAtTime(0,now,.03);
+      }catch(_error){
+        gameAudio.master.gain.value=0;
+      }
+    }
     stopStadiumAmbience();
     stopThemeMusic(.18);
+  }
+
+  if(soundEnabled&&gameAudio.master&&ac){
+    const now=ac.currentTime;
+    try{
+      gameAudio.master.gain.cancelScheduledValues(now);
+      gameAudio.master.gain.setTargetAtTime(.92,now,.03);
+    }catch(_error){
+      gameAudio.master.gain.value=.92;
+    }
   }
 
   updateSoundButton();
 });
 $('setupBackBtn').addEventListener('click',goHome);$('homeBtn').addEventListener('click',goHome);$('resultHomeBtn').addEventListener('click',goHome);$('recalibrateBtn').addEventListener('click',recalibrateCurrent);$('analysisHomeBtn').addEventListener('click',goHome);$('analysisAgainBtn').addEventListener('click',()=>{const type=S.analysisType;S.analysisType=type;startMode('analysis',false);});
+
+function verifyRuntimeIntegrity(){
+  const required={
+    arm:typeof arm==='object',
+    pitchHandVisualState:typeof pitchHandVisualState==='object',
+    renderAnalysisResult:typeof renderAnalysisResult==='function',
+    openAnalysisHistory:typeof openAnalysisHistory==='function',
+    closeAnalysisHistory:typeof closeAnalysisHistory==='function',
+    finishFormAnalysis:typeof finishFormAnalysis==='function',
+    startMode:typeof startMode==='function',
+    startContest:typeof startContest==='function'
+  };
+  const missing=Object.entries(required).filter(([,ok])=>!ok).map(([name])=>name);
+  if(missing.length){
+    console.error('BASEBALL AR 起動整合性エラー:',missing);
+    const message=$('homeMsg');
+    if(message)message.textContent='起動エラーが発生しました。再読み込みしてください。';
+    return false;
+  }
+  return true;
+}
+verifyRuntimeIntegrity();
 
 $('soundBtn').style.display='block';
 $('soundBtn').classList.add('titleSoundButton');
@@ -6336,7 +7236,7 @@ if(soundEnabled){
   });
 }
 applyStadiumThumbnails();setBatterHand(S.batterHand);setComPitcherHand(S.comPitcherHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);setReplayRecordingEnabled(replayRecordingEnabled,false);
-$('againBtn').addEventListener('click',()=>{if(S.isMatch){M.inning=1;M.half=0;M.bases=[false,false,false];M.scoreYou=[0];M.scoreCom=[];startMode('bat',true);}else startMode(S.mode,false);});
+$('againBtn').addEventListener('click',()=>{if(S.isContest){startContest(S.contestType);}else if(S.isMatch){M.inning=1;M.half=0;M.bases=[false,false,false];M.scoreYou=[0];M.scoreCom=[];startMode('bat',true);}else startMode(S.mode,false);});
 
 </script>
 </body>
