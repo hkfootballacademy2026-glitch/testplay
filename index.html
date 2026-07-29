@@ -1156,6 +1156,89 @@ html,body{
   .replayPreference{padding:7px 8px}
 }
 
+
+
+/* =========================================================
+   BASEBALL AR v71 — タイトル・コンテスト左右選択
+   ========================================================= */
+#home .brandHero{
+  width:min(calc(100vw - 16px),680px);
+  grid-template-columns:clamp(42px,14vw,58px) minmax(0,1fr);
+  column-gap:8px;
+  padding-left:2px;
+  padding-right:12px;
+  overflow:visible;
+}
+#home .brandText{
+  width:100%;
+  min-width:0;
+  padding-right:10px;
+  overflow:visible;
+}
+#home .brandText h1{
+  display:flex;
+  align-items:baseline;
+  justify-content:flex-start;
+  gap:.10em;
+  width:100%;
+  max-width:100%;
+  padding-right:4px;
+  font-size:clamp(31px,9.7vw,61px);
+  line-height:1;
+  letter-spacing:-.015em;
+  white-space:nowrap;
+  transform:scaleX(.97);
+  transform-origin:left center;
+  overflow:visible;
+}
+#home .brandText h1 span,
+#home .brandText h1 b{flex:0 0 auto}
+
+.contestHandSettings{
+  width:min(94vw,720px);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.contestHandSettings .contestHandSection{
+  width:100%;
+  min-width:0;
+  padding:10px;
+  gap:7px;
+}
+.contestHandSettings .contestHandChoice{
+  width:100%;
+  gap:8px;
+}
+.contestHandSettings .contestHandBtn{
+  width:calc(50% - 4px);
+  min-width:0;
+  min-height:88px;
+  padding:8px 5px;
+}
+.contestHandSettings .contestHandBtn .handMark{font-size:30px}
+.contestHandSettings .contestHandBtn b{font-size:14px;letter-spacing:.04em}
+.contestHandSettings .contestHandBtn small{font-size:8px;line-height:1.3}
+
+@media(max-width:560px){
+  .contestHandSettings{grid-template-columns:1fr}
+}
+@media(max-width:380px){
+  #home .brandHero{
+    width:calc(100vw - 12px);
+    grid-template-columns:40px minmax(0,1fr);
+    column-gap:6px;
+    padding-right:8px;
+  }
+  #home .brandText{padding-right:8px}
+  #home .brandText h1{
+    font-size:clamp(29px,9.25vw,34px);
+    gap:.07em;
+    letter-spacing:-.025em;
+    transform:scaleX(.96);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1365,6 +1448,32 @@ html,body{
   <div class="contestLead">
     短時間で自己ベストに挑戦できるチャレンジです。<br>
     スピードガンは5球、ホームランコンテストは10球で自己ベストを競います。
+  </div>
+
+  <div class="contestHandSettings">
+    <div class="setupSection contestHandSection">
+      <div class="setupSectionTitle">スピードガン：投球腕</div>
+      <div class="handChoice contestHandChoice" aria-label="スピードガンの投球腕">
+        <button class="handBtn pitchArmBtn contestHandBtn" type="button" data-pitch-arm="right" aria-pressed="false">
+          <span class="handMark">右</span><b>右投げ</b><small>右腕で挑戦</small>
+        </button>
+        <button class="handBtn pitchArmBtn contestHandBtn" type="button" data-pitch-arm="left" aria-pressed="false">
+          <span class="handMark">左</span><b>左投げ</b><small>左腕で挑戦</small>
+        </button>
+      </div>
+    </div>
+
+    <div class="setupSection contestHandSection">
+      <div class="setupSectionTitle">ホームラン：打席</div>
+      <div class="handChoice contestHandChoice" aria-label="ホームランコンテストの打席">
+        <button class="handBtn contestHandBtn" type="button" data-hand="right" aria-pressed="false">
+          <span class="handMark">右</span><b>右打ち</b><small>右打席で挑戦</small>
+        </button>
+        <button class="handBtn contestHandBtn" type="button" data-hand="left" aria-pressed="false">
+          <span class="handMark">左</span><b>左打ち</b><small>左打席で挑戦</small>
+        </button>
+      </div>
+    </div>
   </div>
 
   <div class="contestChoice">
@@ -2738,6 +2847,7 @@ function setBatterHand(hand){
     btn.classList.toggle('sel',selected);
     btn.setAttribute('aria-pressed',selected?'true':'false');
   });
+  if(typeof updateContestSetupSummary==='function')updateContestSetupSummary();
 }
 function setPitchView(_view){
   S.pitchView='catcher';
@@ -2781,6 +2891,7 @@ function setPitchArm(armSide){
   arm.activeSide=selectedPitchArmSide();
   resetPitchHandVisual();
   updatePitchViewBadge();
+  if(typeof updateContestSetupSummary==='function')updateContestSetupSummary();
 }
 function visiblePitchArmSide(lm){
   const score=side=>{
@@ -3506,7 +3617,6 @@ function drawCalibrationGuide(profile,lm){
 
     if(z){
       drawZoneRect(z,true);
-      drawHomePlate(z.x+z.w/2,z.y+z.h+6,z.w*.45);
 
       if(confirming){
         ctx.save();
@@ -7240,7 +7350,6 @@ function loop(now,token=S.loopToken){
     const layout=catcherViewSceneLayout();
     drawCatcherViewBase(layout);
     const movedFromMound=drawCalibratedPitchPosition(lastLm);
-    drawHomePlate(layout.zone.x+layout.zone.w/2,layout.plateY,layout.zone.w*.46);
     drawZoneRect(layout.zone);
     if(!isSpeedContest())drawComBatter(now,layout);
     if(lastLm){const releaseHint=pitchReleaseDebugHint();hint(S.ball?'':isSpeedContest()?`全力投球! 残り ${Math.max(0,(S.contest?.maxAttempts||5)-(S.contest?.attempts||0))} 球`:(now<S.cooldownUntil?'返球を待っています…':releaseHint?releaseHint:movedFromMound?'投球位置へ戻ってください':virtualPitchBackgroundActive()?'中央やや下部のストライクゾーンへ向けて投げてください':'握りを見せて、ストライクゾーンへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
@@ -7257,7 +7366,6 @@ function loop(now,token=S.loopToken){
     drawComPitcher(now);
     drawBattingJudgeCells(now,z);
     drawZoneRect(z,true);
-    drawHomePlate(z.x+z.w/2,z.y+z.h+7,z.w*.46);
     if(lastLm)drawARBat(lastLm,now);
     if(!S.paused&&!S.ball&&S.comPitcher.phase==='idle'&&now>=S.comPitcher.nextPitchAt&&now>=S.cooldownUntil){comPitchStart(now);S.comPitcher.nextPitchAt=now+99999;}if(!S.ball&&S.comPitcher.phase==='idle'&&S.comPitcher.nextPitchAt>now+9000)S.comPitcher.nextPitchAt=now+2300;
   }else if(S.mode==='analysis'){
@@ -7524,6 +7632,8 @@ $('btnContest').addEventListener('click',()=>{
   $('matchSetup').style.display='none';
   $('analysisSetup').style.display='none';
   $('contestSetup').style.display='flex';
+  setPitchArm(S.pitchArm);
+  setBatterHand(S.batterHand);
   updateContestSetupSummary();
 });
 $('speedContestStartBtn').addEventListener('click',()=>startContest('speed'));
