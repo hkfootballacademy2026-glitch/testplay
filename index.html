@@ -1104,6 +1104,58 @@ html,body{
 }
 #batSetup h2{font-size:clamp(27px,8vw,40px)}
 
+
+/* v70: ホーム画面の重なり防止と分析モードのUI削除 */
+#analysisSetup,#analysisResult,#analysisPanel,#analysisHistoryOverlay{display:none!important}
+#home{
+  padding-top:max(68px,calc(env(safe-area-inset-top) + 58px));
+  padding-left:12px;padding-right:12px;gap:12px;align-items:center;
+}
+.brandHero{
+  position:relative;width:min(94vw,680px);display:grid;
+  grid-template-columns:auto minmax(0,1fr);grid-template-areas:'ball title' 'tag tag';
+  align-items:center;justify-content:center;column-gap:10px;row-gap:5px;
+  padding:4px 8px 2px;
+}
+.brandBall{grid-area:ball;flex:0 0 auto}
+.brandText{grid-area:title;min-width:0}
+.brandText h1{font-size:clamp(38px,11vw,66px);line-height:.92;white-space:nowrap}
+.brandText p{font-size:clamp(10px,2.8vw,17px);letter-spacing:.12em;white-space:nowrap}
+.brandTag{
+  grid-area:tag;position:static;right:auto;top:auto;transform:none;
+  justify-self:center;margin-top:1px;padding:4px 10px;font-size:10px;
+}
+.homeLead{max-width:94vw;text-align:center;line-height:1.35}
+.menuGrid{width:min(94vw,680px);display:flex;flex-direction:column;gap:10px}
+.menuRow{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.modeBtn{
+  width:100%!important;min-width:0;overflow:hidden;
+  padding:32px 10px 14px;gap:5px;
+}
+.modeBtn .icon{font-size:clamp(30px,9vw,40px);line-height:1;margin:0}
+.modeBtn strong{font-size:clamp(15px,4.2vw,21px);line-height:1.18;overflow-wrap:anywhere}
+.modeBtn small{font-size:clamp(8px,2.35vw,11px);line-height:1.35;max-width:100%;overflow-wrap:anywhere}
+.modeBtn.match,.modeBtn.contest.contestWide{
+  width:100%!important;height:auto!important;min-height:88px;
+  padding:14px 44px 14px 68px;overflow:hidden;
+}
+.modeBtn.match .icon,.modeBtn.contest.contestWide .icon{left:18px;font-size:34px}
+.modeBtn.match strong,.modeBtn.contest.contestWide strong{font-size:clamp(19px,5vw,24px)}
+.modeBtn.match small,.modeBtn.contest.contestWide small{font-size:clamp(9px,2.5vw,11px);line-height:1.35}
+.replayPreference{max-width:94vw;flex-wrap:wrap;justify-content:center}
+.replayPreferenceCopy{flex:1 1 230px}
+@media(max-width:380px){
+  #home{padding-left:8px;padding-right:8px;gap:9px}
+  .brandBall{width:43px;height:43px;font-size:25px}
+  .brandText h1{font-size:36px}
+  .brandText p{font-size:9px}
+  .brandTag{font-size:8px;padding:3px 8px}
+  .modeBtn{min-height:126px;padding-top:29px}
+  .modeBtn.match,.modeBtn.contest.contestWide{min-height:78px;padding-left:60px}
+  .modeBtn.match .icon,.modeBtn.contest.contestWide .icon{left:15px;font-size:30px}
+  .replayPreference{padding:7px 8px}
+}
+
 </style>
 </head>
 <body>
@@ -1141,7 +1193,7 @@ html,body{
       </button>
       <button class="modeBtn bat" id="btnBat">
         <span class="modeBadge">BAT</span><span class="icon">🏏</span>
-        <strong>バッティング</strong><small>タイミングを合わせて<br>フルスイング！</small>
+        <strong>バッティング</strong><small>コースを読んで<br>フルスイング！</small>
         <span class="goMark">▶</span>
       </button>
     </div>
@@ -1157,12 +1209,6 @@ html,body{
       <span class="wideCopy"><strong>コンテストモード</strong><small>球速とホームランの自己ベストに挑戦！</small></span>
       <span class="goMark">▶</span>
     </button>
-
-    <button class="modeBtn analysis analysisWide" id="btnAnalysis">
-      <span class="modeBadge">ANALYZE</span><span class="icon">📈</span>
-      <span class="wideCopy"><strong>フォーム分析</strong><small>5フェーズで良い点と改善点を分析！</small></span>
-      <span class="goMark">▶</span>
-    </button>
   </div>
 
   <div class="replayPreference" aria-label="リプレイ録画設定">
@@ -1176,7 +1222,7 @@ html,body{
     </div>
   </div>
 
-  <div id="homeMsg">画面をタップするとBGMが始まります　｜　カメラ映像は端末内で処理されます</div>
+  <div id="homeMsg">タップで音楽スタート　｜　音量は右上で切り替え</div>
   <div class="homeFooter">© BASEBALL AR PROJECT</div>
 </div>
 
@@ -1195,8 +1241,8 @@ html,body{
   <div class="setupSection">
     <div class="setupSectionTitle">投球する腕を選択</div>
     <div class="handChoice compact" aria-label="投球腕">
-      <button class="handBtn pitchArmBtn sel" type="button" data-pitch-arm="right" aria-pressed="true"><span class="handMark">右</span><b>右投げ</b><small>右肩・右ひじ・右手首を追跡</small></button>
-      <button class="handBtn pitchArmBtn" type="button" data-pitch-arm="left" aria-pressed="false"><span class="handMark">左</span><b>左投げ</b><small>左肩・左ひじ・左手首を追跡</small></button>
+      <button class="handBtn pitchArmBtn sel" type="button" data-pitch-arm="right" aria-pressed="true"><span class="handMark">右</span><b>右投げ</b><small>右投げでプレイ</small></button>
+      <button class="handBtn pitchArmBtn" type="button" data-pitch-arm="left" aria-pressed="false"><span class="handMark">左</span><b>左投げ</b><small>左投げでプレイ</small></button>
     </div>
   </div>
 
@@ -1212,7 +1258,7 @@ html,body{
   </div>
 
   <div class="setupSection">
-    <div class="setupSectionTitle">握りと腕の振りから球種を自動推定</div>
+    <div class="setupSectionTitle">球種ガイド</div>
     <div class="gripGuide">
       <div class="gripCard"><b>ストレート</b><br>人差し指と中指を揃え、まっすぐ振る</div>
       <div class="gripCard"><b>スライダー / カーブ</b><br>指を揃え、横振り・手首の向きを加える</div>
@@ -1256,7 +1302,7 @@ html,body{
       <button class="stadiumBtn batStadiumBtn" type="button" data-bat-stadium="dome" aria-pressed="false"><span class="stadiumThumb" data-bat-stadium-thumb="dome"></span><b>ドーム球場</b><small>照明付きの屋内球場</small></button>
       <button class="stadiumBtn batStadiumBtn" type="button" data-bat-stadium="open" aria-pressed="false"><span class="stadiumThumb" data-bat-stadium-thumb="open"></span><b>オープン球場</b><small>青空とヤシの木の球場</small></button>
     </div>
-    <div class="virtualBgNote">九分割の投球コースとバット軌道を50%、スイングタイミングを50%で判定します。</div>
+    <div class="virtualBgNote">投球コースとスイングのタイミング、両方を合わせよう！</div>
   </div>
 
   <button class="bigBtn" id="batStartBtn">バッティング開始</button>
@@ -1277,7 +1323,7 @@ html,body{
   </div>
 
   <div class="setupSection">
-    <div class="setupSectionTitle">守備時に対戦するCOM打者</div>
+    <div class="setupSectionTitle">守備時の相手打者</div>
     <div class="handChoice compact" aria-label="試合の相手打者の打席">
       <button class="handBtn" type="button" data-hand="right" aria-pressed="false"><span class="handMark">右</span><b>右バッター</b><small>右打席</small></button>
       <button class="handBtn" type="button" data-hand="left" aria-pressed="false"><span class="handMark">左</span><b>左バッター</b><small>左打席</small></button>
@@ -1304,7 +1350,7 @@ html,body{
     <div class="virtualBgNote">選択した会場を攻撃・守備の両方で使用します。</div>
   </div>
 
-  <div class="note">表：あなたが<b>バッティング</b> ／ 裏：あなたが<b>ピッチング</b><br>ランナーの進塁・守備は自動処理です。</div>
+  <div class="note">表：あなたが<b>バッティング</b> ／ 裏：あなたが<b>ピッチング</b><br>進塁と守備はゲームの進行に合わせて動きます。</div>
 
   <button class="bigBtn" id="matchStartBtn" type="button">PLAY BALL</button>
   <button class="subBtn" id="setupBackBtn" type="button">ホームへ戻る</button>
@@ -1317,7 +1363,7 @@ html,body{
   <h2>コンテストモード</h2>
 
   <div class="contestLead">
-    既存のピッチング・バッティングエンジンを使った短時間チャレンジです。<br>
+    短時間で自己ベストに挑戦できるチャレンジです。<br>
     スピードガンは5球、ホームランコンテストは10球で自己ベストを競います。
   </div>
 
@@ -1367,8 +1413,8 @@ html,body{
 <!-- ActiveArcade風: 正しい骨格検出後にカウントダウン -->
 <div id="calibrationOverlay">
   <div class="calibCard">
-    <div id="calibTitle">キャリブレーション</div>
-    <div id="calibStatus">全身がガイド内に入るように立ってください</div>
+    <div id="calibTitle">プレイ準備</div>
+    <div id="calibStatus">ガイド内に入るように立ってください</div>
     <div class="calibBar"><span id="calibProgress"></span></div>
   </div>
   <div id="calibCount"></div>
@@ -1425,7 +1471,7 @@ html,body{
 <button id="homeBtn">&#8962; ホーム</button>
 <button id="soundBtn" type="button" aria-pressed="false">🔊 音</button>
 <button id="replayOpenBtn" type="button" disabled>🎬 リプレイ <span id="replayCountBadge">0</span></button>
-<button id="recalibrateBtn">&#8635; 再キャリブレーション</button>
+<button id="recalibrateBtn">&#8635; 位置を調整</button>
 <div id="board">
   <div class="lampGroup"><div class="lampLabel">B</div>
     <div class="lamps"><div class="lamp b"></div><div class="lamp b"></div><div class="lamp b"></div></div></div>
@@ -1444,7 +1490,7 @@ html,body{
 <div id="lineScore"></div>
 <div id="speedGun"><div class="kmh" id="kmh">---</div><div class="unit">km/h</div></div>
 <div id="pitchViewBadge"></div>
-<div id="pitchTypeHUD"><div class="type" id="pitchTypeName">ストレート</div><div class="grip" id="gripName">握りを認識中</div><div class="conf" id="gripConfidence"></div></div>
+<div id="pitchTypeHUD"><div class="type" id="pitchTypeName">ストレート</div><div class="grip" id="gripName">握りを確認中</div><div class="conf" id="gripConfidence"></div></div>
 <div id="call"></div>
 
 <div id="banner"><div class="big" id="bannerBig"></div><div class="sub" id="bannerSub"></div></div>
@@ -2351,10 +2397,10 @@ async function initVisionModels(msgEl){
       try{landmarker=await PoseLandmarker.createFromOptions(vision,options);break;}
       catch(err){poseError=err;console.warn('Pose model attempt failed.',err);}
     }
-    if(!landmarker)throw poseError||new Error('骨格認識モデルを開始できませんでした。');
+    if(!landmarker)throw poseError||new Error('プレイヤーの動きを確認できませんでした。');
   }
   if(!handLandmarker&&handModelAvailable){
-    msgEl.textContent='手の握り認識モデルを読み込み中…';
+    msgEl.textContent='ゲームを準備しています…';
     const handAttempts=[
       {baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:'GPU'},runningMode:'VIDEO',numHands:2,minHandDetectionConfidence:.42,minHandPresenceConfidence:.40,minTrackingConfidence:.42},
       {baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'},runningMode:'VIDEO',numHands:2,minHandDetectionConfidence:.42,minHandPresenceConfidence:.40,minTrackingConfidence:.42}
@@ -2827,7 +2873,7 @@ function updateBoard(){
     $('stat1').textContent = M.scoreYou.reduce((a,b)=>a+(b||0),0);
     $('stat1cap').textContent = 'あなた';
     $('stat2').textContent = M.scoreCom.reduce((a,b)=>a+(b||0),0);
-    $('stat2cap').textContent = 'COM';
+    $('stat2cap').textContent = '相手';
     const b=$('diamond').children;
     b[0].classList.toggle('on',M.bases[0]);
     b[1].classList.toggle('on',M.bases[1]);
@@ -2857,7 +2903,7 @@ function renderLineScore(){
     }
     return `<tr><td class="teamName">${name}</td>${tds}<td class="total">${arr.reduce((a,b)=>a+(b||0),0)}</td></tr>`;
   };
-  $('lineScore').innerHTML = `<table>${head}${row('あなた',M.scoreYou,M.half===0)}${row('COM',M.scoreCom,M.half===1)}</table>`;
+  $('lineScore').innerHTML = `<table>${head}${row('あなた',M.scoreYou,M.half===0)}${row('相手',M.scoreCom,M.half===1)}</table>`;
 }
 function addCall(text,color){
   const el=$('call');
@@ -3141,7 +3187,7 @@ function poseFingerprint(lm){
   return{x:center.x,y:center.y,scale,shoulder:shoulderWidth};
 }
 function calibrationQuality(profile,lm){
-  if(!lm)return{ok:false,msg:'人物を認識できません。カメラから少し離れてください'};
+  if(!lm)return{ok:false,msg:'プレイヤーを確認できません。カメラから少し離れてください'};
   const isAnalysisPitch=profile==='analysisPitch',isAnalysisBat=profile==='analysisBat';
   const isAnalysis=isAnalysisPitch||isAnalysisBat;
   const isPitch=profile==='pitch'||isAnalysisPitch,isBat=profile==='bat'||isAnalysisBat;
@@ -3177,12 +3223,12 @@ function calibrationQuality(profile,lm){
     }
   }
 
-  const fp=poseFingerprint(lm);if(!fp)return{ok:false,msg:'骨格を安定して検出できる明るい場所へ移動してください'};
-  return{ok:true,msg:isAnalysis?'全身の必要点を検出しました。自動で分析を開始します':isPitch?`${pitchArmLabel()}の必要点を検出しました。自動で開始します`:`${S.batterHand==='left'?'右':'左'}腕の必要点を検出しました。自動で開始します`,fp};
+  const fp=poseFingerprint(lm);if(!fp)return{ok:false,msg:'姿勢を確認しやすい明るい場所へ移動してください'};
+  return{ok:true,msg:isAnalysis?'全身の必要点を検出しました。自動で分析を開始します':isPitch?`${pitchArmLabel()}の準備ができました。開始します`:`${S.batterHand==='left'?'右':'左'}打席の準備ができました。開始します`,fp};
 }
 
 function showCalibration(profile){
-  const labels={bat:['打撃準備',`肩・腰・膝の検出情報から、${S.batterHand==='left'?'左':'右'}打席用の九分割ゾーンを自動調整します`],pitch:['投球準備',`${pitchArmLabel()}の肩・ひじ・手首と反対側の肩を検出すると、自動で開始します`],analysisBat:['打撃フォーム準備','肩・腕・腰・両膝・両足首まで検出すると、自動で開始します'],analysisPitch:['投球フォーム準備','肩・投球腕・腰・両膝・両足首まで検出すると、自動で開始します']};
+  const labels={bat:['打撃準備',`姿勢に合わせて、${S.batterHand==='left'?'左':'右'}打席用の九分割ゾーンを調整します`],pitch:['投球準備',`${pitchArmLabel()}の姿勢を確認すると開始します`],analysisBat:['打撃フォーム準備','全身が映る位置へ立ってください'],analysisPitch:['投球フォーム準備','全身が映る位置へ立ってください']};
   const [title,status]=labels[profile]||labels.pitch;
   $('calibTitle').textContent=title;$('calibStatus').textContent=status;$('calibProgress').style.width='0%';$('calibCount').textContent='';$('calibCount').classList.remove('show');$('calibrationOverlay').style.display='flex';
 }
@@ -3283,11 +3329,16 @@ function captureCalibration(profile,lm,batZoneOverride=null){
   calibrationData.lastProfile=profile;
 }
 function finishCalibration(c){
+  const completedProfile=c.profile;
   c.active=false;
   hideCalibration();
   S.paused=false;
   const resolve=c.resolve;
   S.calibration=null;
+  if(completedProfile==='pitch'){
+    resetPitchReleaseState(false);
+    resetPitchHandVisual();
+  }
   beep(980,.14,'triangle',.12);
   resolve(true);
 }
@@ -3343,7 +3394,7 @@ function updateCalibration(lm,now){
 
     const progress=clamp(c.detectedFrames/3,0,1);
     $('calibStatus').textContent=isBatProfile
-      ?'骨格に合わせてストライクゾーンを調整しています'
+      ?'姿勢に合わせてストライクゾーンを調整しています'
       :q.msg;
     $('calibProgress').style.width=`${Math.round(progress*100)}%`;
 
@@ -3383,7 +3434,7 @@ function updateCalibration(lm,now){
   if(!stable){
     c.stableSince=0;
     c.countdownStart=0;
-    $('calibStatus').textContent='骨格を検出しました。構えを止めてください';
+    $('calibStatus').textContent='姿勢を確認しました。そのまま少し止まってください';
     $('calibProgress').style.width='18%';
     return;
   }
@@ -3549,9 +3600,9 @@ function updatePitchTypeHUD(){
   const box=$('pitchTypeHUD');if(!box)return;const visible=S.running&&S.mode==='pitch'&&!S.calibration;box.style.display=visible?'block':'none';if(!visible)return;
   const g=gripState.locked||gripState.live;
   $('pitchTypeName').textContent=g?.name||'ストレート';
-  $('gripName').textContent=handModelAvailable?(lastHands.length?'握り＋腕の振りで推定':'指先をカメラへ見せてください'):'腕の振りから推定';
+  $('gripName').textContent=handModelAvailable?(lastHands.length?'握りと腕の振りを確認中':'指先をカメラへ見せてください'):'腕の振りを確認中';
   const styleLabel=g?.releaseStyleLabel?` ・ ${g.releaseStyleLabel}`:'';
-  $('gripConfidence').textContent=g?.confidence?`認識 ${Math.round(g.confidence*100)}%${styleLabel}`:styleLabel.trim();
+  $('gripConfidence').textContent=styleLabel.trim();
 }
 
 /* ----- 実際の身体スケールと腕振りから球速を推定 ----- */
@@ -3964,6 +4015,11 @@ const pitchReleaseState={
   loadBodyX:.5,loadBodyY:.5,
   driveAt:0,
   candidateFrames:0,
+  loadOutward:0,
+  maxDriveSpeed:0,
+  maxDriveTravel:0,
+  peakReleasePoint:null,
+  lastDriveSpeed:0,
   lastReleaseAt:0,
   lastReason:''
 };
@@ -3985,6 +4041,11 @@ function resetPitchReleaseState(requireNeutral=true){
   pitchReleaseState.loadBodyY=.5;
   pitchReleaseState.driveAt=0;
   pitchReleaseState.candidateFrames=0;
+  pitchReleaseState.loadOutward=0;
+  pitchReleaseState.maxDriveSpeed=0;
+  pitchReleaseState.maxDriveTravel=0;
+  pitchReleaseState.peakReleasePoint=null;
+  pitchReleaseState.lastDriveSpeed=0;
   pitchReleaseState.lastReleaseAt=0;
   pitchReleaseState.lastReason='';
   arm.hist={L:[],R:[]};
@@ -4477,9 +4538,18 @@ function pitchHistoryReference(history,now,minAge=65,maxAge=180){
 
 function pitchLoadStyle(pose){
   const span=pose.shoulderSpan;
-  const overhand=pose.wr.y<pose.sh.y-Math.max(.032,span*.12)&&pose.elbowAngle<174;
-  const sidearm=Math.abs(pose.wr.y-pose.sh.y)<=span*.42&&pose.outward>span*.30&&pose.elbowAngle<171;
-  const underhand=!!pose.hip&&pose.wr.y>pose.hip.y+Math.max(.012,span*.05)&&pose.outward>span*.22&&pose.elbowAngle<171;
+  const overhand=
+    pose.wr.y<pose.sh.y-Math.max(.012,span*.045)&&
+    pose.elbowAngle<178;
+  const sidearm=
+    Math.abs(pose.wr.y-pose.sh.y)<=span*.58&&
+    pose.outward>span*.18&&
+    pose.elbowAngle<176;
+  const underhand=
+    !!pose.hip&&
+    pose.wr.y>pose.hip.y+Math.max(.006,span*.025)&&
+    pose.outward>span*.12&&
+    pose.elbowAngle<176;
   if(overhand)return'overhand';
   if(sidearm)return'sidearm';
   if(underhand)return'underhand';
@@ -4488,18 +4558,18 @@ function pitchLoadStyle(pose){
 
 function pitchNeutralPose(pose,motion){
   const span=pose.shoulderSpan;
-  const wristNotCocked=pose.wr.y>pose.sh.y-Math.max(.016,span*.07);
-  const closeToBody=Math.abs(pose.outward)<span*.92;
-  const notBelowFrame=!pose.hip||pose.wr.y<pose.hip.y+span*.72;
-  return motion.speedNorm<.54&&wristNotCocked&&closeToBody&&notBelowFrame;
+  const wristNotCocked=pose.wr.y>pose.sh.y-Math.max(.025,span*.12);
+  const closeToBody=Math.abs(pose.outward)<span*1.18;
+  const notBelowFrame=!pose.hip||pose.wr.y<pose.hip.y+span*.80;
+  return motion.speedNorm<.78&&wristNotCocked&&closeToBody&&notBelowFrame;
 }
 
 function pitchReleaseDebugHint(){
   if(pitchReleaseState.phase==='released'||pitchReleaseState.phase==='needNeutral'){
-    return'投球腕を一度下ろすと、次のボールを持ち直します';
+    return'腕を自然な位置へ戻すと、次の投球になります';
   }
-  if(pitchReleaseState.phase==='loaded')return'テイクバックOK。腕を前へ振ってください';
-  if(pitchReleaseState.phase==='drive')return'そのまま腕を振り切ってください';
+  if(pitchReleaseState.phase==='loaded')return'そのまま前へ振ってください';
+  if(pitchReleaseState.phase==='drive')return'リリースして最後まで振り切ってください';
   return'';
 }
 
@@ -4522,27 +4592,47 @@ function trackThrow(lm,now){
     shoulderSpan:pose.shoulderSpan,
     bodyX:pose.bodyX,bodyY:pose.bodyY
   });
-  while(history.length&&now-history[0].t>900)history.shift();
+  while(history.length&&now-history[0].t>850)history.shift();
 
   const motion=throwMotionFeatures(side,lm,history);
   const neutral=pitchNeutralPose(pose,motion);
 
-  // リリース後は、腕を一度ニュートラルへ戻すまで次の投球を受け付けない。
-  // 2球目以降にフォロースルーや持ち直しを誤投球として拾う問題を防ぐ。
+  // 投球後は短時間だけ再投球をロックし、腕が自然な位置へ戻ればすぐ次球へ進む。
   if(state.phase==='released'||state.phase==='needNeutral'){
     if(neutral){
       if(!state.neutralSince)state.neutralSince=now;
-      if(now-state.neutralSince>=170&&now-state.lastReleaseAt>=360){
+      if(now-state.neutralSince>=90&&now-state.lastReleaseAt>=230){
         state.phase='ready';
         state.neutralSince=0;
         state.pendingStyle=null;
         state.loadFrames=0;
         state.candidateFrames=0;
+        state.maxDriveSpeed=0;
+        state.maxDriveTravel=0;
+        state.peakReleasePoint=null;
         history.splice(0,Math.max(0,history.length-2));
         resetPitchHandVisual();
       }
     }else{
       state.neutralSince=0;
+    }
+
+    // 骨格の揺れでニュートラル判定が取れない場合も、低速状態が続けばデッドロックを解除する。
+    if(
+      state.lastReleaseAt>0&&
+      now-state.lastReleaseAt>1100&&
+      motion.speedNorm<1.02&&
+      pose.wr.y>pose.sh.y-pose.shoulderSpan*.22
+    ){
+      state.phase='ready';
+      state.neutralSince=0;
+      state.pendingStyle=null;
+      state.loadFrames=0;
+      state.candidateFrames=0;
+      state.maxDriveSpeed=0;
+      state.maxDriveTravel=0;
+      state.peakReleasePoint=null;
+      resetPitchHandVisual();
     }
     return;
   }
@@ -4553,13 +4643,11 @@ function trackThrow(lm,now){
 
   if(state.phase==='ready'){
     if(loadStyle){
-      if(state.pendingStyle===loadStyle)state.loadFrames++;
-      else{
-        state.pendingStyle=loadStyle;
-        state.loadFrames=1;
-      }
+      state.pendingStyle=loadStyle;
+      state.loadFrames++;
 
-      if(state.loadFrames>=2){
+      // テイクバックを1フレーム確認すれば準備完了。誤投球は後段の方向・移動量で防ぐ。
+      if(state.loadFrames>=1){
         state.phase='loaded';
         state.loadAt=now;
         state.loadStyle=loadStyle;
@@ -4570,8 +4658,13 @@ function trackThrow(lm,now){
         state.loadShoulderSpan=pose.shoulderSpan;
         state.loadBodyX=pose.bodyX;
         state.loadBodyY=pose.bodyY;
+        state.loadOutward=pose.outward;
         state.driveAt=0;
         state.candidateFrames=0;
+        state.maxDriveSpeed=0;
+        state.maxDriveTravel=0;
+        state.peakReleasePoint=null;
+        state.lastDriveSpeed=0;
         arm.cockedAt[side]=now;
         arm.activeSide=side;
       }
@@ -4587,45 +4680,54 @@ function trackThrow(lm,now){
   const dy=pose.wr.y-state.loadY;
   const normalizedTravel=Math.hypot(dx,dy)/span;
   const elbowGain=pose.elbowAngle-state.loadElbow;
-  const depthAdvance=state.loadZ-pose.z; // プラスほどカメラ方向へ手が進んだ
+  const depthAdvance=state.loadZ-pose.z;
+  const inwardTravel=Math.abs(state.loadOutward)-Math.abs(pose.outward);
   const scaleRatio=pose.shoulderSpan/Math.max(.05,state.loadShoulderSpan);
   const bodyShift=Math.hypot(
     pose.bodyX-state.loadBodyX,
     pose.bodyY-state.loadBodyY
   )/span;
-  const bodyStable=scaleRatio>.72&&scaleRatio<1.36&&bodyShift<.62;
+  const bodyStable=scaleRatio>.66&&scaleRatio<1.52&&bodyShift<.82;
 
   if(!bodyStable){
-    // カメラへ歩いて近づく動きなどを投球にしない。
-    state.phase='needNeutral';
-    state.neutralSince=0;
+    state.phase='ready';
     state.pendingStyle=null;
     state.loadFrames=0;
     state.candidateFrames=0;
-    state.lastReason='body-shift';
-    resetPitchHandVisual();
+    state.lastReason='position-change';
     return;
   }
 
   const driveDirection=state.loadStyle==='overhand'
-    ?dy>span*.075&&motion.vy>.30
+    ?dy>span*.055&&motion.vy>.18
     :state.loadStyle==='sidearm'
-      ?Math.abs(dx)>span*.10&&Math.abs(motion.vx)>.36
-      :-dy>span*.075&&motion.vy<-.24;
+      ?(inwardTravel>span*.025||depthAdvance>.004)&&Math.abs(motion.vx)>.22
+      :-dy>span*.055&&motion.vy<-.16;
 
   if(state.phase==='loaded'){
-    if(now-state.loadAt>1650){
-      state.phase='needNeutral';
-      state.neutralSince=0;
-      state.lastReason='load-timeout';
+    if(now-state.loadAt>1800){
+      state.phase='ready';
+      state.pendingStyle=null;
+      state.loadFrames=0;
+      state.candidateFrames=0;
+      state.lastReason='restart';
       return;
     }
 
-    if(driveDirection&&motion.speedNorm>.52&&normalizedTravel>.13){
+    if(
+      now-state.loadAt>=35&&
+      driveDirection&&
+      motion.speedNorm>.38&&
+      normalizedTravel>.09
+    ){
       state.phase='drive';
       state.driveAt=now;
       state.candidateFrames=0;
-    }else if(neutral&&now-state.loadAt>220){
+      state.maxDriveSpeed=motion.speedNorm;
+      state.maxDriveTravel=normalizedTravel;
+      state.peakReleasePoint=handBallPoint(side,lm,'release');
+      state.lastDriveSpeed=motion.speedNorm;
+    }else if(neutral&&now-state.loadAt>300){
       state.phase='ready';
       state.pendingStyle=null;
       state.loadFrames=0;
@@ -4637,63 +4739,88 @@ function trackThrow(lm,now){
 
   if(state.phase!=='drive')return;
 
-  const reference=pitchHistoryReference(history,now);
+  const reference=pitchHistoryReference(history,now,45,165);
   const frameTravel=reference
     ?Math.hypot(pose.wr.x-reference.x,pose.wr.y-reference.y)/span
     :0;
 
-  const releaseDirection=state.loadStyle==='overhand'
-    ?motion.vy>.38&&dy>span*.12
-    :state.loadStyle==='sidearm'
-      ?Math.abs(motion.vx)>.48&&Math.abs(dx)>span*.16
-      :motion.vy<-.30&&-dy>span*.12;
+  if(motion.speedNorm>=state.maxDriveSpeed){
+    state.maxDriveSpeed=motion.speedNorm;
+    state.peakReleasePoint=handBallPoint(side,lm,'release');
+  }
+  state.maxDriveTravel=Math.max(state.maxDriveTravel,normalizedTravel);
 
-  // 単に腕を伸ばしたまま上下させただけでは投球にしない。
-  // テイクバック時より肘が伸びた、または手がカメラ方向へ進んだことを必須の根拠にする。
+  const releasePlane=state.loadStyle==='overhand'
+    ?pose.wr.y>=pose.sh.y-span*.08&&dy>span*.10
+    :state.loadStyle==='sidearm'
+      ?Math.abs(dx)>span*.16&&(inwardTravel>span*.04||depthAdvance>.004||elbowGain>1.5)
+      :!!pose.hip&&pose.wr.y<=pose.hip.y+span*.28&&-dy>span*.10;
+
+  const releaseDirection=state.loadStyle==='overhand'
+    ?motion.vy>.22
+    :state.loadStyle==='sidearm'
+      ?Math.abs(motion.vx)>.28
+      :motion.vy<-.18;
+
   const extensionEvidence=
-    elbowGain>7||
-    (state.loadElbow<132&&pose.elbowAngle>145);
-  const depthEvidence=depthAdvance>.016;
-  const strongEvidence=
-    motion.speedNorm>1.70&&
-    normalizedTravel>.42&&
-    frameTravel>.11&&
-    (elbowGain>4||depthAdvance>.010);
-  const releaseEvidence=extensionEvidence||depthEvidence||strongEvidence;
+    elbowGain>1.5||
+    (state.loadElbow<138&&pose.elbowAngle>142);
+  const depthEvidence=depthAdvance>.004;
+  const travelEvidence=normalizedTravel>.16&&frameTravel>.018;
+  const releaseEvidence=
+    releasePlane&&
+    (extensionEvidence||depthEvidence||normalizedTravel>.28);
 
   const releaseCandidate=
-    now-state.driveAt>=24&&
+    now-state.loadAt>=55&&
+    now-state.driveAt>=12&&
     releaseDirection&&
     releaseEvidence&&
-    motion.speedNorm>.72&&
-    normalizedTravel>.21&&
-    frameTravel>.035;
+    motion.speedNorm>.48&&
+    travelEvidence;
 
   state.candidateFrames=releaseCandidate
     ?state.candidateFrames+1
     :Math.max(0,state.candidateFrames-1);
 
+  const passedPeak=
+    state.maxDriveSpeed>.84&&
+    motion.speedNorm<state.maxDriveSpeed*.72&&
+    now-state.driveAt>70;
+  const peakFallback=
+    passedPeak&&
+    releasePlane&&
+    state.maxDriveTravel>.23&&
+    (extensionEvidence||depthEvidence||state.maxDriveSpeed>1.18);
   const strongImmediate=
     releaseCandidate&&
-    motion.speedNorm>1.65&&
-    normalizedTravel>.42&&
-    (elbowGain>10||depthAdvance>.020);
+    (motion.speedNorm>1.08||normalizedTravel>.31);
 
-  if(state.candidateFrames>=2||strongImmediate){
+  if(state.candidateFrames>=1||strongImmediate||peakFallback){
     state.phase='released';
     state.lastReleaseAt=now;
     state.neutralSince=0;
     state.candidateFrames=0;
-    const releasePoint=handBallPoint(side,lm,'release');
+    const releasePoint=
+      handBallPoint(side,lm,'release')||
+      state.peakReleasePoint||
+      {x:pitchHandVisualState.x,y:pitchHandVisualState.y};
     releaseUserPitch(side,lm,motion,releasePoint);
     return;
   }
 
-  if(now-state.driveAt>720){
-    state.phase='needNeutral';
-    state.neutralSince=0;
+  state.lastDriveSpeed=motion.speedNorm;
+
+  if(now-state.driveAt>1000){
+    // 投球を取り逃した場合は、腕を下ろす操作を強制せずその場で再試行できる。
+    state.phase='ready';
+    state.pendingStyle=null;
+    state.loadFrames=0;
     state.candidateFrames=0;
-    state.lastReason='drive-timeout';
+    state.maxDriveSpeed=0;
+    state.maxDriveTravel=0;
+    state.peakReleasePoint=null;
+    state.lastReason='retry';
   }
 }
 
@@ -5232,7 +5359,7 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
     dir:'toCom',
     sx,sy,tx,ty,
     controlX,controlY,
-    startR:clamp(Math.min(W,H)*.015,7,12),
+    startR:clamp(Math.min(W,H)*.021,10,17),
     attached:false,
     t0:now,
     dur:flight,
@@ -5844,7 +5971,7 @@ function endMatch(){
   for(let i=1;i<=M.innings;i++) head+=`<th>${i}</th>`;
   head+='<th>R</th></tr>';
   const row=(n,a)=>`<tr><td>${n}</td>${a.map(v=>`<td>${v===undefined?'-':v}</td>`).join('')}${'<td></td>'.repeat(Math.max(0,M.innings-a.length))}<td style="color:var(--amber)">${a.reduce((x,y)=>x+(y||0),0)}</td></tr>`;
-  $('resultScore').innerHTML=`<table>${head}${row('あなた',M.scoreYou)}${row('COM',M.scoreCom)}</table>`;
+  $('resultScore').innerHTML=`<table>${head}${row('あなた',M.scoreYou)}${row('相手',M.scoreCom)}</table>`;
   $('resultStats').innerHTML=`奪三振 <b>${S.ks}</b> / 最速 <b>${S.maxKmh||'-'} km/h</b>`;
   showHUD(false);
   $('result').style.display='flex';
@@ -6322,7 +6449,7 @@ function drawUserHeldBall(lm,now){
   const point=trackedHeldBallPoint(side,lm,now);
   if(!point)return;
 
-  const r=clamp(Math.min(W,H)*.014,7,11);
+  const r=clamp(Math.min(W,H)*.022,11,18);
   ctx.save();
   ctx.shadowColor='rgba(220,242,255,.52)';
   ctx.shadowBlur=6;
@@ -6606,35 +6733,12 @@ function getVisiblePitchFeetPlacement(lm){
     span:clamp(span,42,W*.24)
   };
 }
-function drawARBattersBoxAt(x,y,span,hand='right',alpha=.90){
-  // v29: 足幅だけを基準にすると小さくなりやすいため、
-  // スマホ画面上で実際の打席らしく見える最低サイズを確保する。
-  const boxW=clamp(span*2.28,82,W*.285);
-  const boxH=clamp(span*1.54,62,H*.145);
-  const shift=(hand==='right'?-1:1)*boxW*.055;
-  const left=x-boxW*.5+shift;
-  const top=y-boxH*.91;
-  ctx.save();
-  ctx.globalAlpha=alpha;
-  ctx.fillStyle='rgba(175,126,82,.055)';
-  ctx.strokeStyle='rgba(249,246,238,.90)';
-  ctx.lineWidth=Math.max(2,boxW*.027);
-  ctx.beginPath();ctx.rect(left,top,boxW,boxH);ctx.fill();ctx.stroke();
-  ctx.strokeStyle='rgba(249,246,238,.43)';
-  ctx.lineWidth=Math.max(1.5,boxW*.016);
-  ctx.beginPath();ctx.moveTo(left+boxW*.14,top+boxH*.57);ctx.lineTo(left+boxW*.86,top+boxH*.57);ctx.stroke();
-  ctx.restore();
+function drawARBattersBoxAt(_x,_y,_span,_hand='right',_alpha=.90){
+  // 足元へ追随する打席枠は表示しない。
+  return;
 }
-function drawUserBattersBoxFromPose(lm){
-  const feet=getUserFootPlacement(lm);
-  if(!feet) return;
-  drawARBattersBoxAt(
-    feet.x,
-    feet.y+clamp(feet.span*.08,3,9),
-    feet.span*1.06,
-    S.batterHand==='left'?'left':'right',
-    .94
-  );
+function drawUserBattersBoxFromPose(_lm){
+  return;
 }
 function drawPitchVirtualFieldCleanup(layout){
   // v27: 背景の中央〜右側に被る大きな土色の円形オーバーレイを廃止。
@@ -6814,15 +6918,6 @@ function drawBatterImageFrame(layout,p,alpha=1,now=performance.now()){
 }
 function drawComBatter(now,layout=pitchingSceneLayout()){
   const b=S.comBatter;
-  if(virtualPitchBackgroundActive()){
-    drawARBattersBoxAt(
-      layout.batter.x+layout.batter.w*.5,
-      (layout.feetY??(layout.batter.y+layout.batter.h*.93))+8,
-      layout.batter.w*.72,
-      layout.hand,
-      .92
-    );
-  }
   let p=0;
   if(b.willSwing&&now>=b.swingT){
     p=clamp((now-b.swingT)/(b.swingDuration||560),0,1);
@@ -6901,11 +6996,9 @@ function drawComPitcher(now){
 
 function pitchBallRadius(ball,e){
   if(ball.dir==='toCom'){
-    // v44: 参考ゲームと同じ拡大カーブ。
-    // 手元側では小さく、終盤だけ自然に大きくして着弾先を読みやすくする。
-    return 5+Math.pow(e,1.58)*29;
+    const start=ball.startR||11;
+    return start+Math.pow(e,1.58)*(34-start);
   }
-  // バッティング: 手前のCOM投手→奥のユーザーバッター
   return 21-e*16;
 }
 
@@ -7150,7 +7243,7 @@ function loop(now,token=S.loopToken){
     drawHomePlate(layout.zone.x+layout.zone.w/2,layout.plateY,layout.zone.w*.46);
     drawZoneRect(layout.zone);
     if(!isSpeedContest())drawComBatter(now,layout);
-    if(lastLm){const releaseHint=pitchReleaseDebugHint();hint(S.ball?'':isSpeedContest()?`全力投球! 残り ${Math.max(0,(S.contest?.maxAttempts||5)-(S.contest?.attempts||0))} 球`:(now<S.cooldownUntil?'返球を待っています…':releaseHint?releaseHint:movedFromMound?'緑の投球位置へ戻ってください':virtualPitchBackgroundActive()?'中央やや下部のストライクゾーンへ向けて投げてください':'握りを見せてから、画面奥の自分からミットへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
+    if(lastLm){const releaseHint=pitchReleaseDebugHint();hint(S.ball?'':isSpeedContest()?`全力投球! 残り ${Math.max(0,(S.contest?.maxAttempts||5)-(S.contest?.attempts||0))} 球`:(now<S.cooldownUntil?'返球を待っています…':releaseHint?releaseHint:movedFromMound?'投球位置へ戻ってください':virtualPitchBackgroundActive()?'中央やや下部のストライクゾーンへ向けて投げてください':'握りを見せて、ストライクゾーンへ投げてください'));if(!S.ball&&!S.paused&&now>=S.cooldownUntil)trackThrow(lastLm,now);drawUserHeldBall(lastLm,now);updateGripObservation(lastLm,now);}else hint(S.pitchDistance==='near'?'顔・両肩・両ひじ・両手首が見えるように立ってください':'全身と投球する手が見えるように、カメラから離れてください');catcherOverlayLayout=layout;updatePitchTypeHUD();
   }else if(S.mode==='bat'){
     if(!virtualBatBackgroundActive())drawBattingPitcherBackViewBase();
     if(lastLm){
@@ -7316,13 +7409,13 @@ async function startMode(mode,isMatch,options={}){
   }else if(mode==='bat'){
     await banner(
       '10球勝負!',
-      `相手: <b style="color:var(--green)">${comPitcherHandLabel()}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>手前のCOMピッチャーが、画面奥の打席へ投げます。ゾーンでスイング!`
+      `相手: <b style="color:var(--green)">${comPitcherHandLabel()}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>相手投手の球を見て、ゾーンへスイング！`
     );
     S.comPitcher.nextPitchAt=performance.now()+1300;
   }else if(mode==='pitch'){
     await banner(
       `ピッチング / ${batterHandLabel()}`,
-      `背景: <b style="color:var(--green)">${pitchBackgroundLabel()}</b><br>投球位置を固定し、握りと腕の振りから球種・球速を計算します`,
+      `背景: <b style="color:var(--green)">${pitchBackgroundLabel()}</b><br>狙ったコースへ思いきり投げよう！`,
       1750
     );
   }
@@ -7436,7 +7529,6 @@ $('btnContest').addEventListener('click',()=>{
 $('speedContestStartBtn').addEventListener('click',()=>startContest('speed'));
 $('homeRunContestStartBtn').addEventListener('click',()=>startContest('homerun'));
 $('contestSetupBackBtn').addEventListener('click',goHome);
-$('btnAnalysis').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('matchSetup').style.display='none';$('contestSetup').style.display='none';$('analysisSetup').style.display='flex';});
 document.querySelectorAll('.analysisBtn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.analysisBtn').forEach(x=>x.classList.remove('sel'));btn.classList.add('sel');S.analysisType=btn.dataset.analysis==='pitch'?'pitch':'bat';}));
 $('analysisStartBtn').addEventListener('click',()=>{const sel=document.querySelector('.analysisBtn.sel');S.analysisType=sel?.dataset.analysis==='pitch'?'pitch':'bat';startMode('analysis',false);});
 $('analysisSetupBackBtn').addEventListener('click',goHome);
@@ -7515,10 +7607,6 @@ function verifyRuntimeIntegrity(){
   const required={
     arm:typeof arm==='object',
     pitchHandVisualState:typeof pitchHandVisualState==='object',
-    renderAnalysisResult:typeof renderAnalysisResult==='function',
-    openAnalysisHistory:typeof openAnalysisHistory==='function',
-    closeAnalysisHistory:typeof closeAnalysisHistory==='function',
-    finishFormAnalysis:typeof finishFormAnalysis==='function',
     startMode:typeof startMode==='function',
     startContest:typeof startContest==='function'
   };
