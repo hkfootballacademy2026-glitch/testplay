@@ -1247,6 +1247,182 @@ html,body{
   .brandText p{font-size:8px;letter-spacing:.07em}
 }
 
+
+
+/* v71: モバイル向けリプレイUI。動画と操作部を完全に分離する */
+#replayOverlay{
+  box-sizing:border-box;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  overflow-y:auto;
+  padding:
+    max(16px,env(safe-area-inset-top))
+    14px
+    max(22px,env(safe-area-inset-bottom));
+  overscroll-behavior:contain;
+}
+#replayBackBtn{display:none !important}
+#replayTitle{
+  width:min(94vw,720px);
+  margin-top:2px;
+  text-align:center;
+  font-size:clamp(23px,6.2vw,38px);
+}
+#replayMeta{
+  width:min(94vw,720px);
+  min-height:1.3em;
+  font-size:11px;
+}
+#replayVideo{
+  display:block;
+  flex:0 0 auto;
+  width:min(94vw,720px);
+  max-width:100%;
+  max-height:min(55vh,620px);
+  margin:0;
+  border:3px solid rgba(242,239,230,.82);
+  border-radius:14px;
+  box-shadow:0 12px 34px rgba(0,0,0,.72);
+  background:#000;
+}
+#replayOverlay .replayNav{
+  position:static;
+  width:min(94vw,720px);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+  margin:2px 0 0;
+}
+#replayIndexLabel{
+  min-width:62px;
+  padding:8px 5px;
+  border-radius:10px;
+  background:rgba(255,182,39,.13);
+  border:1px solid rgba(255,182,39,.45);
+}
+.replayNavBtn{
+  min-height:44px;
+  border:2px solid #69c9ff;
+  border-radius:11px;
+  background:linear-gradient(180deg,#208bd0,#12659e);
+  color:#fff;
+  padding:9px 10px;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 4px 0 #073e64,0 7px 16px rgba(0,0,0,.30);
+  touch-action:manipulation;
+  transition:transform .08s,box-shadow .08s,filter .12s;
+}
+.replayNavBtn:active:not(:disabled){
+  transform:translateY(3px) scale(.98);
+  box-shadow:0 1px 0 #073e64,0 3px 8px rgba(0,0,0,.28);
+  filter:brightness(1.18);
+}
+.replayNavBtn:disabled{
+  opacity:.40;
+  filter:grayscale(.55);
+  box-shadow:none;
+}
+#replayShowAllBtn{
+  grid-column:1/-1;
+  justify-self:center;
+  min-width:150px;
+  background:linear-gradient(180deg,#7566da,#5142ab);
+  border-color:#b8adff;
+  box-shadow:0 4px 0 #2d246d,0 7px 16px rgba(0,0,0,.30);
+}
+#replayStatus{
+  width:min(94vw,720px);
+  min-height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+  border-radius:9px;
+  background:rgba(255,255,255,.055);
+  color:#c7d8e5;
+  text-align:center;
+  line-height:1.45;
+}
+#replayOverlay .replayActions{
+  position:static !important;
+  bottom:auto !important;
+  z-index:auto;
+  width:min(94vw,720px);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  padding:0;
+  margin:0 0 8px;
+  border-radius:0;
+  background:transparent;
+  backdrop-filter:none;
+}
+.replayBtn{
+  min-height:50px;
+  border-width:2px;
+  border-style:solid;
+  border-radius:12px;
+  color:#fff;
+  padding:11px 9px;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.02em;
+  box-shadow:0 5px 0 rgba(0,0,0,.48),0 8px 18px rgba(0,0,0,.28);
+  touch-action:manipulation;
+  transition:transform .08s,box-shadow .08s,filter .12s,opacity .12s;
+}
+.replayBtn:active:not(:disabled){
+  transform:translateY(4px) scale(.98);
+  box-shadow:0 1px 0 rgba(0,0,0,.50),0 3px 8px rgba(0,0,0,.28);
+  filter:brightness(1.17);
+}
+#replayCloseBtn{
+  grid-column:1/-1;
+  background:linear-gradient(180deg,#ffc43d,#f09c00);
+  border-color:#ffe08c;
+  color:#142537;
+  box-shadow:0 5px 0 #9b5e00,0 8px 18px rgba(0,0,0,.28);
+}
+#replayShareBtn{
+  background:linear-gradient(180deg,#24a6ed,#1174ba);
+  border-color:#8edaff;
+  box-shadow:0 5px 0 #074d7d,0 8px 18px rgba(0,0,0,.28);
+}
+#replaySaveBtn{
+  background:linear-gradient(180deg,#3bcf7a,#15964c);
+  border-color:#9af0bd;
+  box-shadow:0 5px 0 #075d2c,0 8px 18px rgba(0,0,0,.28);
+}
+.replayBtn.is-working{
+  opacity:.82;
+  filter:saturate(.75);
+  animation:replayActionPulse .72s ease-in-out infinite alternate;
+}
+.replayBtn.tap-confirm{
+  animation:replayTapConfirm .46s ease-out;
+}
+@keyframes replayActionPulse{
+  from{transform:scale(.985)}
+  to{transform:scale(1.015)}
+}
+@keyframes replayTapConfirm{
+  0%{transform:scale(.96)}
+  55%{transform:scale(1.055);filter:brightness(1.35)}
+  100%{transform:scale(1)}
+}
+@media(max-width:480px){
+  #replayOverlay{padding-left:9px;padding-right:9px;gap:8px}
+  #replayVideo{width:96vw;max-height:52vh;border-width:2px}
+  #replayOverlay .replayNav,
+  #replayOverlay .replayActions,
+  #replayStatus,#replayMeta,#replayTitle{width:96vw}
+  .replayNavBtn{font-size:11px;padding:8px 6px}
+  .replayBtn{font-size:12px;min-height:48px}
+}
+
 </style>
 </head>
 <body>
@@ -2443,17 +2619,72 @@ function replayFile(){
   const safe=(clip?.title||'replay').replace(/[^a-zA-Z0-9ぁ-んァ-ヶ一-龠_-]+/g,'-');
   return new File([replayState.blob],`ar-baseball-${safe}-${Date.now()}.${ext}`,{type:replayState.blob.type||`video/${ext}`});
 }
-async function shareReplay(){
-  const file=replayFile();if(!file)return;
-  try{
-    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({title:'AR Baseball リプレイ',text:$('replayTitle').textContent,files:[file]});$('replayStatus').textContent='シェア画面を開きました。';return;}
-    saveReplay();$('replayStatus').textContent='共有非対応のため、動画を保存しました。';
-  }catch(err){if(err?.name!=='AbortError')$('replayStatus').textContent='シェアできませんでした。端末に保存してください。';}
+function replayActionFeedback(buttonId,message,temporaryLabel=null,duration=1050){
+  const button=$(buttonId);
+  if(!button)return;
+  const original=button.dataset.originalLabel||button.textContent;
+  button.dataset.originalLabel=original;
+  button.classList.remove('tap-confirm');
+  void button.offsetWidth;
+  button.classList.add('tap-confirm');
+  if(temporaryLabel)button.textContent=temporaryLabel;
+  if(message)$('replayStatus').textContent=message;
+  clearTimeout(button._replayFeedbackTimer);
+  button._replayFeedbackTimer=setTimeout(()=>{
+    button.classList.remove('tap-confirm');
+    button.textContent=button.dataset.originalLabel||original;
+  },duration);
 }
-function saveReplay(){
-  const file=replayFile();if(!file)return;
+function setReplayActionBusy(buttonId,busy,label){
+  const button=$(buttonId);
+  if(!button)return;
+  if(!button.dataset.originalLabel)button.dataset.originalLabel=button.textContent;
+  button.disabled=!!busy;
+  button.classList.toggle('is-working',!!busy);
+  button.textContent=busy?(label||'処理中…'):button.dataset.originalLabel;
+}
+async function shareReplay(){
+  const file=replayFile();
+  if(!file){replayActionFeedback('replayShareBtn','共有できる動画がありません。','動画なし');return;}
+  setReplayActionBusy('replayShareBtn',true,'共有準備中…');
+  $('replayStatus').textContent='共有の準備をしています…';
+  let feedback={message:'共有操作が完了しました。',label:'共有しました ✓'};
+  try{
+    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+      await navigator.share({title:'AR Baseball リプレイ',text:$('replayTitle').textContent,files:[file]});
+    }else{
+      saveReplay(true);
+      feedback={message:'この端末では直接共有できないため、動画を保存しました。',label:'保存しました ✓'};
+    }
+  }catch(err){
+    feedback=err?.name==='AbortError'
+      ?{message:'共有をキャンセルしました。',label:'キャンセル'}
+      :{message:'シェアできませんでした。端末に保存してください。',label:'共有失敗'};
+  }finally{
+    setReplayActionBusy('replayShareBtn',false);
+    replayActionFeedback('replayShareBtn',feedback.message,feedback.label);
+  }
+}
+function saveReplay(fromShare=false){
+  const file=replayFile();
+  if(!file){
+    if(!fromShare)replayActionFeedback('replaySaveBtn','保存できる動画がありません。','動画なし');
+    return false;
+  }
+  if(!fromShare){
+    setReplayActionBusy('replaySaveBtn',true,'保存中…');
+    $('replayStatus').textContent='動画を端末へ保存しています…';
+  }
   const a=document.createElement('a');const url=URL.createObjectURL(file);
-  a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  if(!fromShare){
+    setTimeout(()=>{
+      setReplayActionBusy('replaySaveBtn',false);
+      replayActionFeedback('replaySaveBtn','端末への保存を開始しました。ダウンロード欄をご確認ください。','保存しました ✓');
+    },180);
+  }
+  return true;
 }
 function markReplayInningCompleted(inning){
   if(!Number.isFinite(inning))return;
@@ -5963,23 +6194,23 @@ function pitchHistoryReference(history,now,minAge=65,maxAge=180){
 
 function pitchLoadStyle(pose){
   const span=pose.shoulderSpan;
-  // 両手が近い振り被り中はテイクバックにしない。
-  // グラブ側と分離した後は、上・横・下投げを広めに受け付ける。
-  const handsSeparated=pose.handSeparation>span*.40;
+  // 振り被り中の「両手が重なった状態」は除外する。
+  // 一方、グラブから投球手が離れた時点は端末差を考慮して広めに受け付ける。
+  const handsSeparated=pose.handSeparation>span*.28;
   if(!handsSeparated)return null;
   const underhand=
     !!pose.hip&&
-    pose.wr.y>pose.hip.y-Math.max(.002,span*.015)&&
-    pose.outward>span*.055&&
-    pose.elbowAngle<179;
+    pose.wr.y>pose.hip.y-Math.max(.004,span*.035)&&
+    pose.outward>span*.035&&
+    pose.elbowAngle<179.5;
   const overhand=
-    pose.wr.y<pose.sh.y-Math.max(.006,span*.025)&&
-    pose.outward>span*.015&&
-    pose.elbowAngle<178;
+    pose.wr.y<pose.sh.y+span*.06&&
+    pose.outward>span*.005&&
+    pose.elbowAngle<179.5;
   const sidearm=
-    Math.abs(pose.wr.y-pose.sh.y)<=span*.75&&
-    pose.outward>span*.095&&
-    pose.elbowAngle<179;
+    Math.abs(pose.wr.y-pose.sh.y)<=span*.86&&
+    pose.outward>span*.055&&
+    pose.elbowAngle<179.5;
   if(underhand)return'underhand';
   if(overhand)return'overhand';
   if(sidearm)return'sidearm';
@@ -5988,10 +6219,10 @@ function pitchLoadStyle(pose){
 
 function pitchNeutralPose(pose,motion){
   const span=pose.shoulderSpan;
-  const wristNotCocked=pose.wr.y>pose.sh.y-Math.max(.025,span*.12);
-  const closeToBody=Math.abs(pose.outward)<span*1.18;
-  const notBelowFrame=!pose.hip||pose.wr.y<pose.hip.y+span*.80;
-  return motion.speedNorm<.78&&wristNotCocked&&closeToBody&&notBelowFrame;
+  const wristNotCocked=pose.wr.y>pose.sh.y-Math.max(.03,span*.20);
+  const closeToBody=Math.abs(pose.outward)<span*1.35;
+  const notBelowFrame=!pose.hip||pose.wr.y<pose.hip.y+span*.88;
+  return motion.speedNorm<1.10&&wristNotCocked&&closeToBody&&notBelowFrame;
 }
 
 function pitchReleaseDebugHint(){
@@ -6131,22 +6362,22 @@ function trackThrow(lm,now){
     calibrationData.pitch?.preferredReleaseStyle;
   const detectedLoadStyle=pitchLoadStyle(pose);
   const relaxedPreferredPose=preferredStyle==='overhand'
-    ?pose.wr.y<pose.sh.y+pose.shoulderSpan*.08&&pose.outward>pose.shoulderSpan*.02
+    ?pose.wr.y<pose.sh.y+pose.shoulderSpan*.10&&pose.outward>pose.shoulderSpan*.005
     :preferredStyle==='sidearm'
-      ?Math.abs(pose.wr.y-pose.sh.y)<=pose.shoulderSpan*.70&&pose.outward>pose.shoulderSpan*.12
+      ?Math.abs(pose.wr.y-pose.sh.y)<=pose.shoulderSpan*.86&&pose.outward>pose.shoulderSpan*.055
       :preferredStyle==='underhand'
-        ?!!pose.hip&&pose.wr.y>pose.hip.y-pose.shoulderSpan*.06&&pose.outward>pose.shoulderSpan*.07
+        ?!!pose.hip&&pose.wr.y>pose.hip.y-pose.shoulderSpan*.09&&pose.outward>pose.shoulderSpan*.035
         :false;
-  const loadStyle=
-    detectedLoadStyle||
-    (
-      preferredStyle&&
-      pose.elbowAngle<176&&
-      pose.handSeparation>pose.shoulderSpan*.40&&
-      relaxedPreferredPose
-        ?preferredStyle
-        :null
-    );
+  // キャリブレーションで確認した投法を最優先する。
+  // これにより横投げを上投げと誤分類し、縦方向待ちで止まる問題を防ぐ。
+  const preferredLoadStyle=
+    preferredStyle&&
+    pose.elbowAngle<179.5&&
+    pose.handSeparation>pose.shoulderSpan*.28&&
+    relaxedPreferredPose
+      ?preferredStyle
+      :null;
+  const loadStyle=preferredLoadStyle||detectedLoadStyle;
 
   if(state.phase==='ready'){
     if(loadStyle){
@@ -6158,11 +6389,11 @@ function trackThrow(lm,now){
         state.loadFrames++;
       }
 
-      // 一瞬だけ頭上を通った動きは除外するが、実投球を止めないよう2フレームで確定する。
+      // テイクバックを1フレームでも取得できれば保持する。
+      // 誤投球は後段の「前方への反転加速」で防ぎ、低fps端末で準備姿勢を取り逃さない。
       if(
-        state.loadFrames>=2&&
-        now-state.loadCandidateAt>=25&&
-        pose.handSeparation>pose.shoulderSpan*.40
+        state.loadFrames>=1&&
+        pose.handSeparation>pose.shoulderSpan*.28
       ){
         state.phase='loaded';
         state.loadAt=now;
@@ -6225,31 +6456,35 @@ function trackThrow(lm,now){
   const warmupTravel=
     calibrationData.pitch?.warmupTravelShoulders||.42;
   const driveTravelMin=clamp(
-    warmupTravel*.20,
-    .075,
-    .135
+    warmupTravel*.16,
+    .055,
+    .11
   );
   const releaseTravelMin=clamp(
-    warmupTravel*.44,
-    .15,
-    .30
+    warmupTravel*.30,
+    .105,
+    .22
   );
 
-  const handsSeparated=pose.handSeparation>span*.30;
+  const handsSeparated=pose.handSeparation>span*.24;
+  const forwardVy=Math.max(motion.vy||0,motion.legacyVy||0);
+  const upwardVy=Math.min(motion.vy||0,motion.legacyVy||0);
+  const horizontalV=Math.max(Math.abs(motion.vx||0),Math.abs(motion.legacyVx||0));
   const driveDirection=state.loadStyle==='overhand'
-    ?dy>span*.045&&motion.vy>.14
+    ?dy>span*.018&&forwardVy>.04
     :state.loadStyle==='sidearm'
       ?(
-        inwardTravel>span*.018||
-        depthAdvance>.002
-      )&&Math.abs(motion.vx)>.16
-      :-dy>span*.045&&motion.vy<-.12;
+        (Math.abs(dx)>span*.035&&horizontalV>.055)||
+        inwardTravel>span*.014||
+        depthAdvance>.0012
+      )
+      :-dy>span*.018&&upwardVy<-.04;
   const driveArmEvidence=
     handsSeparated&&
     (
-      depthAdvance>.0015||
-      elbowGain>1.0||
-      normalizedTravel>driveTravelMin*1.08
+      depthAdvance>.0005||
+      elbowGain>.3||
+      normalizedTravel>driveTravelMin*.85
     );
 
   if(state.phase==='loaded'){
@@ -6270,11 +6505,11 @@ function trackThrow(lm,now){
     );
 
     if(
-      now-state.loadAt>=40&&
+      now-state.loadAt>=24&&
       driveDirection&&
       driveArmEvidence&&
-      driveSpeed>.32&&
-      normalizedTravel>driveTravelMin
+      driveSpeed>.18&&
+      normalizedTravel>driveTravelMin*.72
     ){
       state.phase='drive';
       state.driveAt=now;
@@ -6319,54 +6554,60 @@ function trackThrow(lm,now){
   );
 
   const releasePlane=state.loadStyle==='overhand'
-    ?pose.wr.y>=pose.sh.y-span*.10&&
-      dy>span*.09
+    ?pose.wr.y>=pose.sh.y-span*.32&&
+      dy>span*.045
     :state.loadStyle==='sidearm'
-      ?Math.abs(dx)>span*.14&&
+      ?Math.abs(dx)>span*.075&&
         (
-          inwardTravel>span*.035||
-          depthAdvance>.003||
-          elbowGain>1.5
+          inwardTravel>span*.012||
+          depthAdvance>.001||
+          elbowGain>.4||
+          normalizedTravel>releaseTravelMin*.90
         )
       :!!pose.hip&&
-        pose.wr.y<=pose.hip.y+span*.31&&
-        -dy>span*.09;
+        pose.wr.y<=pose.hip.y+span*.55&&
+        -dy>span*.045;
 
   const releaseDirection=state.loadStyle==='overhand'
-    ?motion.vy>.18
+    ?forwardVy>.04||dy>span*.10
     :state.loadStyle==='sidearm'
-      ?Math.abs(motion.vx)>.24
-      :motion.vy<-.15;
+      ?horizontalV>.06||Math.abs(dx)>span*.08||inwardTravel>span*.018||depthAdvance>.0012
+      :upwardVy<-.04||-dy>span*.10;
 
   const extensionEvidence=
-    elbowGain>1.5||
+    elbowGain>.4||
     (
-      state.loadElbow<138&&
-      pose.elbowAngle>142
+      pose.elbowAngle>=Math.max(128,state.loadElbow-2)&&
+      normalizedTravel>releaseTravelMin*.72
     );
-  const depthEvidence=depthAdvance>.003;
+  const depthEvidence=depthAdvance>.0005;
   const travelEvidence=
-    normalizedTravel>releaseTravelMin&&
-    frameTravel>.014;
+    normalizedTravel>releaseTravelMin*.72&&
+    (
+      frameTravel>.005||
+      depthEvidence||
+      elbowGain>.2
+    );
   const releaseEvidence=
     releasePlane&&
     (
       extensionEvidence||
       depthEvidence||
-      normalizedTravel>releaseTravelMin*1.55
+      normalizedTravel>releaseTravelMin*.90
     );
 
   const releaseSpeed=Math.max(
     motion.speedNorm,
-    (motion.instantSpeedNorm||0)*.58
+    (motion.instantSpeedNorm||0)*.58,
+    (motion.legacySpeedNorm||0)*.72
   );
   const releaseCandidate=
-    now-state.loadAt>=70&&
-    now-state.driveAt>=10&&
+    now-state.loadAt>=50&&
+    now-state.driveAt>=8&&
     handsSeparated&&
     releaseDirection&&
     releaseEvidence&&
-    releaseSpeed>.38&&
+    releaseSpeed>.22&&
     travelEvidence;
 
   state.candidateFrames=releaseCandidate
@@ -6374,32 +6615,44 @@ function trackThrow(lm,now){
     :Math.max(0,state.candidateFrames-1);
 
   const passedPeak=
-    state.maxInstantSpeedNorm>.78&&
+    state.maxInstantSpeedNorm>.52&&
     (motion.instantSpeedNorm||motion.speedNorm)<
-      state.maxInstantSpeedNorm*.70&&
-    now-state.driveAt>65&&
+      state.maxInstantSpeedNorm*.82&&
+    now-state.driveAt>45&&
     handsSeparated;
   const peakFallback=
     passedPeak&&
-    releasePlane&&
-    state.maxDriveTravel>releaseTravelMin&&
+    releaseDirection&&
+    state.maxDriveTravel>releaseTravelMin*.72&&
+    (
+      releasePlane||
+      state.maxDriveTravel>releaseTravelMin*1.02
+    )&&
     (
       extensionEvidence||
       depthEvidence||
-      state.maxInstantSpeedNorm>1.28
+      state.maxInstantSpeedNorm>.72
     );
+  const geometricFallback=
+    now-state.driveAt>34&&
+    handsSeparated&&
+    releaseDirection&&
+    state.maxDriveTravel>releaseTravelMin*.68&&
+    (releasePlane||normalizedTravel>releaseTravelMin*.94)&&
+    (state.maxInstantSpeedNorm>.42||releaseSpeed>.26);
   const strongImmediate=
     releaseCandidate&&
-    now-state.driveAt>=25&&
+    now-state.driveAt>=18&&
     (
-      (motion.instantSpeedNorm||0)>1.25||
-      normalizedTravel>releaseTravelMin*1.65
+      (motion.instantSpeedNorm||0)>.85||
+      normalizedTravel>releaseTravelMin*1.10
     );
 
   if(
     state.candidateFrames>=1||
     strongImmediate||
-    peakFallback
+    peakFallback||
+    geometricFallback
   ){
     state.phase='released';
     state.lastReleaseAt=now;
@@ -9464,9 +9717,9 @@ $('replayReadyToast').addEventListener('click',()=>{
   const inning=Number($('replayReadyToast').dataset.inning);
   openReplayLibrary(Number.isFinite(inning)&&inning>0?inning:null);
 });
-$('replayPrevBtn').addEventListener('click',()=>setReplayVideoAtPosition(replayView.position-1));
-$('replayNextBtn').addEventListener('click',()=>setReplayVideoAtPosition(replayView.position+1));
-$('replayShowAllBtn').addEventListener('click',()=>openReplayLibrary(null));
+$('replayPrevBtn').addEventListener('click',()=>{replayActionFeedback('replayPrevBtn','前のリプレイを表示しました。');setReplayVideoAtPosition(replayView.position-1);});
+$('replayNextBtn').addEventListener('click',()=>{replayActionFeedback('replayNextBtn','次のリプレイを表示しました。');setReplayVideoAtPosition(replayView.position+1);});
+$('replayShowAllBtn').addEventListener('click',()=>{replayActionFeedback('replayShowAllBtn','すべてのリプレイを表示します。');openReplayLibrary(null);});
 $('resultReplayBtn').addEventListener('click',()=>openReplayLibrary(S.isMatch&&replayPreferredInning?replayPreferredInning:null));
 $('replayShareBtn').addEventListener('click',shareReplay);
 $('replaySaveBtn').addEventListener('click',saveReplay);
