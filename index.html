@@ -1501,6 +1501,8 @@ html,body{
   #replayVideo{max-height:42vh !important}
 }
 
+
+/* リプレイ機能は削除済み */
 </style>
 </head>
 <body>
@@ -1555,18 +1557,6 @@ html,body{
       <span class="goMark">▶</span>
     </button>
   </div>
-
-  <div class="replayPreference" aria-label="リプレイ録画設定">
-    <div class="replayPreferenceCopy">
-      <b>🎥 リプレイ録画</b>
-      <small>ホームラン・三振時の動画を録画します。保存・共有はリプレイ画面で選択できます。</small>
-    </div>
-    <div class="replayPreferenceButtons">
-      <button class="replayPrefBtn" type="button" data-replay-recording="on" aria-pressed="false">録画する</button>
-      <button class="replayPrefBtn" type="button" data-replay-recording="off" aria-pressed="false">録画しない</button>
-    </div>
-  </div>
-
   <div id="homeMsg">タップで音楽スタート　｜　音量は右上で切り替え</div>
   <div class="homeFooter">© BASEBALL AR PROJECT</div>
 </div>
@@ -1868,7 +1858,6 @@ html,body{
 <!-- ============ HUD ============ -->
 <button id="homeBtn">&#8962; ホーム</button>
 <button id="soundBtn" type="button" aria-pressed="false">🔊 音</button>
-<button id="replayOpenBtn" type="button" disabled>🎬 リプレイ <span id="replayCountBadge">0</span></button>
 <button id="recalibrateBtn">&#8635; 位置を調整</button>
 <div id="board">
   <div class="lampGroup"><div class="lampLabel">B</div>
@@ -1901,29 +1890,6 @@ html,body{
 </div>
 <div id="hint"></div>
 
-
-<button id="replayReadyToast" type="button" aria-live="polite"></button>
-
-<!-- ============ インスタントリプレイ ============ -->
-<div id="replayOverlay" aria-hidden="true">
-  <button id="replayBackBtn" type="button">← ゲームに戻る</button>
-  <div id="replayTitle">REPLAY LIBRARY</div>
-  <div id="replayMeta"></div>
-  <video id="replayVideo" playsinline controls></video>
-  <div class="replayNav">
-    <button class="replayNavBtn" id="replayPrevBtn" type="button">◀ 前のプレイ</button>
-    <span id="replayIndexLabel">0 / 0</span>
-    <button class="replayNavBtn" id="replayNextBtn" type="button">次のプレイ ▶</button>
-    <button class="replayNavBtn" id="replayShowAllBtn" type="button">全リプレイ</button>
-  </div>
-  <div id="replayStatus"></div>
-  <div class="replayActions">
-    <button class="replayBtn primary" id="replayCloseBtn" type="button">ゲームに戻る</button>
-    <button class="replayBtn" id="replayShareBtn" type="button">録画をシェア</button>
-    <button class="replayBtn" id="replaySaveBtn" type="button">端末に保存</button>
-  </div>
-</div>
-
 <!-- ============ 結果 ============ -->
 <div id="result">
   <h2 id="resultTitle"></h2>
@@ -1931,7 +1897,6 @@ html,body{
   <div class="stats" id="resultStats"></div>
   <div class="btnRow">
     <button class="bigBtn" id="againBtn">もう一回</button>
-    <button class="subBtn" id="resultReplayBtn" type="button">リプレイを見る</button>
     <button class="subBtn" id="resultHomeBtn">ホームへ</button>
   </div>
 </div>
@@ -1961,35 +1926,6 @@ async function ensureVisionModule(){
 /* ================= DOM/描画基盤 ================= */
 const $ = id => document.getElementById(id);
 const video = $('cam'), canvas = $('game'), ctx = canvas.getContext('2d');
-
-const replayCanvas=document.createElement('canvas');
-const replayCtx=replayCanvas.getContext('2d');
-const replayState={recorder:null,stream:null,chunks:[],startedAt:0,stopReason:'',pending:false,title:'',blob:null,url:null,rotationTimer:0,eventMeta:null};
-const replayLibrary=[];
-const replayView={indices:[],position:0,filteredInning:null};
-const replayCompletedInnings=new Set();
-const MAX_REPLAY_CLIPS=10;
-let replayPreferredInning=null;
-let replayToastTimer=0;
-let replayRecordingEnabled=true;
-try{replayRecordingEnabled=localStorage.getItem('arBaseballReplayRecording')!=='false';}catch(_err){}
-
-function setReplayRecordingEnabled(enabled,persist=true){
-  replayRecordingEnabled=!!enabled;
-  if(persist){
-    try{localStorage.setItem('arBaseballReplayRecording',String(replayRecordingEnabled));}catch(_err){}
-  }
-  document.querySelectorAll('.replayPrefBtn').forEach(btn=>{
-    const selected=(btn.dataset.replayRecording==='on')===replayRecordingEnabled;
-    btn.classList.toggle('sel',selected);
-    btn.setAttribute('aria-pressed',String(selected));
-  });
-  if(!replayRecordingEnabled){
-    stopReplayRecorder('discard');
-  }else if(typeof S!=='undefined'&&S.running&&!replayState.recorder){
-    setTimeout(startReplayRecorder,120);
-  }
-}
 
 const virtualPersonCanvas=document.createElement('canvas');
 const virtualPersonCtx=virtualPersonCanvas.getContext('2d',{willReadFrequently:false});
@@ -2030,9 +1966,6 @@ function resize(){
   W = canvas.clientWidth; H = canvas.clientHeight;
   canvas.width = W*dpr; canvas.height = H*dpr;
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  const replayScale=Math.min(1,720/Math.max(1,W));
-  replayCanvas.width=Math.max(2,Math.round(W*replayScale));
-  replayCanvas.height=Math.max(2,Math.round(H*replayScale));
   if(virtualPersonCanvas.width!==Math.max(1,Math.round(W))||virtualPersonCanvas.height!==Math.max(1,Math.round(H))){
     virtualPersonCanvas.width=Math.max(1,Math.round(W));virtualPersonCanvas.height=Math.max(1,Math.round(H));
     poseFallbackMaskCanvas.width=Math.max(1,Math.round(W));poseFallbackMaskCanvas.height=Math.max(1,Math.round(H));
@@ -2514,270 +2447,6 @@ const SFX={
 updateSoundButton();
 
 
-/* ================= インスタントリプレイ／録画共有 ================= */
-function updateReplayCapture(){
-  if(!replayCanvas.width||!replayCanvas.height)return;
-  const rw=replayCanvas.width,rh=replayCanvas.height;
-  replayCtx.clearRect(0,0,rw,rh);
-  if(video.readyState>=2)drawCover(replayCtx,video,rw,rh,true);
-  replayCtx.drawImage(canvas,0,0,canvas.width,canvas.height,0,0,rw,rh);
-}
-function replayMimeType(){
-  if(typeof MediaRecorder==='undefined')return'';
-  const candidates=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4;codecs=h264,aac','video/mp4'];
-  return candidates.find(t=>!MediaRecorder.isTypeSupported||MediaRecorder.isTypeSupported(t))||'';
-}
-function cleanupReplayStream(){
-  if(replayState.stream){replayState.stream.getTracks().forEach(t=>{try{t.stop();}catch(_e){}});replayState.stream=null;}
-  replayState.recorder=null;
-}
-function replayHalfLabel(meta){
-  if(!meta?.isMatch)return meta?.mode==='pitch'?'ピッチング練習':'バッティング練習';
-  return `${meta.inning}回${meta.half===0?'表':'裏'}`;
-}
-function captureReplayMeta(title){
-  return{
-    title,
-    createdAt:Date.now(),
-    isMatch:!!S.isMatch,
-    mode:S.mode,
-    inning:S.isMatch?M.inning:null,
-    half:S.isMatch?M.half:null
-  };
-}
-function updateReplayButtons(){
-  const openBtn=$('replayOpenBtn');
-  const count=replayLibrary.length;
-  if(openBtn){
-    $('replayCountBadge').textContent=String(count);
-    openBtn.disabled=count===0;
-    openBtn.classList.toggle('hasReplay',count>0);
-    const label=S.isMatch&&replayPreferredInning?`${replayPreferredInning}回 リプレイ`:'🎬 リプレイ';
-    openBtn.firstChild.nodeValue=`${label} `;
-  }
-  const resultBtn=$('resultReplayBtn');
-  if(resultBtn)resultBtn.style.display=count?'inline-flex':'none';
-}
-function clearReplayLibrary(){
-  replayLibrary.splice(0,replayLibrary.length);
-  replayView.indices=[];replayView.position=0;replayView.filteredInning=null;
-  replayCompletedInnings.clear();replayPreferredInning=null;
-  updateReplayButtons();
-}
-function showReplayReadyToast(text,inning=null){
-  const toast=$('replayReadyToast');
-  if(!toast)return;
-  clearTimeout(replayToastTimer);
-  toast.textContent=text;
-  toast.dataset.inning=Number.isFinite(inning)?String(inning):'';
-  toast.classList.add('show');
-  replayToastTimer=setTimeout(()=>toast.classList.remove('show'),4200);
-}
-function storeReplayClip(blob,title,meta){
-  if(!blob||blob.size<1000)return;
-  replayLibrary.push({blob,title,...meta});
-  while(replayLibrary.length>MAX_REPLAY_CLIPS)replayLibrary.shift();
-  updateReplayButtons();
-
-  if(meta?.isMatch){
-    if(replayCompletedInnings.has(meta.inning)){
-      replayPreferredInning=meta.inning;
-      const btn=$('replayOpenBtn');
-      if(btn){btn.classList.remove('inningReady');void btn.offsetWidth;btn.classList.add('inningReady');}
-      showReplayReadyToast(`${meta.inning}回のリプレイを保存しました　タップして見る`,meta.inning);
-      updateReplayButtons();
-    }
-  }else{
-    showReplayReadyToast(`${title}を保存しました　好きなタイミングで見られます`);
-  }
-}
-function startReplayRecorder(){
-  if(!replayRecordingEnabled||!S.running||typeof MediaRecorder==='undefined'||typeof replayCanvas.captureStream!=='function'||replayState.recorder)return;
-  try{
-    const stream=replayCanvas.captureStream(30);
-    const audioTrack=gameAudio.recordDest?.stream?.getAudioTracks?.()[0];
-    if(audioTrack)stream.addTrack(audioTrack.clone());
-    const mime=replayMimeType();
-    const recorder=mime?new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:2800000}):new MediaRecorder(stream);
-    replayState.stream=stream;replayState.recorder=recorder;replayState.chunks=[];replayState.startedAt=performance.now();replayState.stopReason='';
-    recorder.ondataavailable=e=>{if(e.data&&e.data.size)replayState.chunks.push(e.data);};
-    recorder.onstop=()=>{
-      const reason=replayState.stopReason;
-      const title=replayState.title;
-      const meta=replayState.eventMeta;
-      const mimeType=recorder.mimeType||replayState.chunks[0]?.type||'video/webm';
-      const blob=replayState.chunks.length?new Blob(replayState.chunks,{type:mimeType}):null;
-      cleanupReplayStream();
-      replayState.pending=false;replayState.stopReason='';replayState.chunks=[];replayState.eventMeta=null;
-      if(reason==='event'&&blob&&blob.size>1000)storeReplayClip(blob,title,meta||captureReplayMeta(title));
-      if(replayRecordingEnabled&&S.running&&$('replayOverlay').style.display!=='flex')setTimeout(startReplayRecorder,180);
-    };
-    recorder.start(500);
-  }catch(err){console.warn('リプレイ録画を開始できませんでした',err);cleanupReplayStream();}
-}
-function stopReplayRecorder(reason='discard'){
-  if(!replayState.recorder)return;
-  replayState.stopReason=reason;
-  try{if(replayState.recorder.state!=='inactive')replayState.recorder.stop();}catch(_e){cleanupReplayStream();}
-}
-function requestInstantReplay(title){
-  if(!replayRecordingEnabled)return;
-  if(replayState.pending||$('replayOverlay').style.display==='flex')return;
-  if(!replayState.recorder){startReplayRecorder();return;}
-  replayState.pending=true;
-  replayState.title=title;
-  replayState.eventMeta=captureReplayMeta(title);
-  // 試合を止めず、プレイ直後を約1.2秒だけ追加収録して保存する。
-  setTimeout(()=>{
-    if(replayState.recorder){
-      replayState.stopReason='event';
-      try{replayState.recorder.stop();}catch(_e){replayState.pending=false;replayState.eventMeta=null;}
-    }
-  },1200);
-}
-function rotateReplayRecorder(now){
-  if(replayRecordingEnabled&&replayState.recorder&&!replayState.pending&&now-replayState.startedAt>18000){replayState.stopReason='rotate';try{replayState.recorder.stop();}catch(_e){}}
-}
-function replayIndicesForInning(inning){
-  const indices=[];
-  replayLibrary.forEach((clip,index)=>{if(clip.isMatch&&clip.inning===inning)indices.push(index);});
-  return indices;
-}
-function replayAllIndices(){return replayLibrary.map((_,index)=>index);}
-function setReplayVideoAtPosition(position){
-  if(!replayView.indices.length)return;
-  replayView.position=clamp(position,0,replayView.indices.length-1);
-  const clip=replayLibrary[replayView.indices[replayView.position]];
-  if(!clip)return;
-  if(replayState.url)URL.revokeObjectURL(replayState.url);
-  replayState.blob=clip.blob;
-  replayState.url=URL.createObjectURL(clip.blob);
-  const v=$('replayVideo');
-  v.pause();v.src=replayState.url;
-  $('replayTitle').textContent=`REPLAY — ${clip.title}`;
-  $('replayMeta').textContent=`${replayHalfLabel(clip)} / ${new Date(clip.createdAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}`;
-  $('replayIndexLabel').textContent=`${replayView.position+1} / ${replayView.indices.length}`;
-  $('replayPrevBtn').disabled=replayView.position<=0;
-  $('replayNextBtn').disabled=replayView.position>=replayView.indices.length-1;
-  $('replayShowAllBtn').style.display=replayView.filteredInning!==null?'inline-block':'none';
-  $('replayStatus').textContent='再生・保存・共有ができます。ゲームはリプレイを閉じるまで一時停止します。';
-  v.onloadedmetadata=()=>{try{v.currentTime=Math.max(0,(v.duration||0)-6);void v.play();}catch(_e){}};
-}
-function openReplayLibrary(inning=null){
-  if(!replayLibrary.length){showReplayReadyToast('まだ保存されたリプレイはありません');return;}
-  const inningIndices=Number.isFinite(inning)?replayIndicesForInning(inning):[];
-  replayView.indices=inningIndices.length?inningIndices:replayAllIndices();
-  replayView.filteredInning=inningIndices.length?inning:null;
-  replayView.position=replayView.indices.length-1;
-
-  stopReplayRecorder('manualView');
-  setThemeMusicDucked(true);
-  const overlay=$('replayOverlay');
-  overlay.style.display='flex';overlay.classList.add('show');overlay.setAttribute('aria-hidden','false');
-  S.paused=true;
-  setReplayVideoAtPosition(replayView.position);
-  replayPreferredInning=null;
-  const btn=$('replayOpenBtn');if(btn)btn.classList.remove('inningReady');
-  updateReplayButtons();
-}
-function closeReplayOverlay(){
-  const overlay=$('replayOverlay'),v=$('replayVideo');
-  v.pause();v.removeAttribute('src');v.load();
-  overlay.classList.remove('show');overlay.style.display='none';overlay.setAttribute('aria-hidden','true');
-  if(replayState.url){URL.revokeObjectURL(replayState.url);replayState.url=null;}
-  replayState.blob=null;
-  setThemeMusicDucked(false);
-  S.paused=false;
-  if(replayRecordingEnabled&&S.running)setTimeout(startReplayRecorder,180);
-}
-function replayFile(){
-  if(!replayState.blob)return null;
-  const ext=replayState.blob.type.includes('mp4')?'mp4':'webm';
-  const clip=replayLibrary[replayView.indices[replayView.position]];
-  const safe=(clip?.title||'replay').replace(/[^a-zA-Z0-9ぁ-んァ-ヶ一-龠_-]+/g,'-');
-  return new File([replayState.blob],`ar-baseball-${safe}-${Date.now()}.${ext}`,{type:replayState.blob.type||`video/${ext}`});
-}
-function replayActionFeedback(buttonId,message,temporaryLabel=null,duration=1050){
-  const button=$(buttonId);
-  if(!button)return;
-  const original=button.dataset.originalLabel||button.textContent;
-  button.dataset.originalLabel=original;
-  button.classList.remove('tap-confirm');
-  void button.offsetWidth;
-  button.classList.add('tap-confirm');
-  if(temporaryLabel)button.textContent=temporaryLabel;
-  if(message)$('replayStatus').textContent=message;
-  clearTimeout(button._replayFeedbackTimer);
-  button._replayFeedbackTimer=setTimeout(()=>{
-    button.classList.remove('tap-confirm');
-    button.textContent=button.dataset.originalLabel||original;
-  },duration);
-}
-function setReplayActionBusy(buttonId,busy,label){
-  const button=$(buttonId);
-  if(!button)return;
-  if(!button.dataset.originalLabel)button.dataset.originalLabel=button.textContent;
-  button.disabled=!!busy;
-  button.classList.toggle('is-working',!!busy);
-  button.textContent=busy?(label||'処理中…'):button.dataset.originalLabel;
-}
-async function shareReplay(){
-  const file=replayFile();
-  if(!file){replayActionFeedback('replayShareBtn','共有できる動画がありません。','動画なし');return;}
-  setReplayActionBusy('replayShareBtn',true,'共有準備中…');
-  $('replayStatus').textContent='共有の準備をしています…';
-  let feedback={message:'共有操作が完了しました。',label:'共有しました ✓'};
-  try{
-    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
-      await navigator.share({title:'AR Baseball リプレイ',text:$('replayTitle').textContent,files:[file]});
-    }else{
-      saveReplay(true);
-      feedback={message:'この端末では直接共有できないため、動画を保存しました。',label:'保存しました ✓'};
-    }
-  }catch(err){
-    feedback=err?.name==='AbortError'
-      ?{message:'共有をキャンセルしました。',label:'キャンセル'}
-      :{message:'シェアできませんでした。端末に保存してください。',label:'共有失敗'};
-  }finally{
-    setReplayActionBusy('replayShareBtn',false);
-    replayActionFeedback('replayShareBtn',feedback.message,feedback.label);
-  }
-}
-function saveReplay(fromShare=false){
-  const file=replayFile();
-  if(!file){
-    if(!fromShare)replayActionFeedback('replaySaveBtn','保存できる動画がありません。','動画なし');
-    return false;
-  }
-  if(!fromShare){
-    setReplayActionBusy('replaySaveBtn',true,'保存中…');
-    $('replayStatus').textContent='動画を端末へ保存しています…';
-  }
-  const a=document.createElement('a');const url=URL.createObjectURL(file);
-  a.href=url;a.download=file.name;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1500);
-  if(!fromShare){
-    setTimeout(()=>{
-      setReplayActionBusy('replaySaveBtn',false);
-      replayActionFeedback('replaySaveBtn','端末への保存を開始しました。ダウンロード欄をご確認ください。','保存しました ✓');
-    },180);
-  }
-  return true;
-}
-function markReplayInningCompleted(inning){
-  if(!Number.isFinite(inning))return;
-  replayCompletedInnings.add(inning);
-  const clips=replayIndicesForInning(inning);
-  const pending=replayState.pending&&replayState.eventMeta?.isMatch&&replayState.eventMeta?.inning===inning;
-  if(clips.length||pending){
-    replayPreferredInning=inning;
-    const btn=$('replayOpenBtn');
-    if(btn){btn.classList.remove('inningReady');void btn.offsetWidth;btn.classList.add('inningReady');}
-    if(clips.length)showReplayReadyToast(`${inning}回のリプレイ ${clips.length}件　タップして見る`,inning);
-    updateReplayButtons();
-  }
-}
-
 /* ================= MediaPipe ================= */
 let landmarker=null, handLandmarker=null, lastVideoTime=-1, lastLm=null, lastWorldLm=null, camReady=false;
 let lastHands=[], lastHandResult=null, handDetectTick=0;
@@ -3022,6 +2691,73 @@ function pitchViewLabel(){ return 'ピッチング'; }
 function pitchDistanceLabel(){ return S.pitchDistance==='near'?'近距離モード':'標準距離'; }
 function pitchControlLabel(){ return S.pitchControl==='one'?'片手モード':'両腕モード'; }
 function pitchArmLabel(){ return S.pitchArm==='left'?'左投げ':'右投げ'; }
+
+/* GitHub版の投球判定を基礎にした軽量ゲート。
+   振り被り（両手が近い）と手首だけの返しは除外する。 */
+function sourceThrowStyle(side,lm,fallback='overhand'){
+  side=normalizedPitchSide(side);
+  const wr=lm?.[side==='L'?LM.Lwr:LM.Rwr];
+  const sh=lm?.[side==='L'?LM.Lsh:LM.Rsh];
+  const hip=lm?.[side==='L'?LM.Lhip:LM.Rhip];
+  const ls=lm?.[LM.Lsh],rs=lm?.[LM.Rsh];
+  if(!wr||!sh)return normalizedThrowStyle(fallback);
+  const shoulderSpan=Math.max(.08,Math.abs((ls?.x||0)-(rs?.x||0)));
+  const outward=side==='L'?(sh.x-wr.x):(wr.x-sh.x);
+  const vertical=sh.y-wr.y;
+  const hipGap=hip?wr.y-hip.y:.2;
+  if(hipGap>.02&&vertical<shoulderSpan*.10)return'underhand';
+  if(Math.abs(vertical)<=shoulderSpan*.22&&outward>shoulderSpan*.28)return'sidearm';
+  if(vertical>shoulderSpan*.10)return'overhand';
+  return outward>shoulderSpan*.22?'sidearm':'overhand';
+}
+
+function sourceThrowMotionFeatures(side,lm,history,now=performance.now()){
+  const recent=history.filter(value=>now-value.t<180);
+  const first=recent[0]||history[Math.max(0,history.length-3)];
+  const last=recent[recent.length-1]||history[history.length-1];
+  if(!first||!last)return null;
+  const dt=Math.max(.016,(last.t-first.t)/1000);
+  const rawVx=(last.x-first.x)/dt;
+  const rawVy=(last.y-first.y)/dt;
+  const speedNorm=Math.hypot(rawVx,rawVy);
+  const sh=nPoint(lm[side==='L'?LM.Lsh:LM.Rsh]);
+  const el=nPoint(lm[side==='L'?LM.Lel:LM.Rel]);
+  const wr=nPoint(lm[side==='L'?LM.Lwr:LM.Rwr]);
+  const elbowAngle=angle3(sh,el,wr);
+  const releaseStyle=sourceThrowStyle(side,lm);
+  const armSlot=releaseStyle==='overhand'?.9:releaseStyle==='sidearm'?.55:.18;
+  return{
+    side:normalizedPitchSide(side),
+    vx:-rawVx,vy:rawVy,speedNorm,
+    sourceVx:-rawVx,sourceVy:rawVy,sourceSpeedNorm:speedNorm,
+    legacyVx:-rawVx,legacyVy:rawVy,legacySpeedNorm:speedNorm,
+    sourceSampleCount:recent.length,
+    elbowAngle,armSlot,releaseStyle
+  };
+}
+
+function resetSourcePitchGate(side=null){
+  pitchReleaseState.side=side;
+  pitchReleaseState.phase='ready';
+  pitchReleaseState.pendingStyle=null;
+  pitchReleaseState.loadFrames=0;
+  pitchReleaseState.loadCandidateAt=0;
+  pitchReleaseState.loadAt=0;
+  pitchReleaseState.loadStyle='overhand';
+  pitchReleaseState.loadX=0;
+  pitchReleaseState.loadY=0;
+  pitchReleaseState.loadZ=0;
+  pitchReleaseState.loadElbow=180;
+  pitchReleaseState.loadShoulderSpan=.18;
+  pitchReleaseState.loadBodyX=0;
+  pitchReleaseState.loadBodyY=0;
+  pitchReleaseState.loadOutward=0;
+  pitchReleaseState.loadHandSeparation=0;
+  pitchReleaseState.driveAt=0;
+  pitchReleaseState.candidateFrames=0;
+  pitchReleaseState.lastReason='';
+}
+
 function selectedPitchArmSide(){ return S.pitchArm==='left'?'L':'R'; }
 function batControlLabel(){ return '両手モード'; }
 function comPitcherHandLabel(){ return S.comPitcherHand==='left'?'左投げ':'右投げ'; }
@@ -3383,8 +3119,6 @@ function showHUD(on){
   $('soundBtn').style.display='block';
   $('soundBtn').classList.toggle('titleSoundButton',!S.running||!on);
 
-  $('replayOpenBtn').style.display=
-    on&&(replayRecordingEnabled||replayLibrary.length)?'block':'none';
   $('hint').style.display=on?'block':'none';
   $('lineScore').style.display=(on&&S.isMatch)?'block':'none';
   $('diamond').style.display=S.isMatch?'block':'none';
@@ -3398,7 +3132,6 @@ function showHUD(on){
   if(dividers[0])dividers[0].style.display=S.isContest?'none':'block';
   if(dividers[1])dividers[1].style.display=S.isMatch?'block':'none';
 
-  updateReplayButtons();
   updatePitchViewBadge();
 }
 function updateBoard(){
@@ -5054,51 +4787,49 @@ function pitchMotionEngineV2(motion,pitchType='fastball',options={}){
   const calibration=calibrationData.pitch||{};
   const player=calibrationData.player||{};
   const side=normalizedPitchSide(options.side||motion?.side||selectedPitchArmSide());
-  const releaseStyle=normalizedThrowStyle(options.releaseStyle||motion?.releaseStyle);
-  const style=motionThrowStyleProfile(releaseStyle);
+  const releaseStyle=sourceThrowStyle(side,options.landmarks||lastLm,motion?.releaseStyle);
+  const styleLabel=motionThrowStyleLabel(releaseStyle);
   const shoulder=calibration.shoulderSpanNorm||player.shoulderSpanScreen||.24;
 
-  // 2026-07-23版の安定性を維持するため、180ms区間速度を最優先にする。
-  // 単一フレーム最大値、World Landmark最大値、複数候補の最大合成は行わない。
-  const legacySpeed=Number(motion?.legacySpeedNorm)||0;
-  const fallbackSpeed=Number(motion?.speedNorm)||0;
-  const speedNorm=legacySpeed>.001?legacySpeed:fallbackSpeed;
-  const horizontalSpeed=Math.abs(Number.isFinite(motion?.legacyVx)?motion.legacyVx:(motion?.vx||0));
-  const verticalSpeed=Math.abs(Number.isFinite(motion?.legacyVy)?motion.legacyVy:(motion?.vy||0));
+  // GitHub版と同じく、直近180msの手首移動速度を肩幅で正規化する。
+  const speedNorm=Number(motion?.sourceSpeedNorm||motion?.legacySpeedNorm||motion?.speedNorm)||0;
+  const verticalVelocity=Number.isFinite(motion?.sourceVy)
+    ?motion.sourceVy
+    :Number.isFinite(motion?.legacyVy)
+      ?motion.legacyVy
+      :(motion?.vy||0);
 
-  if(!Number.isFinite(speedNorm)||speedNorm<.10){
+  if(!Number.isFinite(speedNorm)||speedNorm<.18){
     return{
       valid:false,kmh:null,confidence:0,
-      reason:'選択した投球腕のリリース前後速度を取得できませんでした',
-      side,armLabel:motionPitchArmLabel(side),releaseStyle,releaseStyleLabel:style.label,
-      engineVersion:MOTION_ENGINE_V2.version
+      reason:'投球動作の速度を取得できませんでした',
+      side,armLabel:motionPitchArmLabel(side),releaseStyle,releaseStyleLabel:styleLabel,
+      engineVersion:'github-source-2026-07-23'
     };
   }
 
   const projectedHandMps=(speedNorm/Math.max(.11,shoulder))*.42*2.45;
   const extension=clamp(((motion?.elbowAngle||0)-75)/95,0,1);
-  const directionalSpeed=horizontalSpeed*style.horizontalWeight+verticalSpeed*style.verticalWeight;
-  const drive=clamp((directionalSpeed-.58)/2.75,0,1);
-  const efficiency=(.65+extension*.22+drive*.13)*style.speedFactor;
+  const drive=clamp((Math.abs(verticalVelocity)-.65)/2.8,0,1);
+  const styleFactor=releaseStyle==='underhand'?.82:releaseStyle==='sidearm'?.92:1.0;
+  const efficiency=(.65+extension*.22+drive*.13)*styleFactor;
   const pitchFactor=PITCH_TYPES[pitchType]?.speed||1;
-  let rawKmh=(projectedHandMps*1.62*efficiency+2.4)*3.6*pitchFactor;
-  const kmh=Math.round(clamp(rawKmh,65,150));
+  const rawKmh=(projectedHandMps*1.62*efficiency+2.4)*3.6*pitchFactor;
+  const kmh=Math.round(clamp(rawKmh,36,150));
 
-  const playerQuality=calibration.playerQuality||player.quality||45;
-  const sampleQuality=clamp((motion?.sampleCount||2)/4,0,1);
-  const stabilityQuality=clamp(1-(motion?.speedSpread||0),0,1);
+  const sampleCount=motion?.sourceSampleCount||motion?.sampleCount||2;
   const confidence=Math.round(clamp(
-    playerQuality*.42+sampleQuality*22+stabilityQuality*14+clamp(speedNorm/3.2,0,1)*14+8,
-    0,100
+    46+Math.min(22,sampleCount*5)+clamp(speedNorm/3.2,0,1)*24,
+    0,96
   ));
 
   return{
     valid:true,kmh,confidence,rawKmh,
     handMps:projectedHandMps,ballMps:kmh/3.6,
     side,armLabel:motionPitchArmLabel(side),
-    releaseStyle,releaseStyleLabel:style.label,
-    pitchType,pitchFactor,directionalSpeed,extension,drive,
-    source:'motion-engine-v2',engineVersion:MOTION_ENGINE_V2.version
+    releaseStyle,releaseStyleLabel:styleLabel,
+    pitchType,pitchFactor,extension,drive,
+    source:'github-source-2026-07-23',engineVersion:'github-source-2026-07-23'
   };
 }
 function estimatePitchSpeed(motion,pitchType='fastball',options={}){
@@ -6373,121 +6104,77 @@ function trackThrow(lm,now){
   if(!pose)return;
 
   const state=pitchReleaseState;
-  if(state.side&&state.side!==side)resetPitchReleaseState(true);
-  state.side=side;
+  if(state.side!==side)resetSourcePitchGate(side);
 
-  const worldArm=worldPitchArmSnapshot(side,lastWorldLm);
   const history=arm.hist[side];
   history.push({
     t:now,
-    x:pose.wr.x,
-    y:pose.wr.y,
-    z:pose.z,
-    shoulderX:pose.sh.x,
-    shoulderY:pose.sh.y,
+    x:pose.wr.x,y:pose.wr.y,z:pose.z,
+    ex:pose.el.x,ey:pose.el.y,
+    shoulderX:pose.sh.x,shoulderY:pose.sh.y,
     elbowAngle:pose.elbowAngle,
-    shoulderSpan:pose.shoulderSpan,
-    bodyX:pose.bodyX,
-    bodyY:pose.bodyY,
-    worldShoulder:worldArm?.shoulder||null,
-    worldElbow:worldArm?.elbow||null,
-    worldWrist:worldArm?.wrist||null
+    shoulderSpan:pose.shoulderSpan
   });
-  while(history.length&&now-history[0].t>900)history.shift();
+  while(history.length&&now-history[0].t>950)history.shift();
 
-  const motion=throwMotionFeatures(side,lm,history);
-  const neutral=pitchNeutralPose(pose,motion);
-
-  if(state.phase==='released'||state.phase==='needNeutral'){
-    if(neutral){
-      if(!state.neutralSince)state.neutralSince=now;
-      if(now-state.neutralSince>=90&&now-state.lastReleaseAt>=230){
-        state.phase='ready';
-        state.neutralSince=0;
-        state.pendingStyle=null;
-        state.loadFrames=0;
-        state.loadCandidateAt=0;
-        state.candidateFrames=0;
-        resetPitchPeakMetrics(state);
-        history.splice(0,Math.max(0,history.length-2));
-        resetPitchHandVisual();
-      }
+  if(state.phase==='released'){
+    if(!S.ball&&now>=S.cooldownUntil){
+      resetSourcePitchGate(side);
+      history.splice(0,Math.max(0,history.length-2));
     }else{
-      state.neutralSince=0;
+      return;
     }
-
-    if(
-      state.lastReleaseAt>0&&
-      now-state.lastReleaseAt>1100&&
-      motion.speedNorm<1.02&&
-      pose.wr.y>pose.sh.y-pose.shoulderSpan*.22
-    ){
-      state.phase='ready';
-      state.neutralSince=0;
-      state.pendingStyle=null;
-      state.loadFrames=0;
-      state.loadCandidateAt=0;
-      state.candidateFrames=0;
-      resetPitchPeakMetrics(state);
-      resetPitchHandVisual();
-    }
-    return;
   }
 
   if(now<S.cooldownUntil||S.ball)return;
+  if(history.length<4)return;
 
-  const preferredStyle=
-    calibrationData.pitch?.preferredReleaseStyle;
-  const detectedLoadStyle=pitchLoadStyle(pose);
-  const relaxedPreferredPose=preferredStyle==='overhand'
-    ?pose.wr.y<pose.sh.y+pose.shoulderSpan*.10&&pose.outward>pose.shoulderSpan*.005
-    :preferredStyle==='sidearm'
-      ?Math.abs(pose.wr.y-pose.sh.y)<=pose.shoulderSpan*.86&&pose.outward>pose.shoulderSpan*.055
-      :preferredStyle==='underhand'
-        ?!!pose.hip&&pose.wr.y>pose.hip.y-pose.shoulderSpan*.09&&pose.outward>pose.shoulderSpan*.035
-        :false;
-  // キャリブレーションで確認した投法を最優先する。
-  // これにより横投げを上投げと誤分類し、縦方向待ちで止まる問題を防ぐ。
-  const preferredLoadStyle=
-    preferredStyle&&
-    pose.elbowAngle<179.5&&
-    pose.handSeparation>pose.shoulderSpan*.28&&
-    relaxedPreferredPose
-      ?preferredStyle
-      :null;
-  const loadStyle=preferredLoadStyle||detectedLoadStyle;
+  const span=pose.shoulderSpan;
+  const styleNow=sourceThrowStyle(side,lm);
+  const handsSeparated=pose.handSeparation>span*.30;
+  const forearmLength=Math.hypot(pose.wr.x-pose.el.x,pose.wr.y-pose.el.y);
+  const upperArmLength=Math.hypot(pose.el.x-pose.sh.x,pose.el.y-pose.sh.y);
+  const fullArmVisible=forearmLength>span*.20&&upperArmLength>span*.18;
+  const armBent=pose.elbowAngle<171;
 
+  const overhandReady=
+    pose.wr.y<pose.sh.y-.045&&
+    pose.outward>span*.055;
+  const sidearmReady=
+    Math.abs(pose.wr.y-pose.sh.y)<=span*.28&&
+    pose.outward>=span*.24;
+  const underhandReady=
+    !!pose.hip&&
+    pose.wr.y>pose.hip.y-.018&&
+    pose.outward>span*.025;
+
+  const readyStyle=overhandReady?'overhand':sidearmReady?'sidearm':underhandReady?'underhand':null;
+
+  // 両手が近い振り被り中、肘が伸び切った姿勢、手首だけが見えている状態ではロードしない。
   if(state.phase==='ready'){
-    if(loadStyle){
-      if(state.pendingStyle!==loadStyle){
-        state.pendingStyle=loadStyle;
+    if(readyStyle&&handsSeparated&&fullArmVisible&&armBent){
+      if(state.pendingStyle!==readyStyle){
+        state.pendingStyle=readyStyle;
         state.loadFrames=1;
         state.loadCandidateAt=now;
       }else{
         state.loadFrames++;
       }
 
-      // テイクバックを1フレームでも取得できれば保持する。
-      // 誤投球は後段の「前方への反転加速」で防ぎ、低fps端末で準備姿勢を取り逃さない。
-      if(
-        state.loadFrames>=1&&
-        pose.handSeparation>pose.shoulderSpan*.28
-      ){
+      // 2フレームまたは35msの保持でテイクバック成立。
+      if(state.loadFrames>=2||now-state.loadCandidateAt>=35){
         state.phase='loaded';
+        state.loadStyle=readyStyle;
         state.loadAt=now;
-        state.loadStyle=loadStyle;
         state.loadX=pose.wr.x;
         state.loadY=pose.wr.y;
         state.loadZ=pose.z;
         state.loadElbow=pose.elbowAngle;
-        state.loadShoulderSpan=pose.shoulderSpan;
-        state.loadBodyX=pose.bodyX;
-        state.loadBodyY=pose.bodyY;
+        state.loadShoulderSpan=span;
+        state.loadBodyX=pose.el.x;
+        state.loadBodyY=pose.el.y;
         state.loadOutward=pose.outward;
         state.loadHandSeparation=pose.handSeparation;
-        state.driveAt=0;
-        state.candidateFrames=0;
-        resetPitchPeakMetrics(state);
         arm.cockedAt[side]=now;
         arm.activeSide=side;
       }
@@ -6499,288 +6186,85 @@ function trackThrow(lm,now){
     return;
   }
 
-  const span=Math.max(.07,state.loadShoulderSpan||pose.shoulderSpan);
-  const dx=pose.wr.x-state.loadX;
-  const dy=pose.wr.y-state.loadY;
-  const normalizedTravel=Math.hypot(dx,dy)/span;
-  const elbowGain=pose.elbowAngle-state.loadElbow;
-  const depthAdvance=state.loadZ-pose.z;
-  const inwardTravel=
-    Math.abs(state.loadOutward)-
-    Math.abs(pose.outward);
-  const scaleRatio=
-    pose.shoulderSpan/
-    Math.max(.05,state.loadShoulderSpan);
-  const bodyShift=Math.hypot(
-    pose.bodyX-state.loadBodyX,
-    pose.bodyY-state.loadBodyY
-  )/span;
-  const bodyStable=
-    scaleRatio>.66&&
-    scaleRatio<1.52&&
-    bodyShift<.82;
-
-  if(!bodyStable){
-    state.phase='ready';
-    state.pendingStyle=null;
-    state.loadFrames=0;
-    state.loadCandidateAt=0;
-    state.candidateFrames=0;
-    resetPitchPeakMetrics(state);
-    state.lastReason='position-change';
+  if(state.phase!=='loaded')return;
+  if(now-state.loadAt>1100){
+    resetSourcePitchGate(side);
+    history.splice(0,Math.max(0,history.length-2));
     return;
   }
 
-  const warmupTravel=
-    calibrationData.pitch?.warmupTravelShoulders||.42;
-  const driveTravelMin=clamp(
-    warmupTravel*.16,
-    .055,
-    .11
+  const motion=sourceThrowMotionFeatures(side,lm,history,now);
+  if(!motion)return;
+
+  const reference=history[Math.max(0,history.length-4)];
+  const current=history[history.length-1];
+  const crossedDown=reference.y<pose.sh.y&&current.y>=pose.sh.y-.04;
+  const lateralSweep=Math.abs(current.x-reference.x)>.022;
+  const upwardSweep=!!pose.hip&&reference.y>pose.hip.y-.01&&current.y<pose.hip.y-.05;
+
+  const wristTravel=Math.hypot(
+    pose.wr.x-state.loadX,
+    pose.wr.y-state.loadY
   );
-  const releaseTravelMin=clamp(
-    warmupTravel*.30,
-    .105,
-    .22
+  const elbowTravel=Math.hypot(
+    pose.el.x-state.loadBodyX,
+    pose.el.y-state.loadBodyY
   );
+  const elbowGain=pose.elbowAngle-state.loadElbow;
+  const currentHandsSeparated=pose.handSeparation>span*.24;
 
-  const handsSeparated=pose.handSeparation>span*.20;
-  const forwardVy=Math.max(motion.vy||0,motion.legacyVy||0);
-  const upwardVy=Math.min(motion.vy||0,motion.legacyVy||0);
-  const horizontalV=Math.max(Math.abs(motion.vx||0),Math.abs(motion.legacyVx||0));
-  const driveDirection=state.loadStyle==='overhand'
-    ?((dy>span*.010&&forwardVy>.022)||normalizedTravel>driveTravelMin*.48)
-    :state.loadStyle==='sidearm'
-      ?(
-        (Math.abs(dx)>span*.022&&horizontalV>.032)||
-        inwardTravel>span*.009||
-        depthAdvance>.00055
-      )
-      :((-dy>span*.010&&upwardVy<-.022)||normalizedTravel>driveTravelMin*.48);
-  const driveArmEvidence=
-    handsSeparated&&
+  // 手首だけの返しを排除するため、手首の移動に加えて肘の移動または肘伸展を必須にする。
+  const fullArmDrive=
+    wristTravel>span*.20&&
     (
-      depthAdvance>.00025||
-      elbowGain>.14||
-      normalizedTravel>driveTravelMin*.46
+      elbowTravel>span*.065||
+      elbowGain>7||
+      (pose.elbowAngle>=135&&wristTravel>span*.30)
     );
 
-  if(state.phase==='loaded'){
-    if(now-state.loadAt>1800){
-      state.phase='ready';
-      state.pendingStyle=null;
-      state.loadFrames=0;
-      state.loadCandidateAt=0;
-      state.candidateFrames=0;
-      resetPitchPeakMetrics(state);
-      state.lastReason='restart';
-      return;
-    }
+  // テイクバック直後の一瞬の座標飛びは投球にしない。
+  const sequenceTime=now-state.loadAt;
+  const validSequence=sequenceTime>=45&&sequenceTime<=920&&currentHandsSeparated&&fullArmDrive;
 
-    const driveSpeed=Math.max(
-      motion.speedNorm,
-      (motion.instantSpeedNorm||0)*.62
-    );
+  const overhandRelease=
+    validSequence&&
+    state.loadStyle==='overhand'&&
+    motion.vy>.66&&motion.speedNorm>1.18&&
+    crossedDown&&pose.wr.y>state.loadY+span*.12;
+  const sidearmRelease=
+    validSequence&&
+    state.loadStyle==='sidearm'&&
+    Math.abs(motion.vx)>.82&&motion.speedNorm>1.08&&
+    lateralSweep&&Math.abs(pose.wr.x-state.loadX)>span*.20;
+  const underhandRelease=
+    validSequence&&
+    state.loadStyle==='underhand'&&
+    motion.vy<-.36&&motion.speedNorm>1.00&&
+    upwardSweep&&pose.wr.y<state.loadY-span*.14;
 
-    if(
-      now-state.loadAt>=16&&
-      driveDirection&&
-      driveArmEvidence&&
-      driveSpeed>.11&&
-      normalizedTravel>driveTravelMin*.48
-    ){
-      state.phase='drive';
-      state.driveAt=now;
-      state.candidateFrames=0;
-      updatePitchPeakMetrics(state,motion);
-      state.maxDriveTravel=normalizedTravel;
-      state.lastReason='drive-start';
-      state.peakReleasePoint=handBallPoint(side,lm,'release');
-      state.lastDriveSpeed=motion.speedNorm;
-    }else if(neutral&&now-state.loadAt>300){
-      state.phase='ready';
-      state.pendingStyle=null;
-      state.loadFrames=0;
-      state.loadCandidateAt=0;
-      state.candidateFrames=0;
-      resetPitchPeakMetrics(state);
-    }else{
-      return;
-    }
-  }
-
-  if(state.phase!=='drive')return;
-
-  const reference=pitchHistoryReference(history,now,35,150);
-  const frameTravel=reference
-    ?Math.hypot(
-      pose.wr.x-reference.x,
-      pose.wr.y-reference.y
-    )/span
-    :0;
-
-  updatePitchPeakMetrics(state,motion);
-
-  if(
-    (motion.instantSpeedNorm||motion.speedNorm)>=
-    state.maxInstantSpeedNorm*.98
-  ){
-    state.peakReleasePoint=handBallPoint(side,lm,'release');
-  }
-  state.maxDriveTravel=Math.max(
-    state.maxDriveTravel,
-    normalizedTravel
-  );
-
-  const releasePlane=state.loadStyle==='overhand'
-    ?(pose.wr.y>=pose.sh.y-span*.40&&
-      dy>span*.022)
-    :state.loadStyle==='sidearm'
-      ?Math.abs(dx)>span*.040&&
-        (
-          inwardTravel>span*.006||
-          depthAdvance>.00045||
-          elbowGain>.16||
-          normalizedTravel>releaseTravelMin*.58
-        )
-      :!!pose.hip&&
-        pose.wr.y<=pose.hip.y+span*.66&&
-        -dy>span*.022;
-
-  const releaseDirection=state.loadStyle==='overhand'
-    ?forwardVy>.022||dy>span*.050||normalizedTravel>releaseTravelMin*.62
-    :state.loadStyle==='sidearm'
-      ?horizontalV>.032||Math.abs(dx)>span*.048||inwardTravel>span*.008||depthAdvance>.00055
-      :upwardVy<-.022||-dy>span*.050||normalizedTravel>releaseTravelMin*.62;
-
-  const extensionEvidence=
-    elbowGain>.16||
-    (
-      pose.elbowAngle>=Math.max(120,state.loadElbow-4)&&
-      normalizedTravel>releaseTravelMin*.52
-    );
-  const depthEvidence=depthAdvance>.00025;
-  const travelEvidence=
-    normalizedTravel>releaseTravelMin*.52&&
-    (
-      frameTravel>.003||
-      depthEvidence||
-      elbowGain>.08||
-      Math.abs(dx)>span*.030||
-      Math.abs(dy)>span*.030
-    );
-  const releaseEvidence=
-    releasePlane&&
-    (
-      extensionEvidence||
-      depthEvidence||
-      normalizedTravel>releaseTravelMin*.62
-    );
-
-  const releaseSpeed=Math.max(
-    motion.speedNorm,
-    (motion.instantSpeedNorm||0)*.58,
-    (motion.legacySpeedNorm||0)*.72
-  );
-  const releaseCandidate=
-    now-state.loadAt>=50&&
-    now-state.driveAt>=8&&
-    handsSeparated&&
-    releaseDirection&&
-    releaseEvidence&&
-    releaseSpeed>.12&&
-    travelEvidence;
-
-  state.candidateFrames=releaseCandidate
-    ?state.candidateFrames+1
-    :Math.max(0,state.candidateFrames-1);
-
-  const passedPeak=
-    state.maxInstantSpeedNorm>.34&&
-    (motion.instantSpeedNorm||motion.speedNorm)<
-      state.maxInstantSpeedNorm*.88&&
-    now-state.driveAt>30&&
-    handsSeparated;
-  const peakFallback=
-    passedPeak&&
-    releaseDirection&&
-    state.maxDriveTravel>releaseTravelMin*.52&&
-    (
-      releasePlane||
-      state.maxDriveTravel>releaseTravelMin*.74
-    )&&
-    (
-      extensionEvidence||
-      depthEvidence||
-      state.maxInstantSpeedNorm>.46
-    );
-  const geometricFallback=
-    now-state.driveAt>22&&
-    handsSeparated&&
-    releaseDirection&&
-    state.maxDriveTravel>releaseTravelMin*.50&&
-    (releasePlane||normalizedTravel>releaseTravelMin*.64)&&
-    (state.maxInstantSpeedNorm>.28||releaseSpeed>.14);
-  const strongImmediate=
-    releaseCandidate&&
-    now-state.driveAt>=12&&
-    (
-      (motion.instantSpeedNorm||0)>.52||
-      normalizedTravel>releaseTravelMin*.80
-    );
-
-  const emergencyRelease=
-    now-state.driveAt>18&&
-    handsSeparated&&
-    releaseSpeed>.11&&
-    normalizedTravel>Math.max(releaseTravelMin*.46,.075)&&
-    (
-      Math.abs(dx)>span*.040||
-      Math.abs(dy)>span*.040||
-      depthAdvance>.00022||
-      frameTravel>.0025
-    );
-
-  if(
-    state.candidateFrames>=1||
-    strongImmediate||
-    peakFallback||
-    geometricFallback||
-    emergencyRelease
-  ){
+  if(overhandRelease||sidearmRelease||underhandRelease){
     state.phase='released';
     state.lastReleaseAt=now;
-    state.neutralSince=0;
-    state.candidateFrames=0;
-
-    const releasePoint=
-      handBallPoint(side,lm,'release')||
-      state.peakReleasePoint||
-      {x:pitchHandVisualState.x,y:pitchHandVisualState.y};
-    const releaseMotion=calibratedReleaseMotion(state,motion);
-
+    state.lastReason='github-source-release';
     releaseUserPitch(
       side,
       lm,
-      releaseMotion,
-      releasePoint
+      motion,
+      handBallPoint(side,lm,'release')||screenPoint(pose.wr)
     );
     return;
   }
 
-  state.lastDriveSpeed=motion.speedNorm;
-
-  if(now-state.driveAt>1050){
-    state.phase='ready';
-    state.pendingStyle=null;
-    state.loadFrames=0;
-    state.loadCandidateAt=0;
-    state.candidateFrames=0;
-    resetPitchPeakMetrics(state);
-    state.lastReason='retry';
+  // テイクバックを解いたが投球条件を満たさなかった場合は、手首返し・振り被りとして破棄する。
+  const returnedNeutral=
+    !readyStyle&&
+    motion.speedNorm<.72&&
+    sequenceTime>180;
+  if(returnedNeutral){
+    resetSourcePitchGate(side);
+    history.splice(0,Math.max(0,history.length-2));
   }
 }
-
 
 const BATTING_ZONE_LABELS=[
   '左上','中央高め','右上',
@@ -7320,7 +6804,7 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
     motion,
     pitch.type
   );
-  const provisionalKmh=preSpeedResult.valid?clamp(preSpeedResult.kmh,75,150):90;
+  const provisionalKmh=preSpeedResult.valid?preSpeedResult.kmh:80;
 
   if(!isSpeedContest()){
     S.pitches++;
@@ -7419,11 +6903,11 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
     dur:flight,
     kmh:provisionalKmh,
     provisionalKmh,
-    measuredKmh:null,
-    speedPending:true,
-    speedFinalized:false,
-    speedValid:null,
-    speedConfidence:0,
+    measuredKmh:provisionalKmh,
+    speedPending:false,
+    speedFinalized:true,
+    speedValid:preSpeedResult.valid,
+    speedConfidence:preSpeedResult.confidence||0,
     speedReason:'',
     speedReleaseAt:now,
     speedSamples:preSamples,
@@ -7463,14 +6947,24 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
 
   S.lastPitch={
     ...pitch,
-    kmh:null,
-    speedConfidence:0,
+    kmh:provisionalKmh,
+    speedConfidence:preSpeedResult.confidence||0,
     side,
     armLabel:motionPitchArmLabel(side),
     releaseStyle:motion.releaseStyle,
     releaseStyleLabel:motionThrowStyleLabel(motion.releaseStyle),
-    motionEngineVersion:MOTION_ENGINE_V2.version
+    motionEngineVersion:'github-source-2026-07-23'
   };
+  S.maxKmh=Math.max(S.maxKmh,provisionalKmh);
+  if(isSpeedContest()&&S.contest){
+    S.contest.totalThrows++;
+    S.contest.attempts++;
+    S.pitches=S.contest.attempts;
+    S.contest.speeds.push(provisionalKmh);
+    S.contest.bestSpeed=Math.max(S.contest.bestSpeed,provisionalKmh);
+  }
+  showGun(provisionalKmh,true);
+  updateBoard();
   gripState.locked={...pitch};
   updatePitchTypeHUD();
 
@@ -7605,7 +7099,6 @@ function showSpeedContestResult(){
   $('recalibrateBtn').style.display='none';
   $('pitchTypeHUD').style.display='none';
   $('result').style.display='flex';
-  updateReplayButtons();
 }
 
 function settleHomeRunContestPitch(outcome,visual,evaluation){
@@ -7628,7 +7121,6 @@ function settleHomeRunContestPitch(outcome,visual,evaluation){
     if(visual?.hitDir)launchHitBall(visual.hitDir,visual);
     SFX.fanfare();
     shake(16);
-    requestInstantReplay('ホームランコンテスト');
   }else{
     addCall(visual?.text||'ノーホームラン',visual?.color||'#c7d5e2');
     if(visual?.hitDir)launchHitBall(visual.hitDir,visual);
@@ -7669,7 +7161,6 @@ function showHomeRunContestResult(){
   showHUD(false);
   $('recalibrateBtn').style.display='none';
   $('result').style.display='flex';
-  updateReplayButtons();
 }
 
 function resolveUserPitch(){
@@ -7998,8 +7489,6 @@ function applyOutcome(outcome,youBatting){
   if(outcome==='foul'&&S.strikes<2)S.strikes++;
   if(outcome==='ballCall')S.balls++;
 
-  const replayHomeRun=outcome==='hr';
-  const replayStrikeout=outcome==='strike'&&S.strikes>=3&&!youBatting;
 
   let plateDone=false;
   let outAdded=false;
@@ -8064,26 +7553,20 @@ function applyOutcome(outcome,youBatting){
 
   updateBoard();
 
-  const replayProgressDelay=replayHomeRun?1700:1300;
-  if(replayHomeRun||replayStrikeout){
-    setTimeout(
-      ()=>requestInstantReplay(replayHomeRun?'ホームラン':'奪三振'),
-      180
-    );
-  }
+  const progressDelay=outcome==='hr'?1700:1300;
 
   if(S.isMatch){
     if(S.outs>=3){
-      setTimeout(nextHalf,Math.max(replayProgressDelay,changeCallDelay));
+      setTimeout(nextHalf,Math.max(progressDelay,changeCallDelay));
     }
   }else if(S.mode==='pitch'){
-    if(S.outs>=3)setTimeout(showPracticePitchResult,replayProgressDelay);
+    if(S.outs>=3)setTimeout(showPracticePitchResult,progressDelay);
   }else{
     if(plateDone||outcome==='strike'||outcome==='ballCall'){
       S.batLeft--;
       updateBoard();
       if(S.batLeft<=0){
-        setTimeout(showPracticeBatResult,replayProgressDelay);
+        setTimeout(showPracticeBatResult,progressDelay);
         return;
       }
     }
@@ -8093,13 +7576,11 @@ function applyOutcome(outcome,youBatting){
 /* ================= 試合の進行 ================= */
 async function nextHalf(){
   const completedFullInning=M.half===1?M.inning:null;
-  if(completedFullInning!==null)markReplayInningCompleted(completedFullInning);
   M.bases=[false,false,false];S.balls=0;S.strikes=0;S.outs=0;S.ball=null;S.hitBall=null;S.fieldPlay=null;const arr=M.half===0?M.scoreYou:M.scoreCom;if(arr[M.inning-1]===undefined)arr[M.inning-1]=0;
   if(M.half===0){M.half=1;S.mode='pitch';S.pitchView='catcher';randomizeMatchComBatterHand();updatePitchViewBadge();startModeAmbience();await beginCalibration('pitch');showHUD(true);$('recalibrateBtn').style.display='block';await banner(`${M.inning}回裏 守備!`,`難易度: <b style="color:var(--amber)">${difficultyLabel(S.matchDifficulty)}</b> / <b style="color:var(--green)">守備・${pitchBackgroundLabel()}</b> / 相手は<b style="color:var(--amber)">${batterHandLabel()}</b><br>握りと腕の振りで球種が変化します`);}else{if(M.inning>=M.innings){endMatch();return;}M.inning++;M.half=0;S.mode='bat';updatePitchViewBadge();startModeAmbience();await beginCalibration('bat');showHUD(true);$('recalibrateBtn').style.display='block';await banner(`${M.inning}回表 攻撃!`,`難易度: <b style="color:var(--amber)">${difficultyLabel(S.matchDifficulty)}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>投球を見て、確定したゾーンへスイング!`);S.comPitcher.nextPitchAt=performance.now()+1500;}
   S.cooldownUntil=performance.now()+800;const cur=M.half===0?M.scoreYou:M.scoreCom;if(cur[M.inning-1]===undefined)cur[M.inning-1]=0;updateBoard();
 }
 function endMatch(){
-  markReplayInningCompleted(M.inning);
   S.running=false;
   const you=M.scoreYou.reduce((a,b)=>a+(b||0),0);
   const com=M.scoreCom.reduce((a,b)=>a+(b||0),0);
@@ -8114,7 +7595,6 @@ function endMatch(){
   $('resultStats').innerHTML=`奪三振 <b>${S.ks}</b> / 最速 <b>${S.maxKmh||'-'} km/h</b>`;
   showHUD(false);
   $('result').style.display='flex';
-  updateReplayButtons();
 }
 
 /* ================= 練習結果 ================= */
@@ -9373,8 +8853,8 @@ function loop(now,token=S.loopToken){
     if(handLandmarker&&(S.mode==='pitch'||(S.mode==='analysis'&&S.analysisType==='pitch'))&&(++handDetectTick%2===0)){try{lastHandResult=handLandmarker.detectForVideo(video,now);lastHands=lastHandResult.landmarks||[];}catch(err){console.warn(err);lastHands=[];}}
   }
   ctx.clearRect(0,0,W,H);drawVirtualBackground(now);ctx.save();if(shakeAmt>.5){ctx.translate((Math.random()-.5)*shakeAmt,(Math.random()-.5)*shakeAmt);shakeAmt*=.86;}const grad=ctx.createLinearGradient(0,H*.5,0,H);grad.addColorStop(0,'rgba(6,13,26,0)');grad.addColorStop(1,'rgba(6,13,26,.70)');ctx.fillStyle=grad;ctx.fillRect(0,H*.5,W,H*.5);
-  if(S.fieldPlay){hint('球場カメラ：守備と走塁を再生中');drawFieldPlay(now);ctx.restore();updateReplayCapture();rotateReplayRecorder(now);return;}
-  if(S.calibration?.active){if(lastLm)drawSkeleton(lastLm);drawCalibrationGuide(S.calibration.profile,lastLm);updateCalibration(lastLm,now);ctx.restore();updateReplayCapture();rotateReplayRecorder(now);return;}
+  if(S.fieldPlay){hint('球場カメラ：守備と走塁を再生中');drawFieldPlay(now);ctx.restore();return;}
+  if(S.calibration?.active){if(lastLm)drawSkeleton(lastLm);drawCalibrationGuide(S.calibration.profile,lastLm);updateCalibration(lastLm,now);ctx.restore();return;}
   let catcherOverlayLayout=null;
   if(S.mode==='pitch'){
     const layout=catcherViewSceneLayout();
@@ -9443,7 +8923,7 @@ function loop(now,token=S.loopToken){
       hint(phase==='armed'?'準備できたら1回だけ動作してください':phase==='recording'?'動作を解析しています。最後まで続けてください':'全身を画面内に入れてください');
     }else hint('分析する全身が画面内に入るように立ってください');
   }
-  drawBall(now);if(catcherOverlayLayout)drawCatcherForeground(now,catcherOverlayLayout);drawHitBall();drawPitchImpactOverlay(now);ctx.restore();updateReplayCapture();rotateReplayRecorder(now);
+  drawBall(now);if(catcherOverlayLayout)drawCatcherForeground(now,catcherOverlayLayout);drawHitBall();drawPitchImpactOverlay(now);ctx.restore();
 }
 
 /* ================= モード開始/画面遷移 ================= */
@@ -9580,14 +9060,13 @@ async function startMode(mode,isMatch,options={}){
   [
     'home','pitchSetup','batSetup','matchSetup',
     'contestSetup','analysisSetup','analysisResult',
-    'result','replayOverlay'
+    'result'
   ].forEach(id=>{
     $(id).style.display='none';
   });
 
   setThemeMusicScene('game',.18);
   $('soundBtn').classList.remove('titleSoundButton');
-  clearReplayLibrary();
   resetCommon();
 
   S.mode=mode;
@@ -9609,8 +9088,6 @@ async function startMode(mode,isMatch,options={}){
     const token=S.loopToken;
     requestAnimationFrame(time=>loop(time,token));
   }
-
-  if(replayRecordingEnabled)setTimeout(startReplayRecorder,350);
 
   const profile=
     mode==='bat'
@@ -9676,8 +9153,6 @@ async function startMode(mode,isMatch,options={}){
 function goHome(){
   closeAnalysisHistory();
   stopStadiumAmbience();
-  stopReplayRecorder('discard');
-  closeReplayOverlay();
 
   S.loopToken=(S.loopToken||0)+1;
   S.running=false;
@@ -9694,7 +9169,6 @@ function goHome(){
   showHUD(false);
   $('soundBtn').style.display='block';
   $('soundBtn').classList.add('titleSoundButton');
-  $('replayOpenBtn').style.display='none';
   $('recalibrateBtn').style.display='none';
   $('pitchTypeHUD').style.display='none';
   $('analysisPanel').style.display='none';
@@ -9769,7 +9243,6 @@ setBatDifficulty(S.batDifficulty);
 setMatchDifficulty(S.matchDifficulty);
 updateAnalysisPitchArmVisibility();
 document.querySelectorAll('.comPitcherHandBtn').forEach(btn=>btn.addEventListener('click',()=>setComPitcherHand(btn.dataset.comPitcherHand)));
-document.querySelectorAll('.replayPrefBtn').forEach(btn=>btn.addEventListener('click',()=>setReplayRecordingEnabled(btn.dataset.replayRecording==='on')));
 document.querySelectorAll('.batControlBtn').forEach(btn=>btn.addEventListener('click',()=>setBatControl(btn.dataset.batControl)));
 document.querySelectorAll('[data-stadium]').forEach(btn=>btn.addEventListener('click',()=>setPitchBackground(btn.dataset.stadium)));
 document.querySelectorAll('[data-bat-stadium]').forEach(btn=>btn.addEventListener('click',()=>setBatBackground(btn.dataset.batStadium)));
@@ -9804,19 +9277,6 @@ $('analysisPhaseCards').addEventListener('click',event=>{const toggle=event.targ
 $('btnMatch').addEventListener('click',()=>{enterSetupMusic();$('home').style.display='none';$('pitchSetup').style.display='none';$('batSetup').style.display='none';$('analysisSetup').style.display='none';$('contestSetup').style.display='none';$('matchSetup').style.display='flex';applyStadiumThumbnails();setBatterHand(S.batterHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchControl(S.pitchControl);setPitchArm(S.pitchArm);setBatControl(S.batControl);setMatchDifficulty(S.matchDifficulty);setMatchBackground(S.matchBackground);});
 document.querySelectorAll('.inningsBtn').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.inningsBtn').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');}));
 $('matchStartBtn').addEventListener('click',startMatchModeFromSetup);
-$('replayCloseBtn').addEventListener('click',closeReplayOverlay);
-$('replayBackBtn').addEventListener('click',closeReplayOverlay);
-$('replayOpenBtn').addEventListener('click',()=>openReplayLibrary(S.isMatch&&replayPreferredInning?replayPreferredInning:null));
-$('replayReadyToast').addEventListener('click',()=>{
-  const inning=Number($('replayReadyToast').dataset.inning);
-  openReplayLibrary(Number.isFinite(inning)&&inning>0?inning:null);
-});
-$('replayPrevBtn').addEventListener('click',()=>{replayActionFeedback('replayPrevBtn','前のリプレイを表示しました。');setReplayVideoAtPosition(replayView.position-1);});
-$('replayNextBtn').addEventListener('click',()=>{replayActionFeedback('replayNextBtn','次のリプレイを表示しました。');setReplayVideoAtPosition(replayView.position+1);});
-$('replayShowAllBtn').addEventListener('click',()=>{replayActionFeedback('replayShowAllBtn','すべてのリプレイを表示します。');openReplayLibrary(null);});
-$('resultReplayBtn').addEventListener('click',()=>openReplayLibrary(S.isMatch&&replayPreferredInning?replayPreferredInning:null));
-$('replayShareBtn').addEventListener('click',shareReplay);
-$('replaySaveBtn').addEventListener('click',saveReplay);
 $('soundBtn').addEventListener('click',async()=>{
   // ボタンは常にON/OFFを切り替える。タイトルBGMの開始はホーム画面のタップでも行う。
   soundEnabled=!soundEnabled;
@@ -9895,7 +9355,7 @@ if(soundEnabled){
     console.warn('タイトルBGMの事前読込を完了できませんでした。',error);
   });
 }
-applyStadiumThumbnails();setBatterHand(S.batterHand);setComPitcherHand(S.comPitcherHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);setReplayRecordingEnabled(replayRecordingEnabled,false);
+applyStadiumThumbnails();setBatterHand(S.batterHand);setComPitcherHand(S.comPitcherHand);setPitchView('catcher');setPitchDistance(S.pitchDistance);setPitchBackground(S.pitchBackground);setMatchBackground(S.matchBackground);
 $('againBtn').addEventListener('click',()=>{if(S.isContest){startContest(S.contestType);}else if(S.isMatch){M.inning=1;M.half=0;M.bases=[false,false,false];M.scoreYou=[0];M.scoreCom=[];startMode('bat',true);}else startMode(S.mode,false);});
 
 </script>
