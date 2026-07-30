@@ -1423,6 +1423,84 @@ html,body{
   .replayBtn{font-size:12px;min-height:48px}
 }
 
+
+
+/* v72: リプレイUIを強制的に動画下へ再配置し、モバイルで常時見えるようにする */
+#replayOverlay{
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+  overflow-y:auto !important;
+  padding:
+    max(12px,env(safe-area-inset-top))
+    10px
+    max(18px,env(safe-area-inset-bottom)) !important;
+}
+#replayBackBtn{display:none !important}
+#replayTitle,
+#replayMeta,
+#replayStatus,
+#replayOverlay .replayNav,
+#replayOverlay .replayActions{
+  width:min(92vw,660px) !important;
+  max-width:92vw !important;
+}
+#replayVideo{
+  display:block !important;
+  width:min(92vw,660px) !important;
+  max-width:92vw !important;
+  max-height:46vh !important;
+  flex:0 0 auto !important;
+  margin:0 auto !important;
+}
+#replayOverlay .replayNav{
+  position:static !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:8px !important;
+  margin-top:2px !important;
+}
+#replayIndexLabel{
+  grid-column:1 / -1 !important;
+  order:-1;
+  justify-self:center;
+}
+#replayShowAllBtn{
+  grid-column:1 / -1 !important;
+  width:100%;
+}
+#replayPrevBtn,
+#replayNextBtn{
+  width:100%;
+}
+#replayOverlay .replayActions{
+  position:static !important;
+  bottom:auto !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+  background:transparent !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  margin:0 0 8px !important;
+  backdrop-filter:none !important;
+}
+.replayNavBtn,
+.replayBtn{
+  width:100%;
+  opacity:1 !important;
+  cursor:pointer;
+}
+.replayNavBtn:focus-visible,
+.replayBtn:focus-visible{
+  outline:3px solid rgba(255,255,255,.92);
+  outline-offset:2px;
+}
+@media(max-width:480px){
+  #replayOverlay{gap:8px !important}
+  #replayVideo{max-height:42vh !important}
+}
+
 </style>
 </head>
 <body>
@@ -4988,7 +5066,7 @@ function pitchMotionEngineV2(motion,pitchType='fastball',options={}){
   const horizontalSpeed=Math.abs(Number.isFinite(motion?.legacyVx)?motion.legacyVx:(motion?.vx||0));
   const verticalSpeed=Math.abs(Number.isFinite(motion?.legacyVy)?motion.legacyVy:(motion?.vy||0));
 
-  if(!Number.isFinite(speedNorm)||speedNorm<.18){
+  if(!Number.isFinite(speedNorm)||speedNorm<.10){
     return{
       valid:false,kmh:null,confidence:0,
       reason:'選択した投球腕のリリース前後速度を取得できませんでした',
@@ -5004,7 +5082,7 @@ function pitchMotionEngineV2(motion,pitchType='fastball',options={}){
   const efficiency=(.65+extension*.22+drive*.13)*style.speedFactor;
   const pitchFactor=PITCH_TYPES[pitchType]?.speed||1;
   let rawKmh=(projectedHandMps*1.62*efficiency+2.4)*3.6*pitchFactor;
-  const kmh=Math.round(clamp(rawKmh,36,150));
+  const kmh=Math.round(clamp(rawKmh,65,150));
 
   const playerQuality=calibration.playerQuality||player.quality||45;
   const sampleQuality=clamp((motion?.sampleCount||2)/4,0,1);
@@ -6466,25 +6544,25 @@ function trackThrow(lm,now){
     .22
   );
 
-  const handsSeparated=pose.handSeparation>span*.24;
+  const handsSeparated=pose.handSeparation>span*.20;
   const forwardVy=Math.max(motion.vy||0,motion.legacyVy||0);
   const upwardVy=Math.min(motion.vy||0,motion.legacyVy||0);
   const horizontalV=Math.max(Math.abs(motion.vx||0),Math.abs(motion.legacyVx||0));
   const driveDirection=state.loadStyle==='overhand'
-    ?dy>span*.018&&forwardVy>.04
+    ?((dy>span*.010&&forwardVy>.022)||normalizedTravel>driveTravelMin*.48)
     :state.loadStyle==='sidearm'
       ?(
-        (Math.abs(dx)>span*.035&&horizontalV>.055)||
-        inwardTravel>span*.014||
-        depthAdvance>.0012
+        (Math.abs(dx)>span*.022&&horizontalV>.032)||
+        inwardTravel>span*.009||
+        depthAdvance>.00055
       )
-      :-dy>span*.018&&upwardVy<-.04;
+      :((-dy>span*.010&&upwardVy<-.022)||normalizedTravel>driveTravelMin*.48);
   const driveArmEvidence=
     handsSeparated&&
     (
-      depthAdvance>.0005||
-      elbowGain>.3||
-      normalizedTravel>driveTravelMin*.85
+      depthAdvance>.00025||
+      elbowGain>.14||
+      normalizedTravel>driveTravelMin*.46
     );
 
   if(state.phase==='loaded'){
@@ -6505,17 +6583,18 @@ function trackThrow(lm,now){
     );
 
     if(
-      now-state.loadAt>=24&&
+      now-state.loadAt>=16&&
       driveDirection&&
       driveArmEvidence&&
-      driveSpeed>.18&&
-      normalizedTravel>driveTravelMin*.72
+      driveSpeed>.11&&
+      normalizedTravel>driveTravelMin*.48
     ){
       state.phase='drive';
       state.driveAt=now;
       state.candidateFrames=0;
       updatePitchPeakMetrics(state,motion);
       state.maxDriveTravel=normalizedTravel;
+      state.lastReason='drive-start';
       state.peakReleasePoint=handBallPoint(side,lm,'release');
       state.lastDriveSpeed=motion.speedNorm;
     }else if(neutral&&now-state.loadAt>300){
@@ -6554,46 +6633,48 @@ function trackThrow(lm,now){
   );
 
   const releasePlane=state.loadStyle==='overhand'
-    ?pose.wr.y>=pose.sh.y-span*.32&&
-      dy>span*.045
+    ?(pose.wr.y>=pose.sh.y-span*.40&&
+      dy>span*.022)
     :state.loadStyle==='sidearm'
-      ?Math.abs(dx)>span*.075&&
+      ?Math.abs(dx)>span*.040&&
         (
-          inwardTravel>span*.012||
-          depthAdvance>.001||
-          elbowGain>.4||
-          normalizedTravel>releaseTravelMin*.90
+          inwardTravel>span*.006||
+          depthAdvance>.00045||
+          elbowGain>.16||
+          normalizedTravel>releaseTravelMin*.58
         )
       :!!pose.hip&&
-        pose.wr.y<=pose.hip.y+span*.55&&
-        -dy>span*.045;
+        pose.wr.y<=pose.hip.y+span*.66&&
+        -dy>span*.022;
 
   const releaseDirection=state.loadStyle==='overhand'
-    ?forwardVy>.04||dy>span*.10
+    ?forwardVy>.022||dy>span*.050||normalizedTravel>releaseTravelMin*.62
     :state.loadStyle==='sidearm'
-      ?horizontalV>.06||Math.abs(dx)>span*.08||inwardTravel>span*.018||depthAdvance>.0012
-      :upwardVy<-.04||-dy>span*.10;
+      ?horizontalV>.032||Math.abs(dx)>span*.048||inwardTravel>span*.008||depthAdvance>.00055
+      :upwardVy<-.022||-dy>span*.050||normalizedTravel>releaseTravelMin*.62;
 
   const extensionEvidence=
-    elbowGain>.4||
+    elbowGain>.16||
     (
-      pose.elbowAngle>=Math.max(128,state.loadElbow-2)&&
-      normalizedTravel>releaseTravelMin*.72
+      pose.elbowAngle>=Math.max(120,state.loadElbow-4)&&
+      normalizedTravel>releaseTravelMin*.52
     );
-  const depthEvidence=depthAdvance>.0005;
+  const depthEvidence=depthAdvance>.00025;
   const travelEvidence=
-    normalizedTravel>releaseTravelMin*.72&&
+    normalizedTravel>releaseTravelMin*.52&&
     (
-      frameTravel>.005||
+      frameTravel>.003||
       depthEvidence||
-      elbowGain>.2
+      elbowGain>.08||
+      Math.abs(dx)>span*.030||
+      Math.abs(dy)>span*.030
     );
   const releaseEvidence=
     releasePlane&&
     (
       extensionEvidence||
       depthEvidence||
-      normalizedTravel>releaseTravelMin*.90
+      normalizedTravel>releaseTravelMin*.62
     );
 
   const releaseSpeed=Math.max(
@@ -6607,7 +6688,7 @@ function trackThrow(lm,now){
     handsSeparated&&
     releaseDirection&&
     releaseEvidence&&
-    releaseSpeed>.22&&
+    releaseSpeed>.12&&
     travelEvidence;
 
   state.candidateFrames=releaseCandidate
@@ -6615,44 +6696,57 @@ function trackThrow(lm,now){
     :Math.max(0,state.candidateFrames-1);
 
   const passedPeak=
-    state.maxInstantSpeedNorm>.52&&
+    state.maxInstantSpeedNorm>.34&&
     (motion.instantSpeedNorm||motion.speedNorm)<
-      state.maxInstantSpeedNorm*.82&&
-    now-state.driveAt>45&&
+      state.maxInstantSpeedNorm*.88&&
+    now-state.driveAt>30&&
     handsSeparated;
   const peakFallback=
     passedPeak&&
     releaseDirection&&
-    state.maxDriveTravel>releaseTravelMin*.72&&
+    state.maxDriveTravel>releaseTravelMin*.52&&
     (
       releasePlane||
-      state.maxDriveTravel>releaseTravelMin*1.02
+      state.maxDriveTravel>releaseTravelMin*.74
     )&&
     (
       extensionEvidence||
       depthEvidence||
-      state.maxInstantSpeedNorm>.72
+      state.maxInstantSpeedNorm>.46
     );
   const geometricFallback=
-    now-state.driveAt>34&&
+    now-state.driveAt>22&&
     handsSeparated&&
     releaseDirection&&
-    state.maxDriveTravel>releaseTravelMin*.68&&
-    (releasePlane||normalizedTravel>releaseTravelMin*.94)&&
-    (state.maxInstantSpeedNorm>.42||releaseSpeed>.26);
+    state.maxDriveTravel>releaseTravelMin*.50&&
+    (releasePlane||normalizedTravel>releaseTravelMin*.64)&&
+    (state.maxInstantSpeedNorm>.28||releaseSpeed>.14);
   const strongImmediate=
     releaseCandidate&&
-    now-state.driveAt>=18&&
+    now-state.driveAt>=12&&
     (
-      (motion.instantSpeedNorm||0)>.85||
-      normalizedTravel>releaseTravelMin*1.10
+      (motion.instantSpeedNorm||0)>.52||
+      normalizedTravel>releaseTravelMin*.80
+    );
+
+  const emergencyRelease=
+    now-state.driveAt>18&&
+    handsSeparated&&
+    releaseSpeed>.11&&
+    normalizedTravel>Math.max(releaseTravelMin*.46,.075)&&
+    (
+      Math.abs(dx)>span*.040||
+      Math.abs(dy)>span*.040||
+      depthAdvance>.00022||
+      frameTravel>.0025
     );
 
   if(
     state.candidateFrames>=1||
     strongImmediate||
     peakFallback||
-    geometricFallback
+    geometricFallback||
+    emergencyRelease
   ){
     state.phase='released';
     state.lastReleaseAt=now;
@@ -7226,7 +7320,7 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
     motion,
     pitch.type
   );
-  const provisionalKmh=preSpeedResult.valid?preSpeedResult.kmh:55;
+  const provisionalKmh=preSpeedResult.valid?clamp(preSpeedResult.kmh,75,150):90;
 
   if(!isSpeedContest()){
     S.pitches++;
@@ -7295,7 +7389,7 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
 
   const physicalFlight=
     18.44/(provisionalKmh/3.6)*1000;
-  const flight=clamp(physicalFlight,410,980);
+  const flight=clamp(physicalFlight,360,900);
   const now=performance.now();
 
   const screenVx=-(motion.vx||0);
@@ -8046,7 +8140,7 @@ function launchHitBall(dirUp,visual={}){
   let grav=battingTowardCamera?.18:.5;
   if(battingTowardCamera&&style==='ground'){vy=10+Math.random()*5;grav=.34;}
   else if(battingTowardCamera&&style==='fly'){vy=1.5+Math.random()*3;grav=.10;}
-  else if(battingTowardCamera&&style==='deep'){vy=2+Math.random()*3;grav=.075;}
+  else if(battingTowardCamera&&style==='deep'){vy=.6+Math.random()*1.4;grav=.05;}
   S.hitBall={
     x:from.x+from.w/2,
     y:from.y+from.h/2,
@@ -8117,7 +8211,7 @@ function fieldLayout(){
 function fieldLanding(play){
   const x=clamp(W*.5+play.direction*W*.31,W*.13,W*.87);
   let y=H*.35;
-  if(play.outcome==='hr') y=H*.055;
+  if(play.outcome==='hr') y=H*.01;
   else if(play.style==='ground') y=H*(.50+Math.abs(play.direction)*.025);
   else if(play.style==='line') y=H*.36;
   else if(play.style==='fly') y=H*.29;
@@ -8307,13 +8401,13 @@ function runnerSpecs(play){
 
 function fieldBallPoint(play,p,L,landing){
   const isGround=play.style==='ground';
-  const hitEnd=play.outcome==='hr'?.72:isGround?.46:.53;
+  const hitEnd=play.outcome==='hr'?.80:isGround?.46:.53;
   if(p<=hitEnd){
     const q=smoothstep(clamp(p/hitEnd,0,1));
     let y=lerp(L.home.y-18,landing.y,q);
     if(isGround) y-=Math.abs(Math.sin(q*Math.PI*4))*H*.022*(1-q);
     else{
-      const arc=play.outcome==='hr'?H*.22:play.style==='deep'?H*.18:play.style==='fly'?H*.14:H*.075;
+      const arc=play.outcome==='hr'?H*.32:play.style==='deep'?H*.22:play.style==='fly'?H*.17:H*.075;
       y-=Math.sin(q*Math.PI)*arc;
     }
     return {x:lerp(L.home.x,landing.x,q),y,visible:true,r:play.outcome==='hr'?lerp(9,4,q):lerp(9,6,q)};
