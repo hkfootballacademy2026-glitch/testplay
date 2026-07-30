@@ -2639,7 +2639,7 @@ const PITCH_TYPES={
 
 /* ===== Motion Engine v2: 全投球モード共通の速度・投法・利き腕情報 ===== */
 const MOTION_ENGINE_V2=Object.freeze({
-  version:'2.1.0',
+  version:'3.0.0',
   styles:Object.freeze({
     overhand:Object.freeze({label:'上投げ',speedFactor:1.00,horizontalWeight:.24,verticalWeight:.76,deception:.00}),
     sidearm:Object.freeze({label:'横投げ',speedFactor:.98,horizontalWeight:.78,verticalWeight:.22,deception:.06}),
@@ -2692,8 +2692,8 @@ function pitchDistanceLabel(){ return S.pitchDistance==='near'?'近距離モー�
 function pitchControlLabel(){ return S.pitchControl==='one'?'片手モード':'両腕モード'; }
 function pitchArmLabel(){ return S.pitchArm==='left'?'左投げ':'右投げ'; }
 
-/* GitHub版の投球判定を基礎にした軽量ゲート。
-   振り被り（両手が近い）と手首だけの返しは除外する。 */
+/* 投球判定 v3：選択した投球腕の「肩に対する手首・肘の軌跡」を使用する。
+   画面内で身体が移動しても誤反応しにくくし、上投げ・横投げ・下投げを同じ基盤で扱う。 */
 function sourceThrowStyle(side,lm,fallback='overhand'){
   side=normalizedPitchSide(side);
   const wr=lm?.[side==='L'?LM.Lwr:LM.Rwr];
@@ -2701,62 +2701,161 @@ function sourceThrowStyle(side,lm,fallback='overhand'){
   const hip=lm?.[side==='L'?LM.Lhip:LM.Rhip];
   const ls=lm?.[LM.Lsh],rs=lm?.[LM.Rsh];
   if(!wr||!sh)return normalizedThrowStyle(fallback);
-  const shoulderSpan=Math.max(.08,Math.abs((ls?.x||0)-(rs?.x||0)));
-  const outward=side==='L'?(sh.x-wr.x):(wr.x-sh.x);
-  const vertical=sh.y-wr.y;
-  const hipGap=hip?wr.y-hip.y:.2;
-  if(hipGap>.02&&vertical<shoulderSpan*.10)return'underhand';
-  if(Math.abs(vertical)<=shoulderSpan*.22&&outward>shoulderSpan*.28)return'sidearm';
-  if(vertical>shoulderSpan*.10)return'overhand';
-  return outward>shoulderSpan*.22?'sidearm':'overhand';
+  const span=Math.max(.07,Math.abs((ls?.x||0)-(rs?.x||0)));
+  const outward=(side==='L'?(sh.x-wr.x):(wr.x-sh.x))/span;
+  const wristFromShoulder=(wr.y-sh.y)/span;
+  const wristFromHip=hip?(wr.y-hip.y)/span:-1;
+
+  if(hip&&wristFromHip>-.08&&wristFromShoulder>.34)return'underhand';
+  if(wristFromShoulder<-.10)return'overhand';
+  if(Math.abs(wristFromShoulder)<=.72&&outward>.08)return'sidearm';
+  if(wristFromShoulder>.58)return'underhand';
+  return normalizedThrowStyle(fallback);
 }
 
-function sourceThrowMotionFeatures(side,lm,history,now=performance.now()){
-  const recent=history.filter(value=>now-value.t<180);
-  const first=recent[0]||history[Math.max(0,history.length-3)];
+function sourceLoadStyle(pose){
+  if(!pose)return null;
+  const span=pose.shoulderSpan;
+  if(pose.handSeparation<=span*.23)return null;
+  const armRadius=Math.hypot(pose.wr.x-pose.sh.x,pose.wr.y-pose.sh.y);
+  const elbowRadius=Math.hypot(pose.el.x-pose.sh.x,pose.el.y-pose.sh.y);
+  if(armRadius<span*.36||elbowRadius<span*.14||pose.elbowAngle>=174)return null;
+  if(pose.hip&&pose.wr.y>pose.hip.y-span*.08)return'underhand';
+  if(pose.wr.y<pose.sh.y-span*.08)return'overhand';
+  if(Math.abs(pose.wr.y-pose.sh.y)<=span*1.22&&Math.abs(pose.outward)>span*.05)return'sidearm';
+  return Math.abs(pose.outward)>span*.12?'sidearm':null;
+}
+
+function robustMotionMean(values){
+  const list=values.filter(v=>Number.isFinite(v)&&v>=0).sort((a,b)=>a-b);
+  if(!list.length)return 0;
+  const med=median(list);
+  const filtered=list.filter(v=>v<=Math.max(.25,med*2.35));
+  const use=filtered.length?filtered:list;
+  const top=use.slice(Math.max(0,use.length-3));
+  return avgNum(top);
+}
+
+function sourceThrowMotionFeatures(side,lm,history,now=performance.now(),forcedStyle=null){
+  const recent=history.filter(value=>now-value.t<190);
+  const first=recent[0]||history[Math.max(0,history.length-4)];
   const last=recent[recent.length-1]||history[history.length-1];
   if(!first||!last)return null;
+
+  const rel=(sample,keyX,keyY)=>({
+    x:(sample[keyX]??sample.x)-(sample.shoulderX??0),
+    y:(sample[keyY]??sample.y)-(sample.shoulderY??0)
+  });
+  const firstWr=rel(first,'x','y'),lastWr=rel(last,'x','y');
   const dt=Math.max(.016,(last.t-first.t)/1000);
-  const rawVx=(last.x-first.x)/dt;
-  const rawVy=(last.y-first.y)/dt;
-  const speedNorm=Math.hypot(rawVx,rawVy);
+  const relVx=(lastWr.x-firstWr.x)/dt;
+  const relVy=(lastWr.y-firstWr.y)/dt;
+  const relativeWindowSpeed=Math.hypot(relVx,relVy);
+  const absoluteWindowSpeed=Math.hypot(last.x-first.x,last.y-first.y)/dt;
+
+  const wristPairSpeeds=[];
+  const elbowPairSpeeds=[];
+  const worldPairSpeeds=[];
+  const extensionRates=[];
+  const pairDts=[];
+  for(let i=1;i<recent.length;i++){
+    const a=recent[i-1],b=recent[i];
+    const pdt=(b.t-a.t)/1000;
+    if(pdt<.012||pdt>.105)continue;
+    pairDts.push(pdt);
+    const ar=rel(a,'x','y'),br=rel(b,'x','y');
+    const wrDist=Math.hypot(br.x-ar.x,br.y-ar.y);
+    if(wrDist<.25)wristPairSpeeds.push(wrDist/pdt);
+
+    if(Number.isFinite(a.ex)&&Number.isFinite(a.ey)&&Number.isFinite(b.ex)&&Number.isFinite(b.ey)){
+      const ae=rel(a,'ex','ey'),be=rel(b,'ex','ey');
+      const elDist=Math.hypot(be.x-ae.x,be.y-ae.y);
+      if(elDist<.18)elbowPairSpeeds.push(elDist/pdt);
+    }
+
+    if(a.worldWrist&&a.worldShoulder&&b.worldWrist&&b.worldShoulder){
+      const aw={x:a.worldWrist.x-a.worldShoulder.x,y:a.worldWrist.y-a.worldShoulder.y,z:a.worldWrist.z-a.worldShoulder.z};
+      const bw={x:b.worldWrist.x-b.worldShoulder.x,y:b.worldWrist.y-b.worldShoulder.y,z:b.worldWrist.z-b.worldShoulder.z};
+      const dist=d3(aw,bw);
+      if(dist<.30)worldPairSpeeds.push(dist/pdt);
+    }
+
+    if(Number.isFinite(a.elbowAngle)&&Number.isFinite(b.elbowAngle)){
+      const rate=(b.elbowAngle-a.elbowAngle)/pdt;
+      if(Math.abs(rate)<1500)extensionRates.push(rate);
+    }
+  }
+
+  const pairSpeed=robustMotionMean(wristPairSpeeds);
+  const elbowSpeedNorm=robustMotionMean(elbowPairSpeeds);
+  const worldRelativeMps=robustMotionMean(worldPairSpeeds);
+  const extensionRate=extensionRates.length?median(extensionRates):0;
+
+  // 190ms区間の平均を主値にし、区間内の有効な上位速度を少量だけ補う。
+  // 単一フレームの座標飛びは上限処理で除外する。
+  const supportedPair=Math.min(pairSpeed,relativeWindowSpeed*1.55+.18);
+  const sourceSpeedNorm=Math.max(
+    relativeWindowSpeed,
+    supportedPair,
+    absoluteWindowSpeed*.78
+  );
+
   const sh=nPoint(lm[side==='L'?LM.Lsh:LM.Rsh]);
   const el=nPoint(lm[side==='L'?LM.Lel:LM.Rel]);
   const wr=nPoint(lm[side==='L'?LM.Lwr:LM.Rwr]);
   const elbowAngle=angle3(sh,el,wr);
-  const releaseStyle=sourceThrowStyle(side,lm);
+  const releaseStyle=normalizedThrowStyle(forcedStyle||sourceThrowStyle(side,lm));
   const armSlot=releaseStyle==='overhand'?.9:releaseStyle==='sidearm'?.55:.18;
+  const speedSpread=wristPairSpeeds.length>1
+    ?stdNum(wristPairSpeeds)/Math.max(.01,avgNum(wristPairSpeeds))
+    :1;
+
   return{
     side:normalizedPitchSide(side),
-    vx:-rawVx,vy:rawVy,speedNorm,
-    sourceVx:-rawVx,sourceVy:rawVy,sourceSpeedNorm:speedNorm,
-    legacyVx:-rawVx,legacyVy:rawVy,legacySpeedNorm:speedNorm,
+    vx:-relVx,vy:relVy,speedNorm:sourceSpeedNorm,
+    sourceVx:-relVx,sourceVy:relVy,sourceSpeedNorm,
+    legacyVx:-relVx,legacyVy:relVy,legacySpeedNorm:sourceSpeedNorm,
+    relativeWindowSpeed,absoluteWindowSpeed,pairSpeed,
+    elbowSpeedNorm,elbowExtensionRate:extensionRate,
+    worldRelativeMps,
     sourceSampleCount:recent.length,
+    sampleCount:recent.length,
+    medianDt:pairDts.length?median(pairDts):1/30,
+    speedSpread,
+    shoulderSpan:median(recent.map(s=>s.shoulderSpan).filter(Number.isFinite))||.18,
     elbowAngle,armSlot,releaseStyle
   };
 }
 
 function resetSourcePitchGate(side=null){
-  pitchReleaseState.side=side;
-  pitchReleaseState.phase='ready';
-  pitchReleaseState.pendingStyle=null;
-  pitchReleaseState.loadFrames=0;
-  pitchReleaseState.loadCandidateAt=0;
-  pitchReleaseState.loadAt=0;
-  pitchReleaseState.loadStyle='overhand';
-  pitchReleaseState.loadX=0;
-  pitchReleaseState.loadY=0;
-  pitchReleaseState.loadZ=0;
-  pitchReleaseState.loadElbow=180;
-  pitchReleaseState.loadShoulderSpan=.18;
-  pitchReleaseState.loadBodyX=0;
-  pitchReleaseState.loadBodyY=0;
-  pitchReleaseState.loadOutward=0;
-  pitchReleaseState.loadHandSeparation=0;
-  pitchReleaseState.driveAt=0;
-  pitchReleaseState.candidateFrames=0;
-  pitchReleaseState.lastReason='';
+  const state=pitchReleaseState;
+  state.side=side;
+  state.phase='ready';
+  state.pendingStyle=null;
+  state.loadFrames=0;
+  state.loadCandidateAt=0;
+  state.loadAt=0;
+  state.loadStyle='overhand';
+  state.loadX=0;state.loadY=0;state.loadZ=0;
+  state.loadRelX=0;state.loadRelY=0;
+  state.loadElbowX=0;state.loadElbowY=0;
+  state.loadElbow=180;
+  state.loadShoulderSpan=.18;
+  state.loadBodyX=0;state.loadBodyY=0;
+  state.loadOutward=0;
+  state.loadHandSeparation=0;
+  state.separatedAt=0;
+  state.driveAt=0;
+  state.candidateFrames=0;
+  state.maxDriveSpeed=0;
+  state.maxDriveTravel=0;
+  state.peakScore=0;
+  state.peakMotion=null;
+  state.peakReleasePoint=null;
+  state.peakAt=0;
+  state.lastReason='';
 }
+
 
 function selectedPitchArmSide(){ return S.pitchArm==='left'?'L':'R'; }
 function batControlLabel(){ return '両手モード'; }
@@ -4787,49 +4886,73 @@ function pitchMotionEngineV2(motion,pitchType='fastball',options={}){
   const calibration=calibrationData.pitch||{};
   const player=calibrationData.player||{};
   const side=normalizedPitchSide(options.side||motion?.side||selectedPitchArmSide());
-  const releaseStyle=sourceThrowStyle(side,options.landmarks||lastLm,motion?.releaseStyle);
+  const releaseStyle=normalizedThrowStyle(options.releaseStyle||motion?.releaseStyle||sourceThrowStyle(side,options.landmarks||lastLm));
   const styleLabel=motionThrowStyleLabel(releaseStyle);
-  const shoulder=calibration.shoulderSpanNorm||player.shoulderSpanScreen||.24;
-
-  // GitHub版と同じく、直近180msの手首移動速度を肩幅で正規化する。
+  const shoulder=clamp(
+    Number(motion?.shoulderSpan)||calibration.shoulderSpanNorm||player.shoulderSpanScreen||.24,
+    .08,.48
+  );
   const speedNorm=Number(motion?.sourceSpeedNorm||motion?.legacySpeedNorm||motion?.speedNorm)||0;
-  const verticalVelocity=Number.isFinite(motion?.sourceVy)
-    ?motion.sourceVy
-    :Number.isFinite(motion?.legacyVy)
-      ?motion.legacyVy
-      :(motion?.vy||0);
+  const vx=Math.abs(Number.isFinite(motion?.sourceVx)?motion.sourceVx:(motion?.vx||0));
+  const vy=Math.abs(Number.isFinite(motion?.sourceVy)?motion.sourceVy:(motion?.vy||0));
 
-  if(!Number.isFinite(speedNorm)||speedNorm<.18){
+  if(!Number.isFinite(speedNorm)||speedNorm<.20){
     return{
       valid:false,kmh:null,confidence:0,
-      reason:'投球動作の速度を取得できませんでした',
+      reason:'リリース前の腕全体の速度を十分に取得できませんでした',
       side,armLabel:motionPitchArmLabel(side),releaseStyle,releaseStyleLabel:styleLabel,
-      engineVersion:'github-source-2026-07-23'
+      engineVersion:'motion-engine-3.0'
     };
   }
 
-  const projectedHandMps=(speedNorm/Math.max(.11,shoulder))*.42*2.45;
-  const extension=clamp(((motion?.elbowAngle||0)-75)/95,0,1);
-  const drive=clamp((Math.abs(verticalVelocity)-.65)/2.8,0,1);
-  const styleFactor=releaseStyle==='underhand'?.82:releaseStyle==='sidearm'?.92:1.0;
-  const efficiency=(.65+extension*.22+drive*.13)*styleFactor;
+  // 身体スケールは静止キャリブレーション値を使う。World Landmarkだけに依存しない。
+  const measuredShoulder=calibration.shoulderBreadthM||player.shoulderBreadthM||.42;
+  const shoulderBreadthM=clamp(measuredShoulder*.68+.42*.32,.34,.48);
+  const screenHandMps=(speedNorm/Math.max(.10,shoulder))*shoulderBreadthM*2.45;
+
+  // 奥行き方向が大きい投球では2D速度が低く出るため、安定したWorld値だけを少量補助に使う。
+  const worldCorrection=clamp(calibration.worldScaleCorrection||player.worldScaleCorrection||1,.82,1.22);
+  const rawWorldMps=(motion?.worldRelativeMps||0)*worldCorrection;
+  const worldUsable=rawWorldMps>.45&&rawWorldMps<13&&
+    rawWorldMps>screenHandMps*.52&&rawWorldMps<screenHandMps*1.75;
+  const worldHandMps=worldUsable?clamp(rawWorldMps,screenHandMps*.65,screenHandMps*1.42):0;
+  const projectedHandMps=worldUsable
+    ?screenHandMps*.78+worldHandMps*.22
+    :screenHandMps;
+
+  const extension=clamp(((motion?.elbowAngle||0)-72)/100,0,1);
+  const directionalSpeed=releaseStyle==='sidearm'
+    ?Math.max(vx,speedNorm*.70)
+    :Math.max(vy,speedNorm*.70);
+  const drive=clamp((directionalSpeed-.52)/2.72,0,1);
+  const fullArm=clamp(
+    (motion?.elbowSpeedNorm||0)/1.8+
+    Math.max(0,motion?.elbowExtensionRate||0)/900,
+    0,1
+  );
+  const styleFactor=releaseStyle==='underhand'?.84:releaseStyle==='sidearm'?.94:1.0;
+  const efficiency=(.64+extension*.20+drive*.12+fullArm*.04)*styleFactor;
   const pitchFactor=PITCH_TYPES[pitchType]?.speed||1;
   const rawKmh=(projectedHandMps*1.62*efficiency+2.4)*3.6*pitchFactor;
-  const kmh=Math.round(clamp(rawKmh,36,150));
+  const kmh=Math.round(clamp(rawKmh,36,155));
 
   const sampleCount=motion?.sourceSampleCount||motion?.sampleCount||2;
+  const stability=clamp(1-(motion?.speedSpread||1),0,1);
   const confidence=Math.round(clamp(
-    46+Math.min(22,sampleCount*5)+clamp(speedNorm/3.2,0,1)*24,
-    0,96
+    38+Math.min(24,sampleCount*4)+stability*18+
+    clamp((motion?.elbowSpeedNorm||0)/1.4,0,1)*10+
+    (worldUsable?6:0),
+    0,97
   ));
 
   return{
     valid:true,kmh,confidence,rawKmh,
-    handMps:projectedHandMps,ballMps:kmh/3.6,
+    handMps:projectedHandMps,screenHandMps,worldHandMps,
+    ballMps:kmh/3.6,
     side,armLabel:motionPitchArmLabel(side),
     releaseStyle,releaseStyleLabel:styleLabel,
-    pitchType,pitchFactor,extension,drive,
-    source:'github-source-2026-07-23',engineVersion:'github-source-2026-07-23'
+    pitchType,pitchFactor,extension,drive,fullArm,
+    source:'motion-engine-3.0',engineVersion:'motion-engine-3.0'
   };
 }
 function estimatePitchSpeed(motion,pitchType='fastball',options={}){
@@ -5427,7 +5550,7 @@ function calculatePitchAnalysis(frames){
   const styleLabel=engine.releaseStyleLabel||motionThrowStyleLabel(action.releaseStyle);
   return{
     valid:true,type:'pitch',confidence:Math.min(action.confidence,engine.confidence||action.confidence),
-    estimate:{label:'推定球速',value:current,unit:'km/h',note:`※実測値ではありません。Motion Engine v${MOTION_ENGINE_V2.version}が${armLabel}・${styleLabel}として、ゲーム内スピードガンと同じ180ms速度ロジックで算出しています。`},
+    estimate:{label:'推定球速',value:current,unit:'km/h',note:`※実測値ではありません。Motion Engine v${MOTION_ENGINE_V2.version}が${armLabel}・${styleLabel}として、リリース前約190msの腕全体の軌跡から算出しています。`},
     phases,advice:{text:advice('pitch',item,delta,seed)},
     prediction:{current,improved,unit:'km/h'},status:''
   };
@@ -6102,10 +6225,10 @@ function trackThrow(lm,now){
   const side=selectedPitchArmSide();
   const pose=pitchReleasePose(side,lm);
   if(!pose)return;
-
   const state=pitchReleaseState;
   if(state.side!==side)resetSourcePitchGate(side);
 
+  const worldArm=worldPitchArmSnapshot(side,lastWorldLm);
   const history=arm.hist[side];
   history.push({
     t:now,
@@ -6113,68 +6236,75 @@ function trackThrow(lm,now){
     ex:pose.el.x,ey:pose.el.y,
     shoulderX:pose.sh.x,shoulderY:pose.sh.y,
     elbowAngle:pose.elbowAngle,
-    shoulderSpan:pose.shoulderSpan
+    shoulderSpan:pose.shoulderSpan,
+    handSeparation:pose.handSeparation,
+    worldShoulder:worldArm?.shoulder||null,
+    worldElbow:worldArm?.elbow||null,
+    worldWrist:worldArm?.wrist||null
   });
-  while(history.length&&now-history[0].t>950)history.shift();
+  while(history.length&&now-history[0].t>980)history.shift();
 
   if(state.phase==='released'){
     if(!S.ball&&now>=S.cooldownUntil){
       resetSourcePitchGate(side);
-      history.splice(0,Math.max(0,history.length-2));
-    }else{
-      return;
+      history.splice(0,Math.max(0,history.length-3));
+    }else return;
+  }
+  if(now<S.cooldownUntil||S.ball||history.length<4)return;
+
+  const span=Math.max(.07,pose.shoulderSpan);
+  const handsSeparated=pose.handSeparation>span*.22;
+  if(handsSeparated){
+    if(!state.separatedAt)state.separatedAt=now;
+  }else{
+    state.separatedAt=0;
+    if(state.phase==='ready'){
+      state.pendingStyle=null;
+      state.loadFrames=0;
+      state.loadCandidateAt=0;
     }
   }
 
-  if(now<S.cooldownUntil||S.ball)return;
-  if(history.length<4)return;
+  const motion=sourceThrowMotionFeatures(side,lm,history,now,state.phase==='ready'?null:state.loadStyle);
+  if(!motion)return;
 
-  const span=pose.shoulderSpan;
-  const styleNow=sourceThrowStyle(side,lm);
-  const handsSeparated=pose.handSeparation>span*.30;
   const forearmLength=Math.hypot(pose.wr.x-pose.el.x,pose.wr.y-pose.el.y);
   const upperArmLength=Math.hypot(pose.el.x-pose.sh.x,pose.el.y-pose.sh.y);
-  const fullArmVisible=forearmLength>span*.20&&upperArmLength>span*.18;
-  const armBent=pose.elbowAngle<171;
+  const fullArmVisible=forearmLength>span*.18&&upperArmLength>span*.15;
+  const armBent=pose.elbowAngle<174;
 
-  const overhandReady=
-    pose.wr.y<pose.sh.y-.045&&
-    pose.outward>span*.055;
-  const sidearmReady=
-    Math.abs(pose.wr.y-pose.sh.y)<=span*.28&&
-    pose.outward>=span*.24;
-  const underhandReady=
-    !!pose.hip&&
-    pose.wr.y>pose.hip.y-.018&&
-    pose.outward>span*.025;
-
-  const readyStyle=overhandReady?'overhand':sidearmReady?'sidearm':underhandReady?'underhand':null;
-
-  // 両手が近い振り被り中、肘が伸び切った姿勢、手首だけが見えている状態ではロードしない。
   if(state.phase==='ready'){
-    if(readyStyle&&handsSeparated&&fullArmVisible&&armBent){
-      if(state.pendingStyle!==readyStyle){
-        state.pendingStyle=readyStyle;
+    const loadStyle=sourceLoadStyle(pose);
+    const separatedLongEnough=state.separatedAt&&now-state.separatedAt>=28;
+    if(loadStyle&&separatedLongEnough&&fullArmVisible&&armBent){
+      if(state.pendingStyle!==loadStyle){
+        state.pendingStyle=loadStyle;
         state.loadFrames=1;
         state.loadCandidateAt=now;
-      }else{
-        state.loadFrames++;
-      }
+      }else state.loadFrames++;
 
-      // 2フレームまたは35msの保持でテイクバック成立。
-      if(state.loadFrames>=2||now-state.loadCandidateAt>=35){
+      // 振り被り直後の1フレームではロードせず、姿勢の連続性を確認する。
+      if(state.loadFrames>=2||now-state.loadCandidateAt>=32){
         state.phase='loaded';
-        state.loadStyle=readyStyle;
+        state.loadStyle=loadStyle;
         state.loadAt=now;
-        state.loadX=pose.wr.x;
-        state.loadY=pose.wr.y;
-        state.loadZ=pose.z;
+        state.loadX=pose.wr.x;state.loadY=pose.wr.y;state.loadZ=pose.z;
+        state.loadRelX=pose.wr.x-pose.sh.x;
+        state.loadRelY=pose.wr.y-pose.sh.y;
+        state.loadElbowX=pose.el.x-pose.sh.x;
+        state.loadElbowY=pose.el.y-pose.sh.y;
         state.loadElbow=pose.elbowAngle;
         state.loadShoulderSpan=span;
-        state.loadBodyX=pose.el.x;
-        state.loadBodyY=pose.el.y;
         state.loadOutward=pose.outward;
         state.loadHandSeparation=pose.handSeparation;
+        state.driveAt=0;
+        state.candidateFrames=0;
+        state.maxDriveSpeed=0;
+        state.maxDriveTravel=0;
+        state.peakScore=0;
+        state.peakMotion=null;
+        state.peakReleasePoint=null;
+        state.peakAt=0;
         arm.cockedAt[side]=now;
         arm.activeSide=side;
       }
@@ -6186,83 +6316,136 @@ function trackThrow(lm,now){
     return;
   }
 
-  if(state.phase!=='loaded')return;
-  if(now-state.loadAt>1100){
+  if(state.phase!=='loaded'&&state.phase!=='drive')return;
+  const elapsed=now-state.loadAt;
+  if(elapsed>1250||!handsSeparated){
     resetSourcePitchGate(side);
-    history.splice(0,Math.max(0,history.length-2));
+    history.splice(0,Math.max(0,history.length-3));
     return;
   }
 
-  const motion=sourceThrowMotionFeatures(side,lm,history,now);
-  if(!motion)return;
-
-  const reference=history[Math.max(0,history.length-4)];
-  const current=history[history.length-1];
-  const crossedDown=reference.y<pose.sh.y&&current.y>=pose.sh.y-.04;
-  const lateralSweep=Math.abs(current.x-reference.x)>.022;
-  const upwardSweep=!!pose.hip&&reference.y>pose.hip.y-.01&&current.y<pose.hip.y-.05;
-
-  const wristTravel=Math.hypot(
-    pose.wr.x-state.loadX,
-    pose.wr.y-state.loadY
-  );
-  const elbowTravel=Math.hypot(
-    pose.el.x-state.loadBodyX,
-    pose.el.y-state.loadBodyY
-  );
+  const wrRelX=pose.wr.x-pose.sh.x;
+  const wrRelY=pose.wr.y-pose.sh.y;
+  const elRelX=pose.el.x-pose.sh.x;
+  const elRelY=pose.el.y-pose.sh.y;
+  const dx=wrRelX-state.loadRelX;
+  const dy=wrRelY-state.loadRelY;
+  const wristTravel=Math.hypot(dx,dy)/span;
+  const elbowTravel=Math.hypot(elRelX-state.loadElbowX,elRelY-state.loadElbowY)/span;
   const elbowGain=pose.elbowAngle-state.loadElbow;
-  const currentHandsSeparated=pose.handSeparation>span*.24;
+  const depthAdvance=state.loadZ-pose.z;
+  const fullArmEvidence=
+    elbowTravel>.030||
+    Math.abs(elbowGain)>3.8||
+    (motion.elbowSpeedNorm||0)>.16;
 
-  // 手首だけの返しを排除するため、手首の移動に加えて肘の移動または肘伸展を必須にする。
-  const fullArmDrive=
-    wristTravel>span*.20&&
-    (
-      elbowTravel>span*.065||
-      elbowGain>7||
-      (pose.elbowAngle>=135&&wristTravel>span*.30)
+  // 腕の軌跡から投法を補正する。横方向優位なら横投げ、腰下から上なら下投げ。
+  if(state.phase==='loaded'){
+    const absVx=Math.abs(motion.sourceVx||0),absVy=Math.abs(motion.sourceVy||0);
+    const loadWasLow=state.loadY>(pose.hip?.y??pose.sh.y+span*.9)-span*.10;
+    if(absVx>absVy*1.05&&absVx>.22)state.loadStyle='sidearm';
+    else if(loadWasLow&&(motion.sourceVy||0)<-.16&&absVy>absVx*.62)state.loadStyle='underhand';
+    else if((motion.sourceVy||0)>.16&&state.loadY<pose.sh.y+span*.42)state.loadStyle='overhand';
+
+    const directionalTravel=state.loadStyle==='sidearm'
+      ?Math.abs(dx)/span
+      :state.loadStyle==='underhand'
+        ?Math.max(-dy/span,wristTravel*.55)
+        :Math.max(dy/span,wristTravel*.55);
+    const driveReady=
+      elapsed>=42&&
+      state.separatedAt&&now-state.separatedAt>=60&&
+      wristTravel>.095&&
+      fullArmEvidence&&
+      motion.sourceSpeedNorm>.38&&
+      (directionalTravel>.055||wristTravel>.18||depthAdvance>.0005);
+
+    if(!driveReady)return;
+    state.phase='drive';
+    state.driveAt=now;
+    state.lastReason='full-arm-drive';
+  }
+
+  const driveElapsed=now-state.driveAt;
+  const absVx=Math.abs(motion.sourceVx||0),absVy=Math.abs(motion.sourceVy||0);
+  const directionalSpeed=state.loadStyle==='sidearm'
+    ?Math.max(absVx,motion.sourceSpeedNorm*.68)
+    :Math.max(absVy,motion.sourceSpeedNorm*.68);
+  const directionTravel=state.loadStyle==='sidearm'
+    ?Math.abs(dx)/span
+    :state.loadStyle==='underhand'
+      ?Math.max(-dy/span,wristTravel*.52)
+      :Math.max(dy/span,wristTravel*.52);
+  const releaseScore=
+    motion.sourceSpeedNorm+
+    (motion.elbowSpeedNorm||0)*.22+
+    Math.max(0,motion.elbowExtensionRate||0)/1200;
+
+  state.maxDriveSpeed=Math.max(state.maxDriveSpeed,motion.sourceSpeedNorm||0);
+  state.maxDriveTravel=Math.max(state.maxDriveTravel,wristTravel);
+  if(releaseScore>=state.peakScore){
+    state.peakScore=releaseScore;
+    state.peakMotion={...motion,releaseStyle:state.loadStyle};
+    state.peakReleasePoint=handBallPoint(side,lm,'release')||screenPoint(pose.wr);
+    state.peakAt=now;
+  }
+
+  const strongArmEvidence=
+    elbowTravel>.045||
+    Math.abs(elbowGain)>5.2||
+    (motion.elbowSpeedNorm||0)>.22||
+    ((motion.elbowExtensionRate||0)>105&&wristTravel>.22)||
+    (wristTravel>.36&&motion.sourceSampleCount>=4&&elapsed>105);
+  const styleThreshold=state.loadStyle==='underhand'?.52:state.loadStyle==='sidearm'?.58:.62;
+  const releaseCandidate=
+    driveElapsed>=24&&
+    elapsed>=75&&
+    wristTravel>.18&&
+    state.maxDriveTravel>.20&&
+    directionalSpeed>styleThreshold&&
+    strongArmEvidence&&
+    (directionTravel>.065||wristTravel>.30||depthAdvance>.0008);
+
+  state.candidateFrames=releaseCandidate?state.candidateFrames+1:Math.max(0,state.candidateFrames-1);
+  const strongImmediate=releaseCandidate&&(
+    motion.sourceSpeedNorm>.92||
+    wristTravel>.34||
+    directionalSpeed>.86
+  );
+  const passedPeak=
+    state.peakScore>.72&&
+    now-state.peakAt>=28&&
+    releaseScore<state.peakScore*.80&&
+    state.maxDriveTravel>.20&&
+    strongArmEvidence;
+
+  if(state.candidateFrames>=2||strongImmediate||passedPeak){
+    const usePeak=passedPeak&&state.peakMotion;
+    const releaseMotion={...(usePeak?state.peakMotion:motion)};
+    releaseMotion.releaseStyle=state.loadStyle;
+    releaseMotion.sourceSpeedNorm=Math.max(
+      releaseMotion.sourceSpeedNorm||0,
+      state.peakMotion?.sourceSpeedNorm||0,
+      state.maxDriveSpeed||0
     );
+    releaseMotion.speedNorm=releaseMotion.sourceSpeedNorm;
+    releaseMotion.legacySpeedNorm=releaseMotion.sourceSpeedNorm;
 
-  // テイクバック直後の一瞬の座標飛びは投球にしない。
-  const sequenceTime=now-state.loadAt;
-  const validSequence=sequenceTime>=45&&sequenceTime<=920&&currentHandsSeparated&&fullArmDrive;
-
-  const overhandRelease=
-    validSequence&&
-    state.loadStyle==='overhand'&&
-    motion.vy>.66&&motion.speedNorm>1.18&&
-    crossedDown&&pose.wr.y>state.loadY+span*.12;
-  const sidearmRelease=
-    validSequence&&
-    state.loadStyle==='sidearm'&&
-    Math.abs(motion.vx)>.82&&motion.speedNorm>1.08&&
-    lateralSweep&&Math.abs(pose.wr.x-state.loadX)>span*.20;
-  const underhandRelease=
-    validSequence&&
-    state.loadStyle==='underhand'&&
-    motion.vy<-.36&&motion.speedNorm>1.00&&
-    upwardSweep&&pose.wr.y<state.loadY-span*.14;
-
-  if(overhandRelease||sidearmRelease||underhandRelease){
     state.phase='released';
     state.lastReleaseAt=now;
-    state.lastReason='github-source-release';
+    state.lastReason='motion-engine-3-release';
     releaseUserPitch(
       side,
       lm,
-      motion,
-      handBallPoint(side,lm,'release')||screenPoint(pose.wr)
+      releaseMotion,
+      state.peakReleasePoint||handBallPoint(side,lm,'release')||screenPoint(pose.wr)
     );
     return;
   }
 
-  // テイクバックを解いたが投球条件を満たさなかった場合は、手首返し・振り被りとして破棄する。
-  const returnedNeutral=
-    !readyStyle&&
-    motion.speedNorm<.72&&
-    sequenceTime>180;
-  if(returnedNeutral){
+  if(driveElapsed>820){
     resetSourcePitchGate(side);
-    history.splice(0,Math.max(0,history.length-2));
+    history.splice(0,Math.max(0,history.length-3));
   }
 }
 
@@ -6804,7 +6987,7 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
     motion,
     pitch.type
   );
-  const provisionalKmh=preSpeedResult.valid?preSpeedResult.kmh:80;
+  const provisionalKmh=preSpeedResult.valid?preSpeedResult.kmh:72;
 
   if(!isSpeedContest()){
     S.pitches++;
@@ -6913,7 +7096,7 @@ function releaseUserPitch(side,lm,motion,detectedReleasePoint=null){
     speedSamples:preSamples,
     lastSpeedVideoTime:video?.currentTime,
     preReleaseMotion:{...motion},
-    motionEngineVersion:MOTION_ENGINE_V2.version,
+    motionEngineVersion:'3.0.0',
     motionEngineResult:{...preSpeedResult},
     releaseStyle:motion.releaseStyle,
     releaseStyleLabel:preSpeedResult.releaseStyleLabel||motionThrowStyleLabel(motion.releaseStyle),
