@@ -1341,7 +1341,7 @@ html,body{
     <div class="setupSectionTitle">難易度</div>
     <div class="handChoice compact difficultyChoice" aria-label="ピッチング難易度">
       <button class="handBtn pitchDifficultyBtn" type="button" data-pitch-difficulty="easy" aria-pressed="false"><span class="handMark">E</span><b>イージー</b><small>打者弱め・制球補助</small></button>
-      <button class="handBtn pitchDifficultyBtn sel" type="button" data-pitch-difficulty="normal" aria-pressed="true"><span class="handMark">N</span><b>ノーマル</b><small>現在の標準バランス</small></button>
+      <button class="handBtn pitchDifficultyBtn sel" type="button" data-pitch-difficulty="normal" aria-pressed="true"><span class="handMark">N</span><b>ノーマル</b><small>ほどよい手ごたえ</small></button>
       <button class="handBtn pitchDifficultyBtn" type="button" data-pitch-difficulty="hard" aria-pressed="false"><span class="handMark">H</span><b>ハード</b><small>打者強化・制球シビア</small></button>
     </div>
   </div>
@@ -1397,7 +1397,7 @@ html,body{
     <div class="setupSectionTitle">難易度</div>
     <div class="handChoice compact difficultyChoice" aria-label="バッティング難易度">
       <button class="handBtn batDifficultyBtn" type="button" data-bat-difficulty="easy" aria-pressed="false"><span class="handMark">E</span><b>イージー</b><small>タイミングだけで打てる</small></button>
-      <button class="handBtn batDifficultyBtn sel" type="button" data-bat-difficulty="normal" aria-pressed="true"><span class="handMark">N</span><b>ノーマル</b><small>コース＋タイミング</small></button>
+      <button class="handBtn batDifficultyBtn sel" type="button" data-bat-difficulty="normal" aria-pressed="true"><span class="handMark">N</span><b>ノーマル</b><small>コースを狙って打とう</small></button>
       <button class="handBtn batDifficultyBtn" type="button" data-bat-difficulty="hard" aria-pressed="false"><span class="handMark">H</span><b>ハード</b><small>変化球・速球・際どい球</small></button>
     </div>
   </div>
@@ -1432,11 +1432,12 @@ html,body{
   </div>
 
   <div class="setupSection">
-    <div class="setupSectionTitle">守備時の相手打者</div>
-    <div class="handChoice compact" aria-label="試合の相手打者の打席">
-      <button class="handBtn" type="button" data-hand="right" aria-pressed="false"><span class="handMark">右</span><b>右バッター</b><small>右打席</small></button>
-      <button class="handBtn" type="button" data-hand="left" aria-pressed="false"><span class="handMark">左</span><b>左バッター</b><small>左打席</small></button>
+    <div class="setupSectionTitle">攻撃時の打席を選択</div>
+    <div class="handChoice compact" aria-label="試合でプレイヤーが立つ打席">
+      <button class="handBtn" type="button" data-hand="right" aria-pressed="false"><span class="handMark">右</span><b>右打席</b><small>右バッターで攻撃</small></button>
+      <button class="handBtn" type="button" data-hand="left" aria-pressed="false"><span class="handMark">左</span><b>左打席</b><small>左バッターで攻撃</small></button>
     </div>
+    <div class="virtualBgNote">守備時の相手打者は、打者が代わるたびに右打席・左打席がランダムで決まります。</div>
   </div>
 
   <div class="setupSection">
@@ -1451,7 +1452,7 @@ html,body{
     <div class="setupSectionTitle">試合難易度</div>
     <div class="handChoice compact difficultyChoice" aria-label="試合難易度">
       <button class="handBtn matchDifficultyBtn" type="button" data-match-difficulty="easy" aria-pressed="false"><span class="handMark">E</span><b>イージー</b><small>打撃はタイミング中心</small></button>
-      <button class="handBtn matchDifficultyBtn sel" type="button" data-match-difficulty="normal" aria-pressed="true"><span class="handMark">N</span><b>ノーマル</b><small>攻守とも標準</small></button>
+      <button class="handBtn matchDifficultyBtn sel" type="button" data-match-difficulty="normal" aria-pressed="true"><span class="handMark">N</span><b>ノーマル</b><small>ほどよい試合の手ごたえ</small></button>
       <button class="handBtn matchDifficultyBtn" type="button" data-match-difficulty="hard" aria-pressed="false"><span class="handMark">H</span><b>ハード</b><small>変化球＋強打者</small></button>
     </div>
   </div>
@@ -2612,7 +2613,8 @@ const S = {
   isContest:false,
   contestType:null,
   contest:null,
-  batterHand:savedBatterHand, // COM打者: 'right' | 'left'
+  batterHand:savedBatterHand, // プレイヤーの打席: 'right' | 'left'（練習ピッチングでは相手打者選択にも使用）
+  matchComBatterHand:'right', // 試合守備時の相手打者。打者ごとにランダム
   pitchView:savedPitchView,   // 'pitcher' | 'catcher'
   pitchDistance:savedPitchDistance, // 'normal' | 'near'
   pitchControl:savedPitchControl, // 'two' | 'one'
@@ -2698,7 +2700,15 @@ const M = { // 試合
   scoreYou:[], scoreCom:[],
 };
 
-function batterHandLabel(){ return S.batterHand==='left'?'左バッター':'右バッター'; }
+function activeComBatterHand(){
+  if(S.isMatch&&S.mode==='pitch')return S.matchComBatterHand==='left'?'left':'right';
+  return S.batterHand==='left'?'left':'right';
+}
+function randomizeMatchComBatterHand(){
+  S.matchComBatterHand=Math.random()<.5?'right':'left';
+  return S.matchComBatterHand;
+}
+function batterHandLabel(){ return activeComBatterHand()==='left'?'左バッター':'右バッター'; }
 function pitchViewLabel(){ return 'ピッチング'; }
 function pitchDistanceLabel(){ return S.pitchDistance==='near'?'近距離モード':'標準距離'; }
 function pitchControlLabel(){ return S.pitchControl==='one'?'片手モード':'両腕モード'; }
@@ -5953,22 +5963,23 @@ function pitchHistoryReference(history,now,minAge=65,maxAge=180){
 
 function pitchLoadStyle(pose){
   const span=pose.shoulderSpan;
-  // 振り被り中は両手が近い。実際のテイクバックはグラブ側の手と分離してから成立させる。
-  const handsSeparated=pose.handSeparation>span*.52;
+  // 両手が近い振り被り中はテイクバックにしない。
+  // グラブ側と分離した後は、上・横・下投げを広めに受け付ける。
+  const handsSeparated=pose.handSeparation>span*.40;
   if(!handsSeparated)return null;
   const underhand=
     !!pose.hip&&
-    pose.wr.y>pose.hip.y+Math.max(.004,span*.018)&&
-    pose.outward>span*.09&&
-    pose.elbowAngle<176;
+    pose.wr.y>pose.hip.y-Math.max(.002,span*.015)&&
+    pose.outward>span*.055&&
+    pose.elbowAngle<179;
   const overhand=
-    pose.wr.y<pose.sh.y-Math.max(.010,span*.040)&&
-    pose.outward>span*.04&&
-    pose.elbowAngle<172;
+    pose.wr.y<pose.sh.y-Math.max(.006,span*.025)&&
+    pose.outward>span*.015&&
+    pose.elbowAngle<178;
   const sidearm=
-    Math.abs(pose.wr.y-pose.sh.y)<=span*.62&&
-    pose.outward>span*.15&&
-    pose.elbowAngle<174;
+    Math.abs(pose.wr.y-pose.sh.y)<=span*.75&&
+    pose.outward>span*.095&&
+    pose.elbowAngle<179;
   if(underhand)return'underhand';
   if(overhand)return'overhand';
   if(sidearm)return'sidearm';
@@ -6131,7 +6142,7 @@ function trackThrow(lm,now){
     (
       preferredStyle&&
       pose.elbowAngle<176&&
-      pose.handSeparation>pose.shoulderSpan*.52&&
+      pose.handSeparation>pose.shoulderSpan*.40&&
       relaxedPreferredPose
         ?preferredStyle
         :null
@@ -6147,12 +6158,11 @@ function trackThrow(lm,now){
         state.loadFrames++;
       }
 
-      // 1フレームだけ頭上を通った動きはテイクバックにしない。
-      // 投法姿勢を最低3フレーム・55ms保持し、両手が分離していることを必須化。
+      // 一瞬だけ頭上を通った動きは除外するが、実投球を止めないよう2フレームで確定する。
       if(
-        state.loadFrames>=3&&
-        now-state.loadCandidateAt>=55&&
-        pose.handSeparation>pose.shoulderSpan*.52
+        state.loadFrames>=2&&
+        now-state.loadCandidateAt>=25&&
+        pose.handSeparation>pose.shoulderSpan*.40
       ){
         state.phase='loaded';
         state.loadAt=now;
@@ -6225,21 +6235,21 @@ function trackThrow(lm,now){
     .30
   );
 
-  const handsSeparated=pose.handSeparation>span*.46;
+  const handsSeparated=pose.handSeparation>span*.30;
   const driveDirection=state.loadStyle==='overhand'
-    ?dy>span*.065&&motion.vy>.20
+    ?dy>span*.045&&motion.vy>.14
     :state.loadStyle==='sidearm'
       ?(
-        inwardTravel>span*.030||
-        depthAdvance>.004
-      )&&Math.abs(motion.vx)>.24
-      :-dy>span*.065&&motion.vy<-.18;
+        inwardTravel>span*.018||
+        depthAdvance>.002
+      )&&Math.abs(motion.vx)>.16
+      :-dy>span*.045&&motion.vy<-.12;
   const driveArmEvidence=
     handsSeparated&&
     (
-      depthAdvance>.0025||
-      elbowGain>2.5||
-      normalizedTravel>driveTravelMin*1.30
+      depthAdvance>.0015||
+      elbowGain>1.0||
+      normalizedTravel>driveTravelMin*1.08
     );
 
   if(state.phase==='loaded'){
@@ -6260,10 +6270,10 @@ function trackThrow(lm,now){
     );
 
     if(
-      now-state.loadAt>=85&&
+      now-state.loadAt>=40&&
       driveDirection&&
       driveArmEvidence&&
-      driveSpeed>.46&&
+      driveSpeed>.32&&
       normalizedTravel>driveTravelMin
     ){
       state.phase='drive';
@@ -6351,12 +6361,12 @@ function trackThrow(lm,now){
     (motion.instantSpeedNorm||0)*.58
   );
   const releaseCandidate=
-    now-state.loadAt>=135&&
-    now-state.driveAt>=25&&
+    now-state.loadAt>=70&&
+    now-state.driveAt>=10&&
     handsSeparated&&
     releaseDirection&&
     releaseEvidence&&
-    releaseSpeed>.50&&
+    releaseSpeed>.38&&
     travelEvidence;
 
   state.candidateFrames=releaseCandidate
@@ -6364,10 +6374,10 @@ function trackThrow(lm,now){
     :Math.max(0,state.candidateFrames-1);
 
   const passedPeak=
-    state.maxInstantSpeedNorm>.90&&
+    state.maxInstantSpeedNorm>.78&&
     (motion.instantSpeedNorm||motion.speedNorm)<
-      state.maxInstantSpeedNorm*.66&&
-    now-state.driveAt>100&&
+      state.maxInstantSpeedNorm*.70&&
+    now-state.driveAt>65&&
     handsSeparated;
   const peakFallback=
     passedPeak&&
@@ -6380,14 +6390,14 @@ function trackThrow(lm,now){
     );
   const strongImmediate=
     releaseCandidate&&
-    now-state.driveAt>=60&&
+    now-state.driveAt>=25&&
     (
-      (motion.instantSpeedNorm||0)>1.55||
-      normalizedTravel>releaseTravelMin*1.90
+      (motion.instantSpeedNorm||0)>1.25||
+      normalizedTravel>releaseTravelMin*1.65
     );
 
   if(
-    state.candidateFrames>=2||
+    state.candidateFrames>=1||
     strongImmediate||
     peakFallback
   ){
@@ -6795,7 +6805,7 @@ function userZone(){
 /* COMバッターとストライクゾーンを、シルエットの胸下〜膝へ正確に対応させる。 */
 function pitcherViewSceneLayout(){
   const portrait=H>=W;
-  const hand=S.batterHand==='left'?'left':'right';
+  const hand=activeComBatterHand();
   const minBatterH=Math.min(300,H*.47);
   const maxBatterH=Math.min(650,H*.74);
   const batterH=clamp(H*(portrait?.58:.72),minBatterH,Math.max(minBatterH,maxBatterH));
@@ -6827,7 +6837,7 @@ function pitcherViewSceneLayout(){
 }
 function catcherViewSceneLayout(){
   const portrait=H>=W;
-  const hand=S.batterHand==='left'?'left':'right';
+  const hand=activeComBatterHand();
 
   // v38: 添付動画に合わせた捕手側の構図。
   // ストライクゾーンは中央やや下、COMバッターは左右の手前に大きく表示する。
@@ -7700,6 +7710,9 @@ function applyOutcome(outcome,youBatting){
   if(plateDone){
     S.balls=0;
     S.strikes=0;
+    if(S.isMatch&&!youBatting&&S.outs<3){
+      randomizeMatchComBatterHand();
+    }
   }
 
   updateBoard();
@@ -7735,7 +7748,7 @@ async function nextHalf(){
   const completedFullInning=M.half===1?M.inning:null;
   if(completedFullInning!==null)markReplayInningCompleted(completedFullInning);
   M.bases=[false,false,false];S.balls=0;S.strikes=0;S.outs=0;S.ball=null;S.hitBall=null;S.fieldPlay=null;const arr=M.half===0?M.scoreYou:M.scoreCom;if(arr[M.inning-1]===undefined)arr[M.inning-1]=0;
-  if(M.half===0){M.half=1;S.mode='pitch';S.pitchView='catcher';updatePitchViewBadge();startModeAmbience();await beginCalibration('pitch');showHUD(true);$('recalibrateBtn').style.display='block';await banner(`${M.inning}回裏 守備!`,`難易度: <b style="color:var(--amber)">${difficultyLabel(S.matchDifficulty)}</b> / <b style="color:var(--green)">守備・${pitchBackgroundLabel()}</b> / 相手は<b style="color:var(--amber)">${batterHandLabel()}</b><br>握りと腕の振りで球種が変化します`);}else{if(M.inning>=M.innings){endMatch();return;}M.inning++;M.half=0;S.mode='bat';updatePitchViewBadge();startModeAmbience();await beginCalibration('bat');showHUD(true);$('recalibrateBtn').style.display='block';await banner(`${M.inning}回表 攻撃!`,`難易度: <b style="color:var(--amber)">${difficultyLabel(S.matchDifficulty)}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>投球を見て、確定したゾーンへスイング!`);S.comPitcher.nextPitchAt=performance.now()+1500;}
+  if(M.half===0){M.half=1;S.mode='pitch';S.pitchView='catcher';randomizeMatchComBatterHand();updatePitchViewBadge();startModeAmbience();await beginCalibration('pitch');showHUD(true);$('recalibrateBtn').style.display='block';await banner(`${M.inning}回裏 守備!`,`難易度: <b style="color:var(--amber)">${difficultyLabel(S.matchDifficulty)}</b> / <b style="color:var(--green)">守備・${pitchBackgroundLabel()}</b> / 相手は<b style="color:var(--amber)">${batterHandLabel()}</b><br>握りと腕の振りで球種が変化します`);}else{if(M.inning>=M.innings){endMatch();return;}M.inning++;M.half=0;S.mode='bat';updatePitchViewBadge();startModeAmbience();await beginCalibration('bat');showHUD(true);$('recalibrateBtn').style.display='block';await banner(`${M.inning}回表 攻撃!`,`難易度: <b style="color:var(--amber)">${difficultyLabel(S.matchDifficulty)}</b> / 背景: <b style="color:var(--green)">${batBackgroundLabel()}</b><br>投球を見て、確定したゾーンへスイング!`);S.comPitcher.nextPitchAt=performance.now()+1500;}
   S.cooldownUntil=performance.now()+800;const cur=M.half===0?M.scoreYou:M.scoreCom;if(cur[M.inning-1]===undefined)cur[M.inning-1]=0;updateBoard();
 }
 function endMatch(){
