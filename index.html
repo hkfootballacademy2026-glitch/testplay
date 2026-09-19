@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101918">
 <meta name="description" content="11対11のピッチへ。一人の選手を操作する、Babylon.js・スキニング・PBR・リアルタイムシャドウの一人称サッカーゲーム。">
-<title>FIRST ELEVEN 0.4 — LOOK & KICK</title>
+<title>FIRST ELEVEN 0.5 — KICK RESPONSE</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101918'/%3E%3Cpath d='M17 15h31v8H26v8h18v8H26v12h-9z' fill='%23dcff72'/%3E%3C/svg%3E">
 <style>
 :root{--ink:#101918;--muted:#a6b8b0;--line:#ffffff25;--lime:#dcff72;--blue:#75c5ff;--red:#ff916f;--panel:#101918df;--sans:Inter,"Arial", "Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,sans-serif}
@@ -49,23 +49,36 @@
 @media(max-height:480px) and (min-width:600px){.kick-intent{top:75px;font-size:10px;padding:5px 9px;max-width:55%}.auto-camera-state{top:64px;left:17px;font-size:7px}.body-selected .toast{top:111px;font-size:9px}.body-live{top:134px;right:17px;width:144px}.body-live footer{display:none}.mobile .target-tag{font-size:10px}}
 @media(orientation:portrait) and (max-width:700px){.kick-intent{top:112px;max-width:92%;width:92%;font-size:10px}.body-selected .toast{top:314px}.auto-camera-state{top:74px;left:17px}}
 
+
+/* v0.6: compact diagnostic panel avoids covering the pass recipient. */
+.body-live{width:192px}.body-live canvas{max-height:105px}.body-live #bodyLiveStatus{min-height:26px}
+.target-tag{overflow:hidden;text-overflow:ellipsis}
+.camera-warning{position:absolute;z-index:8;left:12px;right:12px;top:100px;background:#172923ee;border:1px solid #ffe7a3;padding:12px;font-size:11px;line-height:1.6;border-radius:6px;display:flex;gap:10px;align-items:center}
+.camera-warning span{flex:1}.camera-warning button{background:#dcff72;color:#14251a;border-radius:4px;padding:8px;white-space:nowrap}
+@media(max-width:700px){.body-live{width:154px;top:145px;left:12px}.body-live canvas{max-height:96px}.kick-intent{font-size:10px;max-width:94%;width:max-content}.body-stage{flex-wrap:wrap}.camera-warning{top:145px}}
+@media(max-height:480px) and (min-width:600px){.body-live{top:126px;right:14px;left:auto;width:158px}.body-live footer{margin-top:4px}.body-live #bodyLiveStatus{font-size:8px;min-height:20px}}
+@media(orientation:portrait) and (max-width:700px){.body-live{top:auto;bottom:295px;left:auto;right:12px;width:154px}}
+/* v0.6: distinguish camera motion detection from actual ball launches. */
+.kick-diag-count{font-size:14px;font-weight:800;color:#dcff72;margin-top:6px;font-variant-numeric:tabular-nums}.kick-diag-reason{font-size:9px;line-height:1.55;color:#e3eeda;margin:4px 0;min-height:28px;overflow-wrap:anywhere}#bodyTriggerLive{width:100%;font:inherit;font-size:10px;padding:6px;color:#f0f6e9;background:#1c392d;border:1px solid #ffffff38;border-radius:4px}.kick-trigger-label{font-size:8px;color:#b8cbbf;display:block;margin:4px 0}.body-live{max-height:calc(100dvh - 140px);overflow-y:auto}.body-live footer button{min-height:28px}.body-stage{flex-wrap:wrap}.body-live #bodyStage{font-size:8px}.body-live #bodyMiniCanvas{display:block}.body-live #bodyMiniCanvas[hidden]{display:none!important}
+@media(max-height:480px) and (min-width:600px){.body-live{top:93px;max-height:calc(100dvh - 150px);width:170px}.body-live footer button{font-size:8px;min-height:24px}.kick-diag-count{font-size:12px}.kick-diag-reason{font-size:8px}}
+@media(max-height:480px) and (min-width:600px){.body-live #bodyLiveStatus,.body-live .kick-trigger-label,.body-live #bodyMethod{display:none}.body-live header{min-height:20px}.body-live footer{display:flex;margin-top:4px}.body-live .kick-diag-count{margin-top:3px}.body-live .kick-diag-reason{min-height:23px;margin:3px 0}.body-live #bodyTriggerLive{padding:4px}.body-live .body-stage{margin-top:3px}}
 </style>
 </head>
 <body>
-<div id="loading" class="loading-screen"><div><div class="brand-icon">FE</div><h2>LOOK & KICK</h2><p>ピッチと3D描画を準備しています…</p><span>BABYLON.JS · ORIGINAL PROCEDURAL ASSETS</span></div></div>
+<div id="loading" class="loading-screen"><div><div class="brand-icon">FE</div><h2>KICK RESPONSE</h2><p>ピッチと3D描画を準備しています…</p><span>BABYLON.JS · ORIGINAL PROCEDURAL ASSETS</span></div></div>
 <div id="contextNotice" class="context-notice" hidden>描画を再接続しています。復帰しない場合は再読み込みしてください。</div>
 <canvas id="world" aria-label="一人称3Dサッカーフィールド"></canvas>
 <div id="vignette"></div>
 <section id="menu" class="screen menu">
-  <header class="menu-top"><div class="brand"><span class="brand-icon">FE</span><span>FIRST ELEVEN</span></div><div class="build"><i class="status-dot"></i> LOOK & KICK / 0.4</div></header>
+  <header class="menu-top"><div class="brand"><span class="brand-icon">FE</span><span>FIRST ELEVEN</span></div><div class="build"><i class="status-dot"></i> KICK RESPONSE / 0.6</div></header>
   <main class="menu-main">
     <div class="eyebrow">ONE PLAYER. ALL HEART.</div>
     <h1>FIRST<br><span class="outlined">ELEVEN.</span></h1>
     <div class="tagline">このピッチの、主役になれ。</div>
-    <p class="intro">走り込め。パスを呼べ。そして、決めろ。<br>顔で味方を選ぶ。足でパスを出す。ボールは自動追視。</p>
+    <p class="intro">走り込め。パスを呼べ。そして、決めろ。<br>指さしで選ぶ。キックで決める。止めないフットボール。</p>
     <div class="mode-tabs" aria-label="ゲームモード">
       <button class="mode-tab active" id="matchMode" data-mode="match" aria-pressed="true"><span class="mode-title"><span class="mode-no">01</span> エキシビション</span><span class="mode-detail">11 v 11 ・ 味方 / 相手 AI</span></button>
-      <button class="mode-tab" id="practiceMode" data-mode="practice" aria-pressed="false"><span class="mode-title"><span class="mode-no">02</span> トレーニング</span><span class="mode-detail">シュート / 顔で選ぶパス練習</span></button>
+      <button class="mode-tab" id="practiceMode" data-mode="practice" aria-pressed="false"><span class="mode-title"><span class="mode-no">02</span> トレーニング</span><span class="mode-detail">シュート / 指さしパス練習</span></button>
     </div>
     <div class="settings-row">
       <div class="setting"><label for="difficulty">DIFFICULTY / 難易度</label><select id="difficulty"><option value="easy">EASY — 初めてのプレー</option><option value="normal" selected>NORMAL — 標準</option><option value="hard">HARD — 強いプレス</option></select></div>
@@ -77,14 +90,14 @@
     <div class="under-start"><button id="helpButton" class="text-btn">操作方法 / 設定</button><span class="offline">タッチは通信不要 · カメラは初回通信あり</span></div>
   </main>
   <aside class="hero-card"><div class="number">10</div><span class="hero-line"></span><h3>YOUR OWN PERSPECTIVE.</h3><p>視点は一つ。可能性は、無限。</p></aside>
-  <footer class="menu-footer"><span>ORIGINAL FOOTBALL · BABYLON.JS · 0.4</span><span id="deviceLabel">WASD + MOUSE / TOUCH SUPPORTED</span></footer>
+  <footer class="menu-footer"><span>ORIGINAL FOOTBALL · BABYLON.JS · 0.6</span><span id="deviceLabel">WASD + MOUSE / TOUCH SUPPORTED</span></footer>
 </section>
 <div id="hud" class="hud" hidden>
   <div class="topbar">
     <div class="scoreboard"><div class="score-meta"><span id="matchLabel">EXHIBITION · 11 v 11</span><span id="levelLabel">NORMAL</span></div><div class="score-row"><div class="team"><i class="team-dot"></i><span>GRIT</span></div><strong id="score" class="score">0 : 0</strong><div class="team away"><span>NOVA</span><i class="team-dot"></i></div><div id="timer" class="timer">03:00</div></div></div>
     <div class="top-actions"><button id="bodyHUDButton" class="icon-btn" title="カメラ操作を設定" aria-label="カメラ操作を設定">◉</button><button id="trackButton" class="icon-btn" title="ボール追視 (F)" aria-label="ボール追視">◎</button><button id="soundButton" class="icon-btn active" title="音声切替 (M)" aria-label="音声切替">♪</button><button id="fullButton" class="icon-btn" title="全画面" aria-label="全画面">⛶</button><button id="pauseButton" class="icon-btn" title="一時停止 (P / Esc)" aria-label="一時停止">Ⅱ</button></div>
   </div>
-  <div class="render-stats" id="renderStats">LOOK & KICK</div><div class="top-center"><div class="label">FIRST PERSON FOOTBALL</div><strong>FIRST ELEVEN</strong></div>
+  <div class="render-stats" id="renderStats">KICK RESPONSE</div><div class="top-center"><div class="label">FIRST PERSON FOOTBALL</div><strong>FIRST ELEVEN</strong></div>
   <div id="crosshair" class="crosshair"></div>
   <div id="chargeBox" class="charge-box" hidden><span class="charge-title">SHOT POWER</span><div class="charge-track"><div id="chargeFill" class="charge-fill"></div></div></div>
   <div id="possession" class="possession mine">YOUR BALL · ドリブルできます</div>
@@ -93,7 +106,7 @@
   <div class="hints"><div><span class="key">W A S D</span> 移動 <span class="key">SHIFT</span> ダッシュ</div><div><span class="key">SPACE</span> 長押しシュート <span class="key">E</span> パス</div><div><span class="key">Q</span> スルーパス <span class="key">C</span> タックル</div><div><span class="key">R</span> <span id="callHint">パス要求</span> <span class="key">F</span> 追視 <span class="key">G</span> ゴールを見る</div></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="ballMarker" class="ball-marker" hidden><span id="ballDistance"></span></div><div id="ballArrow" class="ball-arrow" hidden></div>
-  <div id="targetTag" class="target-tag" hidden></div><div id="faceAim" class="face-aim" hidden></div><div id="kickIntent" class="kick-intent" hidden></div><div id="autoCameraState" class="auto-camera-state">AUTO BALL</div>
+  <div id="targetTag" class="target-tag" hidden></div><div id="pointAim" class="face-aim" hidden></div><div id="kickIntent" class="kick-intent" hidden></div><div id="autoCameraState" class="auto-camera-state">AUTO BALL</div>
 </div>
 <div id="touchControls" class="touch-controls" hidden>
   <div id="joystick" class="joystick" role="group" aria-label="移動スティック"><div id="stick" class="stick"></div><span class="touch-label">MOVE</span></div>
@@ -113,22 +126,23 @@
   <header class="body-dialog-head"><div><span class="eyebrow">MOVE YOUR BODY. PLAY YOUR GAME.</span><h2 id="bodyTitle">CAMERA CONTROL<span>前面カメラで、ピッチへ。</span></h2></div><button id="bodyClose" class="body-close" aria-label="カメラを止めてタッチ操作に戻る">✕</button></header>
   <div class="body-grid">
    <div class="body-camera-column">
-    <div class="body-preview"><div class="body-empty">端末を固定して、体をフレームの中央へ。<br><small>映像はカメラを許可した後に表示されます。</small></div><video id="bodyVideo" autoplay muted playsinline aria-label="位置合わせ用の前面カメラ映像"></video><canvas id="bodySkeleton" width="640" height="480" aria-label="推定した骨格"></canvas><div class="body-frame-guide"></div><div id="bodyOverlayStatus" class="body-overlay-status">カメラの許可後、3秒静止して位置合わせ</div><b id="bodyCountdown" hidden>3</b><div class="body-camera-badge"><i></i><span id="bodyCameraState">CAMERA OFF</span></div></div>
+    <div class="body-preview"><div class="body-empty">端末を固定して、体をフレームの中央へ。<br><small>映像はカメラを許可した後に表示されます。</small></div><video id="bodyVideo" autoplay muted playsinline aria-label="位置合わせ用の前面カメラ映像"></video><canvas id="bodySkeleton" width="640" height="480" aria-label="推定した骨格"></canvas><div class="body-frame-guide"></div><div id="bodyOverlayStatus" class="body-overlay-status">カメラの許可後、約2秒静止して位置合わせ</div><b id="bodyCountdown" hidden>3</b><div class="body-camera-badge"><i></i><span id="bodyCameraState">CAMERA OFF</span></div></div>
     <div class="body-status-wrap"><div id="bodyStatus" role="status" aria-live="polite">準備したらカメラを許可してください</div><div class="body-progress-track"><div id="bodyProgress"></div></div></div>
     <p id="bodyCaptureTip" class="body-note"></p>
     <p class="body-safety">実物のボールは不要です。小さな動作で遊んでください。端末・家具・人に足が当たらない場所を確保し、足を高く蹴り上げないでください。</p>
    </div>
    <div class="body-options-column">
-    <div class="body-profile-row"><div class="setting"><label for="bodyProfile">認識する範囲</label><select id="bodyProfile"><option value="full">全身 — 足のキック（試作）</option><option value="upper">上半身 — 手の合図</option></select></div><div class="setting body-foot-setting"><label for="bodyFoot">蹴る足</label><select id="bodyFoot"><option value="right">右足</option><option value="left">左足</option></select></div></div>
-    <div class="body-mappings" id="bodyFullHelp"><div><b>顔を左右に向ける</b><span>パスカーソルを動かす → 0.22秒で相手を選択</span></div><div><b>軸足を止め、足を引いてキック</b><span>選択した味方にパス / GOAL選択中はシュート</span></div><div><b>テイクバック中</b><span>選択先を固定。顔を動かしても相手は変わりません</span></div><div><b>その場で交互に足踏み / 体を左右へ</b><span>前進・ダッシュ / 左右移動</span></div><div><b>頭を傾ける（首かしげ）</b><span>自分のボールを持つときだけ進む向きを変更</span></div><div><b>左手または右手を上げる</b><span>ボールがない時だけパス要求。手ではパスしません</span></div></div>
-    <div class="body-mappings" id="bodyUpperHelp" hidden><div><b>顔を左右に向ける</b><span>同じパスカーソルで味方 / ゴールを選択</span></div><div><b>右手を上げて、肩より下へ下ろす</b><span>足が映らない環境専用の代替キック合図</span></div><div><b>体を少し近づける / 左右に寄せる</b><span>前進 / 左右移動</span></div><div><b>左手を上げる</b><span>ボールがない時だけパス要求</span></div></div>
-    <p class="body-note">共通：両手を上げて保持 → 一時停止。右腕を横に伸ばす → タックル。<br>カーソルが点灯するまで蹴っても発射しません。顔の方向は鼻・両耳の位置からの簡易推定で、眼球の視線検出ではありません。顔が小さい・横を向きすぎる場合は選択停止。周囲を空けて小さい動作で試してください。</p>
-    <div class="body-checks"><label><input id="bodyMirror" type="checkbox" checked>鏡表示・左右操作を合わせる</label><label><input id="bodyAutoTrack" type="checkbox" checked>攻守とも自動でボールを追視</label><label><input id="bodyLowQuality" type="checkbox" checked>カメラ中は画質LOWで開始</label><label><input id="bodyHeadInvert" type="checkbox">顔カーソルの左右を反転</label><label>顔カーソル感度 <input id="bodyHeadSensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label><label>移動感度 <input id="bodySensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label></div>
+    <div class="body-profile-row"><div class="setting"><label for="bodyProfile">認識する範囲</label><select id="bodyProfile"><option value="full">全身 — 足のキック（試作）</option><option value="upper">上半身 — 手の合図</option></select></div><div class="setting body-foot-setting"><label for="bodyFoot">蹴る足</label><select id="bodyFoot"><option value="auto">左右どちらでも</option><option value="right">右足</option><option value="left">左足</option></select></div></div>
+    <div class="setting" style="margin-top:12px"><label for="bodyKickLevel">キック判定</label><select id="bodyKickLevel"><option value="direct">反応優先 — 前へ小さく蹴る（推奨）</option><option value="knee">ひざ上げ — 反応確認用・足踏み移動OFF</option><option value="easy">従来式 — 構え＋振り出し</option><option value="normal">標準 — やや大きめの構え</option></select></div>
+    <div class="body-mappings" id="bodyFullHelp"><div><b>胸の高さで、パスしたい方向を指さす</b><span>腕と手の向きでカーソル移動。味方がいれば #番号 PASS、いなければ方向パス</span></div><div><b>片足を小さく前へ蹴る（大きな構えは不要）</b><span>選択中ならパス。選択していなければシュート。顔認識は不要です</span></div><div><b>選んだ味方へ、キックでパス</b><span>指さしをやめても1秒保持。従来式では構えから相手を固定します</span></div><div><b>両腕を下ろして1秒待つ</b><span>パス選択を解除 → SHOTに戻ります</span></div><div><b>その場で交互に足踏み / 体を左右へ</b><span>前進・ダッシュ / 左右移動</span></div><div><b>ボールがない時に片手を上げる</b><span>味方へパス要求。タックルは「奪う」ボタン</span></div></div>
+    <div class="body-mappings" id="bodyUpperHelp" hidden><div><b>胸の高さで指さす</b><span>パスの方向・相手を選択します</span></div><div><b>右手を肩より高く上げ、下ろす</b><span>足の代わりのキック合図。何も選んでいなければシュート</span></div><div><b>体を少し近づける / 左右に寄せる</b><span>前進 / 左右移動</span></div><div><b>ボールがない時に片手を上げる</b><span>パス要求</span></div></div>
+    <p class="body-note">認識が途切れても試合とボール追視を続け、映り直すと操作が戻ります。両手上げによる一時停止、腕を伸ばすタックルは廃止しました。<br>指さしは肩・肘・手首と人さし指の推定位置による大まかな方向操作です。指先だけの精密な追跡ではありません。端末・家具に当たらない場所で小さく蹴ってください。</p>
+    <div class="body-checks"><label><input id="bodyMirror" type="checkbox" checked>鏡表示・左右操作を合わせる</label><label><input id="bodyAutoTrack" type="checkbox" checked>攻守とも自動でボールを追視</label><label><input id="bodyLowQuality" type="checkbox" checked>カメラ中は画質LOWで開始</label><label><input id="bodyPointInvert" type="checkbox">指さしの左右を反転</label><label>指さし感度 <input id="bodyPointSensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label><label>移動感度 <input id="bodySensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label></div>
     <p id="bodyConsentNote" class="body-privacy"></p>
     <label class="body-consent"><input id="bodyConsent" type="checkbox">認識ファイルの取得とGoogleへの利用・性能情報の送信を確認し、カメラ認識に同意する。</label><a class="body-privacy-link" href="https://developers.google.com/edge/mediapipe/solutions/tasks#mediapipe_tasks_privacy_notice" target="_blank" rel="noopener noreferrer">MediaPipeのプライバシー説明</a>
     <p class="body-requirement">カメラにはHTTPSの公開ページ（または同じ端末のlocalhost）が必要です。アプリ内プレビューではなく、通常のブラウザで開いてください。</p>
     <button id="bodyBegin" class="primary">カメラを許可して位置合わせ</button>
-    <p class="body-auto-note">3秒静止して位置合わせ → 3秒カウント後に自動開始。<br>足の判定は映像からの推定です。実際のボール接触・キック力を測るものではありません。</p>
+    <p class="body-auto-note">約2秒静止して位置合わせ → 3秒カウント後に自動開始。<br>足の判定は映像からの推定です。実際のボール接触・キック力を測るものではありません。</p>
    </div>
   </div>
  </div>
@@ -136,10 +150,15 @@
 <div id="bodyLive" class="body-live" hidden>
  <header><span><i></i> CAMERA ON · <b id="bodyProfileShort">FULL BODY</b></span><button id="bodyMiniToggle">映像を隠す</button></header>
  <canvas id="bodyMiniCanvas" width="256" height="192" aria-label="カメラと骨格の確認映像"></canvas>
- <div id="bodyLiveStatus">位置合わせ中</div><div class="body-stage"><span id="bodyStage">WAIT</span><small id="bodyMethod">未接続</small></div><div class="body-meter"><div id="bodyMeterFill"></div></div>
+ <div id="bodyLiveStatus" role="status">位置合わせ中</div>
+ <div class="kick-diag-count" id="bodyDiagCounts">動作 0 → 発射 0</div>
+ <div id="bodyDiagReason" class="kick-diag-reason">v0.6 · カメラ待機</div>
+ <label class="kick-trigger-label" for="bodyTriggerLive">キック判定</label><select id="bodyTriggerLive" aria-label="プレー中のキック判定"><option value="direct">前へ蹴る</option><option value="knee">ひざ上げ（確認用）</option><option value="easy">従来式</option><option value="normal">従来式・標準</option></select><div class="body-stage"><span id="bodyStage">WAIT</span><small id="bodyMethod">未接続</small></div><div class="body-meter"><div id="bodyMeterFill"></div></div>
+ <footer><button id="bodyTestShot" title="カメラ判定を通さずに発射を確認。自分のボールのみ。">テスト発射</button><button id="bodyLogSave" title="映像・骨格を含まない状態ログを保存">診断ログ</button></footer>
  <footer><button id="bodyRecalibrate">位置合わせ</button><button id="bodyStop">カメラOFF</button></footer>
 </div>
 
+<div id="cameraWarning" class="camera-warning" hidden><span id="cameraWarningText"></span><button id="cameraReconnect">再接続</button><button id="cameraDismiss" aria-label="閉じる">×</button></div>
 <script type="text/plain" id="pose-worker-source">/* Embedded as text and spawned as a classic worker (WASM loader may use importScripts).
  * Raw frames stay within this browser; no fetch uploads or recordings. */
 'use strict';
@@ -152,7 +171,7 @@ self.onmessage=async event=>{
    const lib=imported.PoseLandmarker?imported:imported.default;
    if(!lib?.PoseLandmarker||!lib?.FilesetResolver)throw new Error('MediaPipe module exports unavailable');
    const fileset=await lib.FilesetResolver.forVisionTasks(m.config.wasm);
-   const options={baseOptions:{modelAssetPath:m.config.model,delegate:'CPU'},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:.60,minPosePresenceConfidence:.60,minTrackingConfidence:.60,outputSegmentationMasks:false};
+   const options={baseOptions:{modelAssetPath:m.config.model,delegate:'CPU'},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45,outputSegmentationMasks:false};
    if(typeof OffscreenCanvas!=='undefined')options.canvas=new OffscreenCanvas(256,256);
    landmarker=await lib.PoseLandmarker.createFromOptions(fileset,options);
    self.postMessage({type:'ready'});
@@ -57918,272 +57937,323 @@ window.FEPlayerVisual=PlayerVisual;
 </script>
 <!-- src/body-recognizer.js -->
 <script>
-/* FIRST ELEVEN 0.4 - deterministic pose-to-controls. Original MIT code.
- * No camera/network/DOM here. All thresholds are prototype heuristics, not
- * physical kick/contact measurements. z is ML-estimated, not depth sensing.
+/* FIRST ELEVEN 0.6 — KICK RESPONSE. Original MIT code.
+ * Local deterministic pose -> intent. No camera, network or DOM in this module.
+ * A gameplay gesture recognizer, not a biomechanical/contact measurement.
+ * Torso tracking, arm pointing and foot kicks have separate visibility gates.
  */
 (function(root){
 'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:((a.z||0)+(b.z||0))/2});
-const d2=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const visible=(p,t=.60)=>p && Number.isFinite(p.x)&&Number.isFinite(p.y)&&(p.visibility??0)>=t;
-const angle=(a,b,c)=>{const u=[a.x-b.x,a.y-b.y,(a.z||0)-(b.z||0)],v=[c.x-b.x,c.y-b.y,(c.z||0)-(b.z||0)];const n=Math.hypot(...u)*Math.hypot(...v);return n>1e-7?Math.acos(clamp(u.reduce((s,x,i)=>s+x*v[i],0)/n,-1,1))*180/Math.PI:180;};
-const mean=(xs,key)=>xs.reduce((s,x)=>s+x[key],0)/Math.max(1,xs.length);
-const neutral=()=>({x:0,forward:0,turn:0,headYaw:0,headValid:false,sprint:false,valid:false,actions:[],status:'姿勢を確認しています',stage:'WAIT',charge:0,progress:0});
-class Recognizer {
+const seen=(p,t=.42)=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&(p.visibility??0)>=t&&p.x>-.04&&p.x<1.04&&p.y>-.04&&p.y<1.04;
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const distance=(a,b,aspect=1)=>Math.hypot((a.x-b.x)*aspect,a.y-b.y);
+const angle=(a,b,c,aspect=1,useZ=false)=>{const u=[(a.x-b.x)*aspect,a.y-b.y,useZ?(a.z-b.z):0],v=[(c.x-b.x)*aspect,c.y-b.y,useZ?(c.z-b.z):0];const n=Math.hypot(...u)*Math.hypot(...v);return n>1e-7?Math.acos(clamp(u.reduce((s,x,i)=>s+x*v[i],0)/n,-1,1))*180/Math.PI:180;};
+const finite3=p=>p&&['x','y','z'].every(k=>Number.isFinite(p[k]));
+const mean=(xs,k)=>xs.reduce((s,x)=>s+x[k],0)/Math.max(1,xs.length);
+const neutral=()=>({x:0,forward:0,turn:0,sprint:false,headYaw:0,headValid:false,pointYaw:0,pointValid:false,pointSide:null,valid:false,actions:[],status:'体を確認中・試合は継続します',stage:'WAIT',charge:0,progress:0,feet:[false,false]});
+class Recognizer{
  constructor(options={}){this.configure(options);}
  configure(options={}){
-  this.profile=options.profile==='upper'?'upper':'full';this.foot=options.foot==='left'?'left':'right';
-  this.mirror=options.mirror!==false;this.headInvert=!!options.headInvert;this.headSensitivity=clamp(Number(options.headSensitivity)||1,.6,1.6);this.sensitivity=clamp(Number(options.sensitivity)||1,.6,1.6);
-  this.baseline=null;this.samples=[];this.calibrationStart=null;this.lastTime=null;this.lastFeatures=null;
-  this.lastValid=0;this.lastOutput=neutral();this.resetGestures();
+  this.profile=options.profile==='upper'?'upper':'full';this.foot=['left','right'].includes(options.foot)?options.foot:'auto';
+  this.mirror=options.mirror!==false;this.pointInvert=!!options.pointInvert;
+  this.sensitivity=clamp(Number(options.sensitivity)||1,.6,1.6);this.pointSensitivity=clamp(Number(options.pointSensitivity)||1,.6,1.6);
+  this.kickLevel=['direct','knee','easy','normal'].includes(options.kickLevel)?options.kickLevel:'direct';
+  this.baseline=null;this.samples=[];this.calibrationStart=null;this.lastTime=null;this.lastValid=-Infinity;this.lastOutput=neutral();this.resetGestures();
  }
- resetGestures(){this.holds={};this.latched={};this.releaseSince={};this.lastAction=-Infinity;this.armedAt=Infinity;this.neutralSince=null;
-  this.upperChargeAt=null;this.upperReleaseAt=null;this.upperArmed=false;this.marchSide=-1;this.lastStep=-Infinity;this.stepTimes=[];
-  this.kick={stage:'WAIT',started:0,phaseAt:0,support:null,speed:0};this.supportHistory=[];this.smooth={x:0,forward:0,turn:0};this.smoothHead=0;}
- recalibrate(){this.baseline=null;this.samples=[];this.calibrationStart=null;this.lastFeatures=null;this.lastTime=null;this.resetGestures();}
- suspend(){this.resetGestures();this.lastFeatures=null;this.lastTime=null;this.lastOutput=neutral();}
- features(lm,world){
-  const required=this.profile==='full'?[0,11,12,23,24,25,26,27,28]:[0,11,12,23,24];
-  if(!lm || lm.length<33 || required.some(i=>!visible(lm[i])))return null;
-  // Reject a cropped head/feet rather than extrapolating invisible limbs.
-  if(required.some(i=>lm[i].x<.025||lm[i].x>.975||lm[i].y<.025||lm[i].y>.975))return null;
+ resetKick(){this.kick={stage:'WAIT',side:-1,started:0};}
+ resetGestures(){this.directLegs=[null,null];this.lastDirectReason='READY';this.resetKick();this.previousLegs=[null,null];this.lastKick=-Infinity;this.nextKick=0;this.lastAction=-Infinity;this.settleAt=null;this.armed=false;this.pointSide=null;this.smoothPoint=0;this.smooth={x:0,forward:0,turn:0};this.stepTimes=[];this.lastStep=-Infinity;this.marchSide=-1;this.holds={};this.latched={};this.upperChargeAt=null;this.upperArmed=false;this.upperReleaseAt=null;}
+ recalibrate(){this.baseline=null;this.samples=[];this.calibrationStart=null;this.lastTime=null;this.resetGestures();}
+ suspend(){this.resetGestures();this.lastTime=null;this.lastOutput=neutral();}
+ features(lm,world,aspect=1){
+  if(!lm||lm.length<33||[11,12,23,24].some(i=>!seen(lm[i])))return null;
   const shoulder=mid(lm[11],lm[12]),hip=mid(lm[23],lm[24]);
-  const span=d2(lm[11],lm[12]),torso=d2(shoulder,hip);
-  if(span<.065||torso<.065)return null;
-  const hands=[15,16].map((i,j)=>visible(lm[i])&&lm[i].y<lm[0].y-.035&&lm[i].y<lm[11+j].y-.08);
-  const handVisible=visible(lm[15])&&visible(lm[16]);
-  const rightOut=visible(lm[16])&&visible(lm[14])&&Math.abs(lm[16].x-lm[12].x)>span*.80&&Math.abs(lm[16].y-lm[12].y)<torso*.35;
-  const earA=lm[7],earB=lm[8];
-  // Geometric head roll, not a claimed eye-gaze/face-orientation measurement.
-  const roll=visible(earA)&&visible(earB)&&Math.abs(earB.x-earA.x)>.04?(earB.y-earA.y)/(earB.x-earA.x):0;
-  // Nose relative to the ear axis gives coarse yaw. Projection removes roll,
-  // translation and image scale; this is NOT an eye-gaze/biometric estimate.
-  let faceOffset=null;
-  if(visible(earA,.65)&&visible(earB,.65)&&visible(lm[0],.65)){
-   const dx=Math.abs(earB.x-earA.x),dy=(earB.y-earA.y)*Math.sign(earB.x-earA.x),len2=dx*dx+dy*dy;
-   if(dx>.035&&len2>.0020&&Math.sqrt(len2)<span*1.12){
-    const nx=lm[0].x-(earA.x+earB.x)/2,ny=lm[0].y-(earA.y+earB.y)/2;
-    const v=(nx*dx+ny*dy)/len2;if(Math.abs(v)<1.2)faceOffset=v;
-   }
-  }
-  const f={center:hip.x,span,torso,roll,hands,handVisible,rightOut,faceOffset,
-   noseY:(shoulder.y-lm[0].y)/torso,hipY:hip.y,world, lm,shoulder,hip};
-  if(this.profile==='full'){
-   f.knee=[(lm[23].y-lm[25].y)/torso,(lm[24].y-lm[26].y)/torso];
-   f.ankles=[lm[27],lm[28]];
-   const q=this.foot==='right'?[24,26,28,32,27]:[23,25,27,31,28];
-   if(world?.length>=33&&q.every(i=>world[i]&&['x','y','z'].every(k=>Number.isFinite(world[i][k])))&&q.slice(2).every(i=>visible(lm[i]))){
-    f.kick={angle:angle(world[q[0]],world[q[1]],world[q[2]]),z:world[q[2]].z,ay:lm[q[2]].y,ky:lm[q[1]].y,
-     foot:lm[q[3]],ankle:lm[q[2]],support:lm[q[4]],worldFoot:world[q[3]]};
+  const span=Math.max(Math.abs(lm[11].x-lm[12].x),.04),torso=distance(shoulder,hip,aspect);
+  if(torso<.06)return null;
+  const f={lm,world,aspect,shoulder,hip,span,torso,center:hip.x,hipY:hip.y,legs:[],knees:[],arms:[],hands:[]};
+  for(let s=0;s<2;s++){
+   const h=23+s,n=25+s,a=27+s,support=27+(1-s),sh=11+s,el=13+s,wr=15+s,ix=19+s;
+   f.knees[s]=seen(lm[n],.30)?{lift:(lm[h].y-lm[n].y)/torso,visibility:lm[n].visibility}:null;
+   f.hands[s]=seen(lm[wr])&&lm[wr].y<lm[sh].y-torso*.45;
+   if([h,n,a].every(i=>seen(lm[i]))&&seen(lm[support],.35)){
+    let hasDepth=world?.length>=33&&[h,n,a,support].every(i=>finite3(world[i]));
+    if(hasDepth){const length=Math.hypot(world[a].x-world[n].x,world[a].y-world[n].y,world[a].z-world[n].z);hasDepth=length>.12&&length<.95;}
+    f.legs[s]={side:s,ankle:lm[a],support:lm[support],angle:hasDepth?angle(world[h],world[n],world[a],1,true):angle(lm[h],lm[n],lm[a],aspect),
+     angle2D:angle(lm[h],lm[n],lm[a],aspect),hasDepth,z:hasDepth?world[a].z-world[h].z:null,rise:(lm[support].y-lm[a].y)/torso,
+     relX:(lm[a].x-lm[h].x)*aspect/torso,relY:(lm[a].y-lm[h].y)/torso,kneeY:lm[n].y,ankleY:lm[a].y,knee:(lm[h].y-lm[n].y)/torso};
+   }else f.legs[s]=null;
+   // Forearm + index direction when available. A hand model is intentionally not
+   // required: fingers are tiny at full-body distance. This is coarse ARM pointing.
+   if([sh,el,wr].every(i=>seen(lm[i],.45))){
+    const shP=lm[sh],e=lm[el],w=lm[wr],i=seen(lm[ix],.45)?lm[ix]:null;
+    const reach=distance(shP,w,aspect)/torso,bend=angle(shP,e,w,aspect);
+    const forward=finite3(world?.[wr])&&finite3(world?.[sh])?world[sh].z-world[wr].z:0;
+    const atChest=w.y<hip.y-torso*.16&&w.y>shoulder.y-torso*.75;
+    const extended=(reach>.44&&bend>112)||(forward>.14&&reach>.16);
+    if(atChest&&extended){
+     const tip=i&&distance(w,i,aspect)<torso*.5?i:w;
+     const sideX=(tip.x-shP.x)/span;
+     const foreX=(tip.x-e.x)/span;
+     const yaw=clamp(((.68*sideX+.32*foreX)/1.20)*(this.mirror?-1:1)*(this.pointInvert?-1:1)*this.pointSensitivity,-1,1);
+     f.arms.push({side:s,yaw,score:reach+Math.max(0,forward),start:e,end:tip});
+    }
    }
   }
   return f;
  }
- hold(name,condition,ms,now){
-  if(!condition){this.holds[name]=null;this.releaseSince[name]??=now;if(now-this.releaseSince[name]>=250)this.latched[name]=false;return false;}
-  this.releaseSince[name]=null;this.holds[name]??=now;
-  if(!this.latched[name]&&now-this.holds[name]>=ms){this.latched[name]=true;return true;}return false;
- }
- emit(out,type,now,value){
-  if(now-this.lastAction<650)return false;
-  out.actions.push({type,...(value===undefined?{}:{value})});this.lastAction=now;return true;
- }
+ hold(name,on,ms,now){if(!on){this.holds[name]=null;this.latched[name]=false;return false;}this.holds[name]??=now;if(!this.latched[name]&&now-this.holds[name]>=ms){this.latched[name]=true;return true;}return false;}
  update(lm,world,now,context={}){
-  let out=neutral();const f=this.features(lm,world);
-  if(!Number.isFinite(now))return out;
-  const previousTime=this.lastTime;const dt=previousTime===null?1/15:clamp((now-previousTime)/1000,.016,.3);
-  if(previousTime!==null&&now<=previousTime)return {...this.lastOutput,actions:[]};
-  if(previousTime!==null&&now-previousTime>400){this.resetGestures();this.lastFeatures=null;}
-  this.lastTime=now;
-  if(!f){this.samples=[];this.calibrationStart=null;this.resetGestures();this.lastFeatures=null;out.status=this.profile==='full'?'頭から足先まで映してください・操作停止':'顔・肩・腰を映してください・操作停止';this.lastOutput=out;return out;}
-  this.lastValid=now;out.valid=true;
+  let out=neutral();if(!Number.isFinite(now))return out;
+  if(this.lastTime!==null&&now<=this.lastTime)return {...this.lastOutput,actions:[]};
+  const gap=this.lastTime===null?0:now-this.lastTime,dt=clamp((gap||80)/1000,.016,.8);this.lastTime=now;
+  const f=this.features(lm,world,clamp(context.imageAspect||1,.4,2.5));
+  if(!f){
+   this.smooth={x:0,forward:0,turn:0};
+   if(!this.baseline){this.samples=[];this.calibrationStart=null;}
+   // A missed frame never pauses the game or restarts a calibrated session.
+   // Drop unfinished gestures only after a real gap, not one weak landmark.
+   if(now-this.lastValid>=1000){this.resetKick();this.previousLegs=[null,null];this.upperChargeAt=null;this.upperArmed=false;this.stepTimes=[];this.armed=false;this.settleAt=null;}
+   out.calibrated=!!this.baseline;out.progress=this.baseline?1:0;out.status='体を見失いました・操作待機／試合と追視は継続';this.lastOutput=out;return out;
+  }
+  if(gap>1500){this.resetKick();this.previousLegs=[null,null];this.upperChargeAt=null;this.upperArmed=false;this.stepTimes=[];this.armed=false;this.settleAt=null;}
+  this.lastValid=now;out.valid=true;out.feet=f.legs.map(Boolean);
   if(!this.baseline){
-   const last=this.samples.at(-1);
-   const still=!f.hands.some(Boolean)&&(!last||(Math.abs(f.center-last.center)<.045&&Math.abs(f.span-last.span)<.04&&Math.abs(f.hipY-last.hipY)<.04));
-   if(!still){this.samples=[];this.calibrationStart=null;out.status='手を下ろし、まっすぐ静止してください';this.lastOutput=out;return out;}
+   const last=this.samples.at(-1);const still=!f.hands.some(Boolean)&&(!last||(Math.abs(f.center-last.center)<.065&&Math.abs(f.hipY-last.hipY)<.055));
+   if(!still){this.samples=[];this.calibrationStart=null;out.status='肩と腰を映し、手を下ろして静止してください';this.lastOutput=out;return out;}
    this.calibrationStart??=now;this.samples.push(f);if(this.samples.length>100)this.samples.shift();
-   out.progress=clamp((now-this.calibrationStart)/3000,0,1);
-   out.status=`位置合わせ ${Math.max(1,Math.ceil(3-(now-this.calibrationStart)/1000))}・そのまま静止`;
-   if(out.progress>=1&&this.samples.length>=18){
-    this.baseline={center:mean(this.samples,'center'),span:mean(this.samples,'span'),torso:mean(this.samples,'torso'),roll:mean(this.samples,'roll'),noseY:mean(this.samples,'noseY')};
-    const faces=this.samples.filter(x=>Number.isFinite(x.faceOffset));this.baseline.faceOffset=faces.length>=10?mean(faces,'faceOffset'):null;
-    if(this.profile==='full'){this.baseline.knee=[0,1].map(i=>this.samples.reduce((s,x)=>s+x.knee[i],0)/this.samples.length);const ks=this.samples.filter(x=>x.kick);if(ks.length>=10)this.baseline.kickZ=ks.reduce((s,x)=>s+x.kick.z,0)/ks.length;}
-    out.status='準備完了・手を下ろした姿勢から操作';out.calibrated=true;this.resetGestures();this.samples=[];
+   out.progress=clamp((now-this.calibrationStart)/2200,0,1);out.status=`位置合わせ ${Math.max(1,Math.ceil((2200-now+this.calibrationStart)/1000))}・静止してください`;
+   if(out.progress>=1&&this.samples.length>=10){
+    this.baseline={center:mean(this.samples,'center'),span:mean(this.samples,'span'),torso:mean(this.samples,'torso'),knee:[0,1].map(i=>{const xs=this.samples.map(v=>v.knees[i]).filter(Boolean);return xs.length?mean(xs,'lift'):null;})};
+    this.samples=[];this.resetGestures();out.calibrated=true;out.status='準備完了・指さしでパス先／何も選ばず蹴るとシュート';
    }
-   this.lastFeatures=f;this.lastOutput=out;return out;
+   this.previousLegs=f.legs.map(q=>q?{...q,time:now}:null);this.lastOutput=out;return out;
   }
-  out.calibrated=true;out.progress=1;out.status='顔を向けて選び、足でキック';
-  if(Number.isFinite(f.faceOffset)&&Number.isFinite(this.baseline.faceOffset)){
-   const sign=(this.mirror?-1:1)*(this.headInvert?-1:1);
-   const raw=clamp((f.faceOffset-this.baseline.faceOffset)*sign*2.2*this.headSensitivity,-1,1);
-   const dead=Math.abs(raw)<.07?0:Math.sign(raw)*(Math.abs(raw)-.07)/.93;
-   this.smoothHead+=(dead-this.smoothHead)*(1-Math.exp(-dt*11));out.headYaw=this.smoothHead;out.headValid=true;
-  }else {this.smoothHead=0;out.headValid=false;out.status='顔の方向が不明・パス選択を解除';}
-  const b=this.baseline,scaleRatio=f.span/b.span;
-  // Distance changes are not used as locomotion in full-body mode.
-  if(scaleRatio<.60||scaleRatio>1.65){this.resetGestures();out.valid=false;out.status='距離が変わりました・位置合わせをやり直してください';this.lastFeatures=f;this.lastOutput=out;return out;}
-  if(!context.active){this.resetGestures();this.lastFeatures=f;out.status='カメラ確認中・ゲーム操作は停止';this.lastOutput=out;return out;}
-  // A neutral settle period is mandatory after start, occlusion, pause or mode change.
-  if(this.armedAt===Infinity){
-   if(!f.hands.some(Boolean)){this.neutralSince??=now;if(now-this.neutralSince>=550)this.armedAt=now;}else this.neutralSince=null;
-   out.status='手を下ろして操作を開始';this.lastFeatures=f;this.lastOutput=out;return out;
-  }
-  const dead=(v,d,max)=>Math.abs(v)<=d?0:Math.sign(v)*clamp((Math.abs(v)-d)/(max-d),0,1);
-  const sign=this.mirror?-1:1;
-  const mx=dead(sign*(f.center-b.center)/b.span*this.sensitivity,.15,.70);
-  const turn=dead(sign*(f.roll-b.roll)*this.sensitivity,.14,.50);
-  let forward=0,sprint=false;
-  const both=f.hands[0]&&f.hands[1];
-  // Both hands take priority; do not emit pass/shot while pausing.
-  if(both){
-   this.upperChargeAt=null;this.upperArmed=false;this.kick={stage:'WAIT',started:0,phaseAt:0,support:null,speed:0};
-   this.holds.left=this.holds.right=this.holds.tackle=null;this.latched.left=this.latched.right=true;
-   if(this.hold('pause',true,800,now))this.emit(out,'pause',now);
-   out.status='両手を上げたまま → 一時停止';out.stage='WAIT';this.smooth={x:0,forward:0,turn:0};this.lastFeatures=f;this.lastOutput=out;return out;
-  }
-  this.hold('pause',false,800,now);
-  if(this.hold('left',f.hands[0]&&!f.hands[1],500,now)&&!context.ownsBall)this.emit(out,'call',now);
-  if(this.hold('tackle',!f.hands.some(Boolean)&&f.rightOut,550,now))this.emit(out,'tackle',now);
+  out.calibrated=true;out.progress=1;out.status='キック待機・指さしでパス先／選択なしはシュート';
+  if(!context.active){this.resetGestures();this.previousLegs=f.legs.map(q=>q?{...q,time:now}:null);out.status='カメラ確認中';this.lastOutput=out;return out;}
+  for(let s=0;s<2;s++)if(this.baseline.knee[s]===null&&f.legs[s])this.baseline.knee[s]=f.legs[s].knee;
+  // Short settle, once on start/reacquisition; face direction is never required.
+  if(!this.armed){this.settleAt??=now;if(now-this.settleAt>=220)this.armed=true;else{this.previousLegs=f.legs.map(q=>q?{...q,time:now}:null);out.status='操作準備・そのまま立ってください';this.lastOutput=out;return out;}}
+  const available=f.arms.sort((a,b)=>b.score-a.score);
+  const pointer=available.find(a=>a.side===this.pointSide)||available[0];
+  if(pointer){this.pointSide=pointer.side;this.smoothPoint+=(pointer.yaw-this.smoothPoint)*(1-Math.exp(-dt*16));out.pointYaw=this.smoothPoint;out.pointValid=true;out.pointSide=pointer.side;out.pointRay={start:pointer.start,end:pointer.end};out.status='指さしでパス先を選択・蹴るとパス';}
+  else{this.pointSide=null;this.smoothPoint=0;}
+  const dead=(v,d,m)=>Math.abs(v)<=d?0:Math.sign(v)*clamp((Math.abs(v)-d)/(m-d),0,1);
+  let mx=dead((this.mirror?-1:1)*(f.center-this.baseline.center)/this.baseline.span*this.sensitivity,.20,.9),forward=0;
+  // No hand gesture pauses a match. Raised/pointed arms never trigger a tackle.
+  if(!context.ownsBall&&this.hold('call',f.hands.some(Boolean),700,now)&&now-this.lastAction>800){out.actions.push({type:'call'});this.lastAction=now;}
+  if(context.ownsBall)this.hold('call',false,700,now);
   if(this.profile==='upper'){
-   // Leaning closer makes the shoulders slightly larger in the image.
-   // This is a deliberate simple gesture, not a 3D position measurement.
-   forward=dead((scaleRatio-1)*this.sensitivity,.085,.27);if(forward<0)forward*=.5;
-   if(f.hands[1]&&!f.hands[0]&&context.ownsBall&&visible(lm[16])){
+   forward=dead((f.span/this.baseline.span-1)*this.sensitivity,.09,.32);if(forward<0)forward*=.5;
+   // Explicit upper-body fallback only: right hand ABOVE shoulder -> lower it.
+   // Chest-height pointing is not this trigger.
+   if(context.ownsBall&&f.hands[1]&&!f.hands[0]){
     this.upperChargeAt??=now;this.upperReleaseAt=null;
-    if(now-this.upperChargeAt>=450){this.upperArmed=true;out.charge=clamp((now-this.upperChargeAt-450)/1050,0,1);out.stage='BACKSWING';out.status='選択先を固定・右手を下ろしてキック合図';}
+    if(now-this.upperChargeAt>=500){this.upperArmed=true;out.stage='BACKSWING';out.charge=clamp((now-this.upperChargeAt-500)/1100,0,1);out.status='右手を下ろすとキック（上半身モード）';}
    }else if(this.upperChargeAt!==null){
-    const lowered=visible(lm[16])&&lm[16].y>lm[12].y+.06&&!f.hands[0];
-    if(!context.ownsBall||!visible(lm[16])||f.hands[0]||now-this.upperChargeAt>4500){this.upperChargeAt=null;this.upperArmed=false;}
-    else if(lowered){this.upperReleaseAt??=now;if(now-this.upperReleaseAt>=140){if(this.upperArmed)this.emit(out,'kick',now,clamp(.25+(now-this.upperChargeAt-450)/1500,.25,1));this.upperChargeAt=null;this.upperArmed=false;}}
+    if(!context.ownsBall||!seen(lm[16])||f.hands[0]||now-this.upperChargeAt>3500){this.upperChargeAt=null;this.upperArmed=false;}
+    else if(lm[16].y>lm[12].y+.05){if(this.upperArmed&&now>=this.nextKick){out.actions.push({type:'kick',value:.60});out.stage='KICK';this.lastKick=now;this.nextKick=now+700;}this.upperChargeAt=null;this.upperArmed=false;}
    }
-   if(this.upperChargeAt!==null&&now-this.upperChargeAt>4500){this.upperChargeAt=null;this.upperArmed=false;out.status='シュート待機解除・手を下ろしてやり直す';}
+   if(this.upperArmed)out.stage='BACKSWING';
   }else{
-   if(this.hold('right',f.hands[1]&&!f.hands[0],600,now)&&!context.ownsBall)this.emit(out,'call',now);
-   this.updateKick(f,now,dt,context,out);
-   if(this.kick.stage==='WAIT'){
-    const lifted=[0,1].map(i=>f.knee[i]-b.knee[i]);const side=lifted[0]>lifted[1]?0:1;
-    if(lifted[side]>.14&&side!==this.marchSide&&now-this.lastStep>220){
-     this.marchSide=side;this.lastStep=now;this.stepTimes.push(now);this.stepTimes=this.stepTimes.filter(t=>now-t<2000);
-    }
-    const recent=this.stepTimes.filter(t=>now-t<1800);
-    if(recent.length>=2&&now-this.lastStep<650){forward=clamp(.5+recent.length*.085,.5,1);sprint=recent.length>=5;out.status=sprint?'速い足踏み → ダッシュ':'足踏み → 前進';}
-   }else forward=0;
-   out.stage=out.actions.some(a=>a.type==='kick')?'KICK':this.kick.stage;
-   if(!f.kick||!Number.isFinite(b.kickZ))out.status='足の奥行き推定不足・キック停止（タッチは利用可）';
+   if(this.kickLevel==='direct'||this.kickLevel==='knee')this.updateDirectKick(f,now,context,out);else this.updateKick(f,now,context,out);
+   if(this.kick.stage==='WAIT'&&!out.actions.some(a=>a.type==='kick')&&this.kickLevel!=='knee'){
+    const lifts=f.legs.map((q,i)=>q&&Number.isFinite(this.baseline.knee[i])?q.knee-this.baseline.knee[i]:0);const side=lifts[0]>lifts[1]?0:1;
+    if(lifts[side]>.19&&side!==this.marchSide&&now-this.lastStep>240){this.marchSide=side;this.lastStep=now;this.stepTimes.push(now);}
+    this.stepTimes=this.stepTimes.filter(t=>now-t<1800);
+    if(this.stepTimes.length>=2&&now-this.lastStep<600){forward=clamp(.45+this.stepTimes.length*.08,.5,1);out.sprint=this.stepTimes.length>=5;out.status='足踏み → 前進';}
+   }
+   if(!f.legs.some(Boolean)&&!out.diagnostic)out.status='足が見えません・肩と腰は認識中／試合は継続';
   }
-  if(this.profile==='upper'&&this.upperArmed)out.stage='BACKSWING';
-  if(out.actions.some(a=>a.type==='kick'))out.stage='KICK';
-  const smoothFactor=1-Math.exp(-dt*12);
-  this.smooth.x+=(mx-this.smooth.x)*smoothFactor;this.smooth.turn+=(turn-this.smooth.turn)*smoothFactor;this.smooth.forward+=(forward-this.smooth.forward)*smoothFactor;
-  if(this.kick.stage!=='WAIT'||this.upperArmed){this.smooth.x=0;this.smooth.forward=0;}
-  out.x=this.smooth.x;out.forward=this.smooth.forward;out.turn=this.smooth.turn;out.sprint=sprint;
-  if(out.actions.some(a=>['pause','kick'].includes(a.type)))out.x=out.forward=out.turn=0;
-  this.lastFeatures=f;this.lastOutput=out;return out;
+  if(this.kick.stage!=='WAIT'||this.upperArmed||out.actions.some(a=>a.type==='kick')){mx=forward=0;this.stepTimes=[];}
+  const factor=1-Math.exp(-dt*12);this.smooth.x+=(mx-this.smooth.x)*factor;this.smooth.forward+=(forward-this.smooth.forward)*factor;
+  out.x=this.smooth.x;out.forward=this.smooth.forward;out.turn=0;
+  if(out.actions.some(a=>a.type==='kick')){out.x=out.forward=0;out.stage='KICK';out.status='キック検出';out.charge=1;}
+  this.previousLegs=f.legs.map(q=>q?{...q,time:now}:null);this.lastOutput=out;return out;
  }
- updateKick(f,now,dt,context,out){
-  const k=this.kick,q=f.kick,prev=this.lastFeatures?.kick;
-  const reset=()=>{this.kick={stage:'WAIT',started:0,phaseAt:0,support:null,speed:0};};
-  if(!q||!prev||!out.headValid||!context.ownsBall||!Number.isFinite(this.baseline.kickZ)||f.hands.some(Boolean)){reset();return;}
-  this.supportHistory.push({time:now,p:{...q.support}});this.supportHistory=this.supportHistory.filter(v=>now-v.time<550);
-  const supportStable=this.supportHistory.length>=4&&now-this.supportHistory[0].time>=200&&this.supportHistory.every(v=>d2(v.p,q.support)<f.torso*.14);
-  const speed=(prev.z-q.z)/dt,extension=(q.angle-prev.angle)/dt,baseZ=this.baseline.kickZ;
-  if(k.stage!=='WAIT'){
-   if(now-k.started>1900||d2(q.support,k.support)>f.torso*.19||!supportStable){reset();out.status='キック解除・軸足を安定させてください';return;}
-   k.speed=Math.max(k.speed,speed);
+
+ // Screen-space foot travel is the primary signal in this mode. Estimated
+ // depth is corroborating only: valid-but-flat world Z must NOT disable 2D.
+ // A kick can arrive in one sampled frame; no pre-emitted BACKSWING is required.
+ updateDirectKick(f,now,context,out){
+  const kneeOnly=this.kickLevel==='knee',sides=this.foot==='auto'?[0,1]:[this.foot==='left'?0:1];
+  const diagnostic={mode:this.kickLevel,reason:'READY',score:0,legs:[],feet:[false,false]};
+  const lm=f.lm,world=f.world;let event=null;
+  for(const side of [0,1]){
+   const hi=23+side,ki=25+side,other=1-side;
+   const footIndex=[27+side,29+side,31+side].find(i=>seen(lm[i],.28));
+   const supportIndex=[27+other,29+other,31+other].find(i=>seen(lm[i],.28));
+   const visible=seen(lm[ki],.30)&&(kneeOnly||footIndex!==undefined&&supportIndex!==undefined);
+   diagnostic.feet[side]=footIndex!==undefined;
+   if(!visible){this.directLegs[side]=null;diagnostic.legs[side]={visible:false,score:0};continue;}
+   const knee=(lm[hi].y-lm[ki].y)/f.torso;
+   const point=kneeOnly?lm[ki]:lm[footIndex];
+   const support=supportIndex===undefined?lm[23+other]:lm[supportIndex];
+   const coord={x:(point.x-lm[hi].x)*f.aspect/f.torso,y:(point.y-lm[hi].y)/f.torso,knee,
+    supportX:(support.x-lm[23+other].x)*f.aspect/f.torso,supportY:(support.y-lm[23+other].y)/f.torso,
+    z:finite3(world?.[footIndex])&&finite3(world?.[hi])?world[footIndex].z-world[hi].z:null,
+    center:f.center,scale:f.torso,time:now,footIndex};
+   let state=this.directLegs[side];
+   // Do not compare mismatched ankle/heel tracks or bridge a long observation
+   // gap: that would turn a newly visible foot into a false high-speed kick.
+   if(!state||now-state.last.time>1000||state.last.footIndex!==footIndex){
+    this.directLegs[side]={rest:{...coord},last:{...coord},ready:false,restAt:now,quietAt:now};
+    diagnostic.legs[side]={visible:true,score:0,settling:true};continue;
+   }
+   const rest=state.rest,last=state.last,dt=Math.max(.03,(now-last.time)/1000);
+   const dx=coord.x-rest.x,up=rest.y-coord.y,kneeUp=coord.knee-rest.knee;
+   const motion=Math.hypot(dx,up),step=Math.hypot(coord.x-last.x,coord.y-last.y);
+   const supportMotion=Math.hypot(coord.supportX-rest.supportX,coord.supportY-rest.supportY);
+   const forwardZ=Number.isFinite(coord.z)&&Number.isFinite(rest.z)?rest.z-coord.z:0;
+   const centered=Math.abs(coord.center-last.center)<f.span*.50&&Math.abs(coord.scale/rest.scale-1)<.32;
+   const stable=centered&&supportMotion<.25;
+   const nearRest=kneeOnly?Math.abs(kneeUp)<.07:motion<.09;
+   if(nearRest&&step<.075){
+    state.restAt??=now;
+    if(now-state.restAt>=150){state.ready=true;state.awaitReturn=false;}
+    if(state.ready){for(const key of ['x','y','knee','supportX','supportY','scale'])state.rest[key]+=(coord[key]-state.rest[key])*.08;}
+   }else state.restAt=null;
+   // Support and kicking legs rise together in walking/body bob: subtract
+   // knee travel. Pure knee motion is a separately labelled diagnostic mode.
+   const footVsKnee=up-Math.max(0,kneeUp)*.65;
+   const screenScore=Math.max(Math.max(0,footVsKnee)/.18,Math.abs(dx)/.25);
+   const depthScore=Math.max(0,forwardZ)/.11;
+   const score=kneeOnly?Math.max(0,kneeUp)/.19:Math.max(screenScore, motion>.07?depthScore:0);
+   const moving=step>.032&&step/dt>.13;
+   const enough=kneeOnly?kneeUp>.19:motion>.12&&score>=1;
+   const quality=Math.round(Math.min(lm[ki].visibility??0,kneeOnly?1:lm[footIndex].visibility??0)*100);
+   diagnostic.legs[side]={visible:true,score:Math.min(2,score),quality,ready:state.ready,stable,motion:Math.round(motion*100)/100};
+   if(sides.includes(side))diagnostic.score=Math.max(diagnostic.score,Math.min(1,score));
+   if(sides.includes(side)&&state.ready&&stable&&moving&&enough&&now>=this.nextKick){
+    event={type:'kick',value:clamp(.52+motion*.28+Math.max(0,forwardZ)*.5,.48,.90),side:side===0?'left':'right',source:kneeOnly?'knee':'direct'};
+    state.ready=false;state.awaitReturn=true;state.restAt=null;
+   }
+   // If a camera adjustment/step moved the whole stance, reacquire a baseline
+   // only after quiet observations, with no action on the resetting frame.
+   if(!state.awaitReturn&&!nearRest&&step<.045){state.quietAt??=now;if(now-state.quietAt>1800){state.rest={...coord};state.ready=false;state.restAt=now;state.quietAt=null;}}
+   else state.quietAt=null;
+   state.last={...coord};
   }
-  switch(k.stage){
-   case 'WAIT':
-    // A knee lift alone / sideways step / small flick cannot arm a shot.
-    if(supportStable&&q.angle<130&&q.z>baseZ+.085&&q.ay<q.support.y-.02&&now-this.lastAction>850){k.stage='BACKSWING';k.started=now;k.phaseAt=now;k.support={...q.support};k.speed=0;out.status='テイクバック検出';}
-    break;
-   case 'BACKSWING':
-    if(now-k.phaseAt>=100&&speed>.45&&extension>65){k.stage='SWING';k.phaseAt=now;out.status='振り出し検出';}
-    break;
-   case 'SWING':
-    // IMPACT is only a virtual trigger-zone crossing, NOT real ball contact.
-    if(now>k.phaseAt&&q.z<baseZ-.025&&q.angle>135&&q.ay>q.ky+.035&&q.foot.y>=q.ky+.025){k.stage='IMPACT';k.phaseAt=now;out.status='仮想キック位置を通過';}
-    break;
-   case 'IMPACT':
-    if(now>k.phaseAt&&q.angle>150&&q.z<baseZ-.10){k.stage='FOLLOW_THROUGH';k.phaseAt=now;out.status='フォロースルー検出';}
-    break;
-   case 'FOLLOW_THROUGH':
-    if(now-k.phaseAt>=45&&q.angle>148&&q.z<baseZ-.08){
-     if(this.emit(out,'kick',now,clamp(.32+k.speed*.25,.35,1))){out.stage='KICK';out.status='キック成立・選択先へ';}
-     reset();this.stepTimes=[];this.marchSide=-1;
-    }
-    break;
+  out.feet=diagnostic.feet;
+  if(event){
+   out.actions.push(event);out.stage='KICK';out.charge=1;this.lastKick=now;this.nextKick=now+850;this.resetKick();this.stepTimes=[];
+   diagnostic.reason='KICK';
+  }else if(!sides.some(s=>diagnostic.legs[s]?.visible))diagnostic.reason=kneeOnly?'KNEE_MISSING':'FOOT_MISSING';
+  else if(now<this.nextKick)diagnostic.reason='COOLDOWN';
+  else if(!sides.some(s=>diagnostic.legs[s]?.ready))diagnostic.reason='RETURN_FOOT';
+  else if(diagnostic.score>.25)diagnostic.reason='MOVE_MORE';
+  const texts={READY:kneeOnly?'反応確認：片膝を少し上げるとキック':'準備OK：片足を小さく前へ蹴る',KICK:'キック検出',FOOT_MISSING:'足先が見えません・カメラの映像を確認',KNEE_MISSING:'膝が見えません・膝まで映してください',COOLDOWN:'キック受付済み・足を元の位置へ',RETURN_FOOT:'両足を下ろして短く静止してください',MOVE_MORE:kneeOnly?'膝の動きを検出中':'足の動きを検出中・もう少し前へ'};
+  out.diagnostic=diagnostic;out.charge=event?1:diagnostic.score;out.status=texts[diagnostic.reason];
+ }
+ updateKick(f,now,context,out){
+  const easy=this.kickLevel==='easy';const minFlex=easy?163:151,depthTravel=easy?.035:.06;
+  if(!context.ownsBall){this.resetKick();return;}
+  if(now<this.nextKick)return;
+  const k=this.kick;
+  if(k.stage==='WAIT'){
+   const sides=this.foot==='auto'?[0,1]:[this.foot==='left'?0:1];
+   const options=[];
+   for(const side of sides){
+    const q=f.legs[side],p=this.previousLegs[side];if(!q||!p||now-p.time>650)continue;
+    const lift=q.knee-(this.baseline.knee[side]??q.knee);
+    const stable=distance(q.support,p.support,f.aspect)<f.torso*.36;
+    const ankleLift=q.rise>(easy?.04:.08);
+    // A small preparatory flex is enough. Five strictly separate phases are not
+    // required; high-knee marching alone is deliberately not sufficient.
+    if(stable&&q.angle<minFlex&&ankleLift&&lift<(easy?.52:.42))options.push({q,side,score:(180-q.angle)+q.rise*10});
+   }
+   if(options.length){options.sort((a,b)=>b.score-a.score);const{q,side}=options[0];this.kick={stage:'BACKSWING',side,started:now,support:{...q.support},minAngle:q.angle,minAngle2D:q.angle2D,maxZ:q.z,hasDepth:q.hasDepth,startX:q.relX,maxRise:q.rise,lastZ:q.z,lastAt:now};out.stage='BACKSWING';out.charge=.25;out.status='足の構えを検出 → 小さく前へ振り出す';}
+   return;
   }
+  const q=f.legs[k.side];
+  if(now-k.started>1800){this.resetKick();out.status='キック待機に戻りました';return;}
+  if(!q){out.stage='BACKSWING';return;}
+  if(distance(q.support,k.support,f.aspect)>f.torso*(easy?.42:.32)){this.resetKick();out.status='歩行を検出・キックは待機';return;}
+  const lift=q.knee-(this.baseline.knee[k.side]??q.knee);
+  k.minAngle=Math.min(k.minAngle,q.angle);k.minAngle2D=Math.min(k.minAngle2D??q.angle2D,q.angle2D);k.maxRise=Math.max(k.maxRise,q.rise);
+  if(q.hasDepth&&k.hasDepth)k.maxZ=Math.max(k.maxZ,q.z);
+  const extension=q.angle-k.minAngle,arc=Math.abs(q.relX-k.startX),travel=q.hasDepth&&k.hasDepth?k.maxZ-q.z:0;
+  const lowFoot=q.ankleY>q.kneeY-.02;
+  const depthSwing=travel>depthTravel&&extension>(easy?7:15);
+  const sideSwing=arc>(easy?.16:.25)&&extension>(easy?12:20);
+  const fallback=(q.angle2D-k.minAngle2D)>(easy?22:34)&&k.maxRise>.10&&k.maxRise-q.rise>.07&&q.angle2D>150&&lift<.30;
+  if(now>k.started+55&&q.angle>(easy?128:140)&&lowFoot&&lift<.50&&(depthSwing||sideSwing||fallback)){
+   const speed=travel/Math.max(.07,(now-k.started)/1000);
+   out.actions.push({type:'kick',value:clamp(.50+speed*.25+arc*.2,.45,1)});out.stage='KICK';out.status='キック検出';
+   this.lastKick=now;this.nextKick=now+800;this.resetKick();this.stepTimes=[];this.marchSide=-1;return;
+  }
+  out.stage='BACKSWING';out.charge=clamp(.25+extension/110,.25,.9);out.status='構え検出済み・足を前へ振り出してください';
  }
 }
-root.FEBodyRecognizer=Recognizer;
-if(typeof module!=='undefined'&&module.exports)module.exports=Recognizer;
+root.FEBodyRecognizer=Recognizer;if(typeof module!=='undefined'&&module.exports)module.exports=Recognizer;
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
 <!-- src/intent-assist.js -->
 <script>
-/* FIRST ELEVEN 0.4 | Original MIT code. Camera-independent intent selection.
- * Face input is a coarse normalized direction, not eye tracking or degrees.
- * Selection is held briefly to reject jitter, then latched at kick wind-up.
+/* FIRST ELEVEN 0.5 — pointing selects a pass. An unselected kick is a shot.
+ * No head visibility gate. A short hand-release grace helps real kick balance.
  */
 (function(root){
 'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
-const id=t=>t?`${t.kind}:${t.id??'goal'}`:'';
+const id=t=>t?`${t.kind}:${t.id??'space'}`:'';
 class IntentSelector{
  constructor(){this.reset();}
- reset(){this.candidate=null;this.selected=null;this.since=0;this.locked=null;this.winding=false;this.lockUntil=0;this.progress=0;this.aimYaw=0;this.valid=false;}
- update({hero,players,headValid,aimYaw,ownsBall,now,goalZ=46}){
-  this.aimYaw=aimYaw;this.valid=!!headValid;
-  if(!ownsBall||!headValid||!Number.isFinite(aimYaw)){this.reset();return null;}
-  if(this.winding){if(now>this.lockUntil){this.locked=null;this.selected=null;}return this.locked;}
+ reset(){this.candidate=null;this.selected=null;this.since=0;this.locked=null;this.winding=false;this.lockUntil=0;this.progress=0;this.aimYaw=0;this.valid=false;this.pointing=false;this.holdUntil=0;this.lastPose=-Infinity;this.lastNow=0;}
+ update({hero,players,poseValid=true,pointValid=false,aimYaw,ownsBall,now,goalZ=46}){
+  this.lastNow=now;if(!ownsBall){this.reset();return null;}
+  this.valid=!!poseValid;this.pointing=!!pointValid&&poseValid;
+  if(poseValid)this.lastPose=now;
+  if(!poseValid){if(now-this.lastPose>.65){this.locked=null;this.selected=null;this.candidate=null;this.winding=false;}return this.target();}
+  if(this.winding){if(now>this.lockUntil){this.cancelWindup();this.selected=null;}else return this.locked;}
+  this.aimYaw=Number.isFinite(aimYaw)?aimYaw:hero.dir||0;
+  const shot={kind:'shot',id:'goal',x:0,z:goalZ,yaw:Math.atan2(-hero.x,goalZ-hero.z)};
+  if(!this.pointing){this.candidate=null;this.progress=0;if(!this.selected||this.selected.kind==='shot'||now>this.holdUntil)this.selected=shot;return this.selected;}
   const targets=[];
   for(const p of players){
    if(!p.active||p.id===hero.id||p.team!==hero.team)continue;
-   const d=Math.hypot(p.x-hero.x,p.z-hero.z);if(d<3.2||d>43)continue;
-   const yaw=Math.atan2(p.x-hero.x,p.z-hero.z),error=Math.abs(delta(yaw,aimYaw));
+   const d=Math.hypot(p.x-hero.x,p.z-hero.z);if(d<2.2||d>46)continue;
+   const yaw=Math.atan2(p.x-hero.x,p.z-hero.z),error=Math.abs(delta(yaw,this.aimYaw));
    const t={kind:'pass',id:p.id,n:p.n,x:p.x,z:p.z,d,yaw,error};
-   // A small retention margin avoids switching between two nearby teammates.
-   if(error<.19+(id(t)===id(this.selected)?.045:0))targets.push(t);
+   if(error<.28+(id(t)===id(this.selected)?.06:0))targets.push(t);
   }
-  const gd=Math.hypot(hero.x,goalZ-hero.z),gy=Math.atan2(-hero.x,goalZ-hero.z),ge=Math.abs(delta(gy,aimYaw));
-  if(gd>=2&&gd<=40&&goalZ-hero.z>1&&ge<.105)targets.push({kind:'shot',id:'goal',x:0,z:goalZ,d:gd,yaw:gy,error:ge+.022});
-  targets.sort((a,b)=>(a.error-(id(a)===id(this.selected)?.032:0))-(b.error-(id(b)===id(this.selected)?.032:0))||a.d-b.d);
-  const next=targets[0]||null;
-  if(id(next)!==id(this.candidate)){this.candidate=next;this.selected=null;this.since=now;this.progress=0;}
-  else this.candidate=next;
-  if(next){this.progress=clamp((now-this.since)/.22,0,1);if(this.progress>=1)this.selected={...next};}
-  else {this.selected=null;this.progress=0;}
+  targets.sort((a,b)=>(a.error-(id(a)===id(this.selected)?.045:0))-(b.error-(id(b)===id(this.selected)?.045:0))||a.d-b.d);
+  const next=targets[0]||{kind:'space',id:'space',x:clamp(hero.x+Math.sin(this.aimYaw)*18,-29,29),z:clamp(hero.z+Math.cos(this.aimYaw)*18,-44,44),yaw:this.aimYaw};
+  if(id(next)!==id(this.candidate)){this.candidate=next;this.since=now;this.progress=0;}else this.candidate=next;
+  this.progress=clamp((now-this.since)/.16,0,1);
+  if(this.progress>=1||next.kind==='space'){this.selected={...next};this.holdUntil=now+1.0;}
   return this.selected;
  }
- begin(now){if(this.winding)return;this.winding=true;this.locked=this.selected?{...this.selected}:null;this.lockUntil=now+2.05;}
+ begin(now){
+  if(this.winding)return;
+  this.winding=true;
+  // A quick kick while pointing follows the currently shown candidate, never
+  // unexpectedly turns into a shot just because 160ms dwell was not complete.
+  this.locked=this.pointing&&this.candidate?{...this.candidate}:this.selected?{...this.selected}:null;
+  this.lockUntil=now+1.85;
+ }
  cancelWindup(){this.winding=false;this.locked=null;}
  target(){return this.winding?this.locked:this.selected;}
  take(now){const result=this.winding&&now<=this.lockUntil&&this.valid?this.locked:null;this.reset();return result;}
- snapshot(){return {candidate:this.candidate?{...this.candidate}:null,selected:this.selected?{...this.selected}:null,locked:this.locked?{...this.locked}:null,winding:this.winding,progress:this.progress,aimYaw:this.aimYaw,valid:this.valid};}
+ snapshot(){return{candidate:this.candidate?{...this.candidate}:null,selected:this.selected?{...this.selected}:null,locked:this.locked?{...this.locked}:null,winding:this.winding,progress:this.progress,aimYaw:this.aimYaw,valid:this.valid,pointing:this.pointing,holdRemaining:Math.max(0,this.holdUntil-this.lastNow)};}
 }
 function followBall(view,hero,ball,dt,{own=false,manual=false}={}){
- if(manual||!['x','y','z'].every(k=>Number.isFinite(ball[k])))return {...view};
+ if(manual||!['x','y','z'].every(k=>Number.isFinite(ball[k])))return{...view};
  const h=Math.hypot(ball.x-hero.x,ball.z-hero.z);
- // No yaw correction while dribbling: the attached ball follows the player's body.
- // Chasing it in yaw would create a feedback loop. Pitch keeps feet and field in view.
  const yaw=own||h<.65?view.yaw:Math.atan2(ball.x-hero.x,ball.z-hero.z);
  const pitch=own?-.33:clamp(Math.atan2(ball.y+.10-1.65,Math.max(.35,h)),-1.18,1.18);
  const yd=delta(yaw,view.yaw),pd=pitch-view.pitch;
- return {yaw:view.yaw+clamp(yd*(1-Math.exp(-dt*8.5)),-4.6*dt,4.6*dt),pitch:view.pitch+clamp(pd*(1-Math.exp(-dt*7)),-2.5*dt,2.5*dt)};
+ return{yaw:view.yaw+clamp(yd*(1-Math.exp(-dt*8.5)),-4.6*dt,4.6*dt),pitch:view.pitch+clamp(pd*(1-Math.exp(-dt*7)),-2.5*dt,2.5*dt)};
 }
-root.FEIntentAssist={IntentSelector,followBall,delta};
-if(typeof module!=='undefined'&&module.exports)module.exports=root.FEIntentAssist;
+root.FEIntentAssist={IntentSelector,followBall,delta};if(typeof module!=='undefined'&&module.exports)module.exports=root.FEIntentAssist;
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
 <!-- src/game.js -->
 <script>
 'use strict';
-/* FIRST ELEVEN 0.4: original v0.1 fixed-step simulation, upgraded renderer.
+/* FIRST ELEVEN 0.6: original v0.1 fixed-step simulation, upgraded renderer.
    World +Z = GRIT attack, +X = right; metres and seconds. */
 (() => {
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
@@ -58195,8 +58265,8 @@ const canvas=$('world');
 let graphics;
 function fatal(message){$('fatal').hidden=false;$('loading').hidden=true;$('startButton').disabled=true;if(message)$('fatalMessage').textContent=message;}
 const settings={assist:true,bob:false,audio:true,sensitivity:1,quality:"auto",atmosphere:"day",autoTrack:true};
-try{const saved=JSON.parse(localStorage.getItem('first-eleven-settings-v4')||localStorage.getItem('first-eleven-settings-v2')||localStorage.getItem('first-eleven-settings-v1')||'null');if(saved){if(["auto","high","balanced","low"].includes(saved.quality))settings.quality=saved.quality;if(["day","sunset"].includes(saved.atmosphere))settings.atmosphere=saved.atmosphere;for(const k of ['assist','bob','audio','autoTrack'])if(typeof saved[k]==='boolean')settings[k]=saved[k];if(Number.isFinite(saved.sensitivity))settings.sensitivity=clamp(saved.sensitivity,.4,2);}}catch(e){}
-function saveSettings(){try{localStorage.setItem('first-eleven-settings-v4',JSON.stringify(settings));}catch(e){}}
+try{const saved=JSON.parse(localStorage.getItem('first-eleven-settings-v5')||localStorage.getItem('first-eleven-settings-v4')||localStorage.getItem('first-eleven-settings-v2')||localStorage.getItem('first-eleven-settings-v1')||'null');if(saved){if(["auto","high","balanced","low"].includes(saved.quality))settings.quality=saved.quality;if(["day","sunset"].includes(saved.atmosphere))settings.atmosphere=saved.atmosphere;for(const k of ['assist','bob','audio','autoTrack'])if(typeof saved[k]==='boolean')settings[k]=saved[k];if(Number.isFinite(saved.sensitivity))settings.sensitivity=clamp(saved.sensitivity,.4,2);}}catch(e){}
+function saveSettings(){try{localStorage.setItem('first-eleven-settings-v5',JSON.stringify(settings));}catch(e){}}
 let mobile=matchMedia('(pointer:coarse)').matches;
 if(mobile)document.body.classList.add('mobile');
 $('deviceLabel').textContent=mobile?'TOUCH TO PLAY / 横向き推奨':'WASD + MOUSE / TOUCH SUPPORTED';
@@ -58219,6 +58289,7 @@ function newStats(){return{shots:0,goals:0,passes:0,completed:0,tackles:0,assist
 game.stats=newStats();
 const input={keys:new Set(),joyX:0,joyY:0,sprint:false,charging:false,charge:0,yaw:0,pitch:-.24,lookIdle:0,mouseDown:false};
 let bodyFrame=null,inputMode='touch';
+let bodyResult={ok:false,reason:'WAIT',kind:null,at:0},bodySequence=0;
 const intent=new window.FEIntentAssist.IntentSelector();
 let manualViewUntil=0;
 const windupStages=new Set(['BACKSWING','SWING','IMPACT','FOLLOW_THROUGH','KICK']);
@@ -58258,7 +58329,7 @@ function startGame(){
  $('matchLabel').textContent=game.mode==='practice'?'TRAINING · YOU vs GK':'EXHIBITION · 11 v 11';$('levelLabel').textContent=game.difficulty.toUpperCase();$('callHint').textContent=game.mode==='practice'?'ボールを戻す':'パス要求';$('touchCall').textContent=game.mode==='practice'?'ボールを戻す':'パス要求';
  $('playerSub').textContent=game.mode==='practice'?'TRAINING · シュート練習':'GRIT FC · 攻撃方向 ↑';
  $('targetTag').hidden=true;passTarget=null;game.frame=0;
- notify(inputMode==='camera'?'顔で選択 → カーソル点灯 → 軸足を止めてキック。追視は自動。':game.mode==='practice'?'長押しでシュート。R / ボールを戻すで何度でも挑戦。':mobile?'左で移動・右側ドラッグで視点。まずは味方にパス。':'WASD で移動。E でパス、R でパスを要求。',4);
+ notify(inputMode==='camera'?'指さしでパス先 → キック。SHOT表示ならシュート。認識が途切れても試合は継続。':game.mode==='practice'?'長押しでシュート。R / ボールを戻すで何度でも挑戦。':mobile?'左で移動・右側ドラッグで視点。まずは味方にパス。':'WASD で移動。E でパス、R でパスを要求。',4);
  sfx('whistle');requestLock();updateHUD();
 }
 function releaseLock(){try{if(document.pointerLockElement===canvas)document.exitPointerLock();}catch(e){}}
@@ -58279,7 +58350,7 @@ function launch(p,dx,dz,speed,vy,kind){const n=hypot(dx,dz)||1;dx/=n;dz/=n;ball.
 function passBall(p=hero,through=false,explicitId=null){if(ball.owner!==p.id)return false;
  let target;
  if(explicitId!==null){target=players[explicitId];if(!target?.active||target.team!==p.team||target.id===p.id||dist(p,target)>48||dist(p,target)<1.5)return false;}
- else if(p.id===hero.id&&inputMode==='camera'){const t=intent.target();if(!t||t.kind!=='pass')return false;target=players[t.id];if(!target?.active||target.team!==p.team)return false;}
+ else if(p.id===hero.id&&inputMode==='camera'){const t=intent.target();target=t?.kind==='pass'?players[t.id]:choosePass(p,true);}
  else target=choosePass(p,p.id===hero.id);let tx,tz;if(target){const lead=through?5.8:clamp(dist(p,target)/16,0,1.2);tx=target.x+target.vx*lead;tz=target.z+target.vz*lead+(through?teamAttack(p.team)*4.5:0);}else{tx=p.x+Math.sin(p.dir)*15;tz=p.z+Math.cos(p.dir)*15;}tx=clamp(tx,-29,29);tz=clamp(tz,-44,44);const d=hypot(tx-p.x,tz-p.z),speed=clamp(10.5+d*.45+(through?2:0),12,28);launch(p,tx-p.x,tz-p.z,speed,.65,'pass');if(p.id===hero.id)notify(target?`${through?'スルーパス':'パス'} → #${target.n}`:'前方へパス',1.25);return true;}
 function shoot(p=hero,power=.6){if(ball.owner!==p.id){if(p.id===hero.id)notify('ボールを持っているときにシュートできます',1.4);return false;}const dir=teamAttack(p.team),goalZ=dir*46;let yaw=p.dir,tx,tz=goalZ;let targetY=.85+power*.7;
  if(p.id===hero.id){
@@ -58425,7 +58496,7 @@ function step(dt){game.real+=dt;game.frame++;
  if(game.mode==='match'){game.remaining=Math.max(0,game.remaining-dt);if(game.remaining<=0){endMatch();return;}}
  if(game.mode==='practice'&&game.practiceTimer>0){game.practiceTimer-=dt;if(game.practiceTimer<=0&&ball.owner!==hero.id){resetPositions();notify('ボールをセットしました',1);}}
  if(input.charging){if(ball.owner!==hero.id){input.charging=false;}else input.charge=clamp(input.charge+dt/1.05,0,1);}
- const body=bodyFrame&&inputMode==='camera'&&performance.now()-bodyFrame.at<350?bodyFrame:null;
+ const body=bodyFrame&&inputMode==='camera'&&performance.now()-bodyFrame.at<550?bodyFrame:null;
  if(body&&ball.owner===hero.id&&!intent.winding&&Math.abs(body.turn)>.04){input.yaw+=body.turn*1.7*dt;input.lookIdle=0;}
  const keys=input.keys;const lookSpeed=1.9*settings.sensitivity;
  if(keys.has('ArrowLeft')){input.yaw-=lookSpeed*dt;input.lookIdle=0;}if(keys.has('ArrowRight')){input.yaw+=lookSpeed*dt;input.lookIdle=0;}
@@ -58452,45 +58523,58 @@ function autoCamera(dt){
 }
 function updateIntent(){
  if(inputMode!=='camera'){passTarget=ball.owner===hero.id?choosePass(hero,true):null;return;}
- const body=bodyFrame&&performance.now()-bodyFrame.at<350?bodyFrame:null;
- // Absolute angle relative to the pitch-facing body, not a continuously integrated yaw.
- // The camera does not chase the target during possession, so no drift feedback.
- intent.update({hero,players,headValid:!!body?.headValid&&game.phase==='play',aimYaw:input.yaw+(body?.headYaw||0)*1.05,ownsBall:ball.owner===hero.id,now:game.real});
+ const body=bodyFrame&&performance.now()-bodyFrame.at<550?bodyFrame:null;
+ intent.update({hero,players,poseValid:!!body&&game.phase==='play',pointValid:!!body?.pointValid,
+  aimYaw:input.yaw+(body?.pointYaw||0)*1.30,ownsBall:ball.owner===hero.id,now:game.real});
  const t=intent.target();passTarget=t?.kind==='pass'?players[t.id]:null;
 }
 function performIntentKick(power){
+ if(ball.owner!==hero.id){bodyResult={ok:false,reason:'NO_BALL',kind:'kick',at:performance.now()};notify('ボールを持っていません・追視は継続中',1.2);return false;}
  const selected=intent.take(game.real);passTarget=null;
- if(ball.owner!==hero.id)return false;
- if(!selected){notify('選択先なし・顔でカーソルを点灯させてから蹴ってください',2);return false;}
+ if(!selected){bodyResult={ok:false,reason:'NO_INTENT',kind:'kick',at:performance.now()};notify('キック準備を確認できません・足を軽く引いて蹴ってください',1.8);return false;}
  if(selected.kind==='pass'){
-  const ok=passBall(hero,false,selected.id);if(!ok)notify('選択先が遠い、または無効です。パスを出さず選び直します',2);return ok;
+  const ok=passBall(hero,false,selected.id);bodyResult={ok,reason:ok?'PASS':'RECEIVER_LOST',kind:'pass',at:performance.now()};if(!ok)notify('その味方へはパスできません・指さしで選び直してください',1.5);return ok;
+ }
+ if(selected.kind==='space'){
+  const d=hypot(selected.x-hero.x,selected.z-hero.z);
+  if(d<1)return false;
+  launch(hero,selected.x-hero.x,selected.z-hero.z,clamp(10.5+d*.45,12,28),.65,'pass');
+  bodyResult={ok:true,reason:'PASS_SPACE',kind:'pass',at:performance.now()};notify('指さした方向へパス',1.25);return true;
  }
  if(selected.kind==='shot'){
-  const before=hero.dir;hero.dir=heading(hero,{x:0,z:46});
-  const ok=shoot(hero,Number.isFinite(power)?clamp(power,.2,1):.5);hero.dir=before;return ok;
+  const before=hero.dir;
+  // Camera kick uses goal-direction assist independent of head pose/cursor.
+  // The optional setting still allows view-aimed shots for advanced players.
+  if(settings.assist)hero.dir=heading(hero,{x:0,z:46});
+  const ok=shoot(hero,Number.isFinite(power)?clamp(power,.2,1):.6);hero.dir=before;
+  bodyResult={ok,reason:ok?'SHOT':'NO_BALL',kind:'shot',at:performance.now()};if(ok)notify('シュート！',1.4);return ok;
  }
  return false;
 }
 function updateIntentMarkers(){
  const active=game.phase==='play'&&inputMode==='camera',mine=ball.owner===hero.id;
- $('kickIntent').hidden=!active;$('faceAim').hidden=!active||!mine||!intent.valid;
+ $('kickIntent').hidden=!active;$('pointAim').hidden=!active||!mine||!intent.pointing;
  if(!active)return;
  const t=intent.target(),candidate=intent.candidate;
  $('kickIntent').classList.toggle('ready',!!t);$('kickIntent').classList.toggle('locked',intent.winding&&!!t);
- $('kickIntent').textContent=!mine?(game.track?'AUTO BALL · ボールを自動追視':'ボールを持つと顔で選択'):
- !intent.valid?'顔の方向が不明 · カーソル選択停止':intent.winding&&!t?'選択前のキック · 発射しません':
- t?(t.kind==='pass'?`PASS #${t.n} · ${intent.winding?'固定済み':'足でキック'}`:`GOAL · ${intent.winding?'シュート先固定':'足でシュート'}`):candidate?'その向きで少し静止 → 選択':'顔を左右へ → 味方 / ゴールを選択';
+ const status=t?.kind==='pass'?`PASS #${t.n}`:t?.kind==='space'?'方向パス':'SHOT';
+ $('kickIntent').textContent=!mine?'AUTO BALL · ボールを追視中':
+  !intent.valid?'認識待機 · 試合は継続／タッチも使えます':
+  `${status} · ${intent.winding?'LOCK・足を振り出す':t?.kind==='shot'?'足を小さく前へ蹴る':!intent.pointing?'選択保持・1秒でSHOTに戻る':'指さしで選択 → 蹴る'}`;
  const ray=project(hero.x+Math.sin(intent.aimYaw)*12,1.5,hero.z+Math.cos(intent.aimYaw)*12);
- $('faceAim').style.left=clamp(ray.x,24,screenW-24)+'px';$('faceAim').style.top=clamp(ray.y,100,screenH*.60)+'px';
- $('faceAim').classList.toggle('ready',!!t);$('faceAim').style.setProperty('--progress',Math.round(intent.progress*360)+'deg');
- const mark=t||candidate;if(!mark||!mine)return;
- const p=mark.kind==='pass'?players[mark.id]:{x:0,z:46};
- if(!p||mark.kind==='pass'&&(!p.active||p.team!==hero.team))return;
- const q=project(p.x,mark.kind==='shot'?2.7:2.3,p.z);
- const edge=q.depth<.1||q.x<35||q.x>screenW-35;
+ $('pointAim').style.left=clamp(ray.x,24,screenW-24)+'px';$('pointAim').style.top=clamp(ray.y,100,screenH*.60)+'px';
+ $('pointAim').classList.toggle('ready',!!t);$('pointAim').style.setProperty('--progress',Math.round(intent.progress*360)+'deg');
+ const mark=(intent.pointing&&!intent.winding?candidate:null)||t;if(!mark||!mine||!intent.valid)return;
+ const pos=mark.kind==='pass'?players[mark.id]:mark.kind==='space'?mark:{x:0,z:46};
+ if(!pos||mark.kind==='pass'&&(!pos.active||pos.team!==hero.team))return;
+ const q=project(pos.x,mark.kind==='shot'?2.7:mark.kind==='space'?.4:2.3,pos.z);
+ const edge=q.depth<.1||q.x<55||q.x>screenW-55;
  $('targetTag').hidden=false;$('targetTag').classList.toggle('candidate',!t);$('targetTag').classList.toggle('locked',intent.winding&&!!t);
- $('targetTag').style.left=clamp(q.x,55,screenW-55)+'px';$('targetTag').style.top=clamp(q.y,112,screenH*.65)+'px';
- $('targetTag').textContent=(edge?(Math.sin(window.FEIntentAssist.delta(heading(hero,p),cam.yaw))>0?'→ ':'← '):'')+(mark.kind==='pass'?`#${mark.n} PASS`:'GOAL / SHOT')+(intent.winding&&t?' · LOCK':!t?' · …':' ✓');
+ // Reserve room for the entire label, not only its centre, in narrow portrait.
+ const maxWidth=Math.min(230,screenW-24);$('targetTag').style.maxWidth=maxWidth+'px';
+ $('targetTag').style.left=clamp(q.x,maxWidth/2+8,screenW-maxWidth/2-8)+'px';$('targetTag').style.top=clamp(q.y,112,screenH*.65)+'px';
+ $('targetTag').textContent=(edge?(Math.sin(window.FEIntentAssist.delta(heading(hero,pos),cam.yaw))>0?'→ ':'← '):'')+
+  (mark.kind==='pass'?`#${mark.n} PASS`:mark.kind==='space'?'方向パス':'GOAL / SHOT')+(intent.winding&&t?' · LOCK':'');
 }
 // ---------------------- Graphics / simulation adapter ----------------------
 function render(){
@@ -58586,26 +58670,34 @@ function releaseStick(e){if(e.pointerId===joyPointer){joyPointer=null;input.joyX
 for(const t of['pointerup','pointercancel','lostpointercapture'])$('joystick').addEventListener(t,releaseStick);
 function actionButton(id,down,up){const b=$(id);let pid=null;b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(game.phase!=='play'||pid!==null)return;pid=e.pointerId;b.setPointerCapture(e.pointerId);b.classList.add('pressed');down();});for(const type of['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,e=>{if(e.pointerId!==pid)return;pid=null;b.classList.remove('pressed');if(up)up(type==='pointercancel');});}
 actionButton('touchShot',beginShot,cancel=>{if(cancel){input.charging=false;input.charge=0;}else releaseShot();});actionButton('touchPass',()=>passBall());actionButton('touchThrough',()=>passBall(hero,true));actionButton('touchTackle',tackle);actionButton('touchSprint',()=>{input.sprint=true;},()=>{input.sprint=false;});actionButton('touchCall',callPass);actionButton('touchGoal',faceGoal);
-addEventListener('blur',()=>{if(['play','goal','restart'].includes(game.phase))pauseGame();resetMotion();viewPointer=mouseDrag=null;joyPointer=null;});
+addEventListener('blur',()=>{if(inputMode!=='camera'&&!mobile&&['play','goal','restart'].includes(game.phase))pauseGame();resetMotion();viewPointer=mouseDrag=null;joyPointer=null;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&['play','goal','restart'].includes(game.phase))pauseGame();});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pauseGame();});
 // Public, narrow camera-input bridge. No synthetic DOM key events.
-// All motion expires after 350 ms, independently of the game simulation clock.
+// All motion expires after 550 ms, independently of the game simulation clock.
 window.FEGame={
- state:()=>({phase:game.phase,ownsBall:ball.owner===hero.id,mode:game.mode,inputMode,autoTrack:game.track,intent:intent.snapshot()}),
- setInputMode(mode){inputMode=mode==='camera'?'camera':'touch';resetMotion();$('faceAim').hidden=true;$('kickIntent').hidden=true;},
- setBodyFrame(v){if(inputMode!=='camera'||game.phase!=='play'||!v?.valid){this.clearBodyInput();return;}
+ state:()=>({phase:game.phase,ownsBall:ball.owner===hero.id,mode:game.mode,inputMode,autoTrack:game.track,intent:intent.snapshot(),version:'0.6.0',lastBodyResult:{...bodyResult},shots:game.stats.shots,passes:game.stats.passes}),
+ setInputMode(mode){inputMode=mode==='camera'?'camera':'touch';resetMotion();$('pointAim').hidden=true;$('kickIntent').hidden=true;},
+ setBodyFrame(v){if(inputMode!=='camera'||game.phase!=='play'||!v?.valid){this.clearBodyInput(false);return;}
   const n=k=>Number.isFinite(v[k])?clamp(v[k],-1,1):0;
-  bodyFrame={x:n('x'),forward:n('forward'),turn:n('turn'),headYaw:n('headYaw'),headValid:!!v.headValid&&Number.isFinite(v.headYaw),stage:v.stage||'WAIT',sprint:!!v.sprint,at:performance.now()};
+  bodyFrame={x:n('x'),forward:n('forward'),turn:n('turn'),pointYaw:n('pointYaw'),pointValid:!!v.pointValid&&Number.isFinite(v.pointYaw),stage:v.stage||'WAIT',sprint:!!v.sprint,at:performance.now(),sequence:++bodySequence,consumed:false};
   updateIntent();
-  if(bodyFrame.headValid&&windupStages.has(bodyFrame.stage))intent.begin(game.real);
-  else if(!windupStages.has(bodyFrame.stage)&&intent.winding)intent.cancelWindup();
+  if(windupStages.has(bodyFrame.stage))intent.begin(game.real);
+  else if(intent.winding)intent.cancelWindup();
   updateIntent();},
- clearBodyInput(){if(bodyFrame&&Math.abs(input.joyX)+Math.abs(input.joyY)<.01&&input.keys.size===0){hero.vx=0;hero.vz=0;}bodyFrame=null;intent.reset();passTarget=null;},
- bodyAction(kind,power=.5){if(inputMode!=='camera'||game.phase!=='play'||!bodyFrame||performance.now()-bodyFrame.at>=350)return false;
+ clearBodyInput(hard=true){
+  if(bodyFrame&&Math.abs(input.joyX)+Math.abs(input.joyY)<.01&&input.keys.size===0){hero.vx=0;hero.vz=0;}
+  bodyFrame=null;if(hard){intent.reset();passTarget=null;}
+ },
+ bodyAction(kind,power=.5){if(inputMode!=='camera'||game.phase!=='play'||!bodyFrame||performance.now()-bodyFrame.at>=550){bodyResult={ok:false,reason:game.phase!=='play'?'NOT_PLAYING':'STALE_INPUT',kind,at:performance.now()};return false;}
+  if(kind==='kick'){if(bodyFrame.consumed){bodyResult={ok:false,reason:'DUPLICATE',kind,at:performance.now()};return false;}bodyFrame.consumed=true;}
   switch(kind){case 'kick':return performIntentKick(power);case 'shot':return shoot(hero,Number.isFinite(power)?clamp(power,.2,1):.5);
    case 'pass':return passBall();case 'through':return passBall(hero,true);case 'call':callPass();return true;
    case 'tackle':tackle();return true;case 'pause':pauseGame();return true;case 'goal':faceGoal();return true;default:return false;}},
+ cameraTestShot(){
+  if(game.phase!=='play'||ball.owner!==hero.id){bodyResult={ok:false,reason:game.phase!=='play'?'NOT_PLAYING':'NO_BALL',kind:'test',at:performance.now()};return false;}
+  const before=hero.dir;if(settings.assist)hero.dir=heading(hero,{x:0,z:46});const ok=shoot(hero,.65);hero.dir=before;bodyResult={ok,reason:ok?'TEST_SHOT':'NO_BALL',kind:'test',at:performance.now()};return ok;
+ },
  startReady:startGame,pause:pauseGame,resume:resumeGame,notify,
  setQuality(q){if(['auto','high','balanced','low'].includes(q)){settings.quality=q;graphics.setQuality(q);syncSettings();saveSettings();}},
  setBodyAssist(v){setAutoTrack(v);}
@@ -58621,7 +58713,7 @@ if(new URLSearchParams(location.search).has('test')||window.__FE_ENABLE_TEST__==
   setClock:v=>{game.remaining=v;},setPhase:v=>{game.phase=v;},
   shoot:p=>shoot(hero,p),pass:through=>passBall(hero,through),tackle,callPass,pause:pauseGame,resume:resumeGame,goal,reset:resetPositions,
   setKeys:keys=>{input.keys=new Set(keys);},setLook:(yaw,pitch)=>{input.yaw=yaw;input.pitch=pitch;},
-  render,updateHUD,updateIntent,autoCamera,setAutoTrack,look,project,physics:physicsStep,version:'0.4.0'
+  render,updateHUD,updateIntent,autoCamera,setAutoTrack,look,project,physics:physicsStep,version:'0.6.0'
  };
 }
 function frame(now){try{const dt=rafTime?Math.min(.10,(now-rafTime)/1000):1/60;rafTime=now;accumulator+=dt;let count=0;while(accumulator>=1/60&&count<6){step(1/60);accumulator-=1/60;count++;}render();if(game.frame%4===0&&game.phase!=='menu')updateHUD();if(master)master.gain.value=settings.audio?(game.phase==='menu'||game.phase==='paused'?.025:.14):0;if(!window.__FE_DISABLE_RAF__)requestAnimationFrame(frame);}catch(error){console.error(error);fatal('描画を継続できませんでした。詳細: '+error.message);}}
@@ -58633,7 +58725,7 @@ try{render();$('loading').hidden=true;$('startButton').disabled=false;window.__F
 </script>
 <!-- src/body-controls.js -->
 <script>
-/* FIRST ELEVEN 0.4: opt-in front camera, local pose inference, session-safe cleanup.
+/* FIRST ELEVEN 0.6: opt-in front camera, local pose inference, session-safe cleanup.
  * Worker is preferred. On browsers without worker video support use a throttled
  * main-thread CPU fallback. No raw frames/landmarks are persisted or transmitted.
  */
@@ -58654,18 +58746,20 @@ const connections=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,2
 let choice='touch',running=false,loading=false,enabled=false,generation=0,stream=null,worker=null,workerURL=null,mainPose=null;
 let ready=false,sessionFailed=false,returnTo='start',countdown=null,countdownAt=0,watchdog=null,tickTimer=null;
 let busy=false,busyAt=0,lastCapture=0,lastVideoTime=-1,lastReceived=0,lastTracked=0,lastOutput=null,lastLandmarks=null;
-let targetFPS=15,inferenceCost=0,method='未接続',mini=true,prevPhase='menu';
+let diagnostic={detected:0,launched:0,testShots:0,rejected:0,poses:0,lastReason:'WAIT',lastEventAt:0},diagnosticLog=[],lastDiagnosticAt=0;
+let targetFPS=18,inferenceCost=0,method='未接続',mini=false,prevPhase='menu',feedbackUntil=0;
 const video=$('bodyVideo'),preview=$('bodySkeleton'),miniCanvas=$('bodyMiniCanvas');
 let recognizer=new window.FEBodyRecognizer(readOptions());
-function readOptions(){return{profile:$('bodyProfile').value,foot:$('bodyFoot').value,mirror:$('bodyMirror').checked,sensitivity:Number($('bodySensitivity').value),headSensitivity:Number($('bodyHeadSensitivity').value),headInvert:$('bodyHeadInvert').checked};}
-function setStatus(text,kind='normal'){$('bodyOverlayStatus').textContent=text;$('bodyStatus').textContent=text;$('bodyStatus').dataset.kind=kind;$('bodyLiveStatus').textContent=text;}
+function readOptions(){return{profile:$('bodyProfile').value,foot:$('bodyFoot').value,mirror:$('bodyMirror').checked,sensitivity:Number($('bodySensitivity').value),pointSensitivity:Number($('bodyPointSensitivity').value),pointInvert:$('bodyPointInvert').checked,kickLevel:$('bodyKickLevel').value};}
+function setStatus(text,kind='normal'){$('bodyOverlayStatus').textContent=text;$('bodyStatus').textContent=text;$('bodyStatus').dataset.kind=kind;if(performance.now()>feedbackUntil)$('bodyLiveStatus').textContent=text;}
 function labels(){
  const full=$('bodyProfile').value==='full';
  $('bodyFullHelp').hidden=!full;$('bodyUpperHelp').hidden=full;$('bodyFoot').disabled=!full;
  $('bodyProfileShort').textContent=full?'FULL BODY':'UPPER BODY';
- $('bodyCaptureTip').textContent=full?'横向きに固定し、頭から足先まで枠に入れてください。約2〜3mは目安です。':'端末を固定し、顔・両手・腰まで枠に入れてください。椅子に座っても試せます。';
+ $('bodyCaptureTip').textContent=full?'端末を固定し、肩・腰・両足先を映してください。顔が一瞬外れても操作は継続します。約2〜3mは目安です。':'端末を固定し、肩・両手・腰を映してください。足の代わりに右手の上げ下げでキックします。';
  $('bodyConsentNote').textContent=isLocalAssets?'カメラ映像は端末内で処理します。録画・映像送信・マイク使用はしません。認識モデルはこのサイトから取得します。':'カメラ映像は端末内で処理します。録画・映像送信・マイク使用はしません。認識用ファイルを初回にjsDelivrとGoogleから取得します（通信が必要）。';
  $('bodyConsentNote').textContent+=' MediaPipeは利用状況・性能指標をGoogleに送信します。映像そのものの送信ではありません。';
+ $('bodyTriggerLive').value=$('bodyKickLevel').value;
  video.style.transform=$('bodyMirror').checked?'scaleX(-1)':'none';preview.style.transform=video.style.transform;
 }
 function selectMode(value){
@@ -58679,7 +58773,7 @@ function requestSetup(next){
  if(['play','goal','restart'].includes(API.state().phase))API.pause();
  API.clearBodyInput();selectMode('camera');enabled=false;clearCountdown();
  $('bodyScreen').hidden=false;$('bodyBegin').disabled=loading;labels();
- if(running&&ready){recognizer.recalibrate();lastOutput=null;$('bodyBegin').hidden=true;setStatus('手を下ろして3秒静止してください');}
+ if(running&&ready){recognizer.recalibrate();lastOutput=null;$('bodyBegin').hidden=true;setStatus('手を下ろして約2秒静止してください');}
  else{$('bodyBegin').hidden=false;$('bodyBegin').textContent='カメラを許可して位置合わせ';setStatus('準備したら下のボタンを押してください');}
  $('bodyClose').focus();
 }
@@ -58710,22 +58804,22 @@ async function initWorker(id){
   ownedWorker.onerror=e=>{e.preventDefault();if(id!==generation)return;if(!ready)reject(new Error(e.message||'Worker error'));else fail(new Error('姿勢認識の処理が停止しました。再接続してください。'));};
   ownedWorker.postMessage({type:'init',config:assets});
  }),45000,'認識用ファイルを読み込めませんでした。通信を確認して再接続してください。');
- checkSession(id);method='WORKER / CPU';targetFPS=15;
+ checkSession(id);method='WORKER / CPU';targetFPS=18;
 }
 async function initMain(id){
  const imported=await import(assets.module);checkSession(id);
  const lib=imported.PoseLandmarker?imported:imported.default;
  if(!lib?.PoseLandmarker)throw new Error('認識ライブラリを読み込めませんでした');
  const fileset=await lib.FilesetResolver.forVisionTasks(assets.wasm);checkSession(id);
- const model=await lib.PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:assets.model,delegate:'CPU'},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:.60,minPosePresenceConfidence:.60,minTrackingConfidence:.60,outputSegmentationMasks:false});
+ const model=await lib.PoseLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:assets.model,delegate:'CPU'},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45,outputSegmentationMasks:false});
  if(id!==generation||sessionFailed){model.close();throw cancelError();}
- mainPose=model;method='互換モード / CPU';targetFPS=8;
+ mainPose=model;method='互換モード / CPU';targetFPS=15;
 }
 async function begin(){
  if(loading)return;
  if(!$('bodyConsent').checked){setStatus('通信とプライバシーの説明を確認し、同意欄にチェックしてください','warning');$('bodyConsent').focus();return;}
  if($('bodyLowQuality').checked)API.setQuality('low');API.setBodyAssist($('bodyAutoTrack').checked);
- stop({keepChoice:true,keepOverlay:true});selectMode('camera');labels();
+ stop({keepChoice:true,keepOverlay:true});selectMode('camera');labels();$('cameraWarning').hidden=true;
  const id=++generation;loading=true;sessionFailed=false;$('bodyBegin').disabled=true;$('bodyBegin').hidden=false;
  setStatus('カメラの許可を確認しています');
  try{
@@ -58736,11 +58830,11 @@ async function begin(){
   stream=camera;video.srcObject=stream;document.querySelector('.body-dialog').scrollTo({top:0,behavior:'smooth'});
   for(const track of stream.getVideoTracks()){
    track.addEventListener('ended',()=>{if(id===generation)fail(new Error('カメラが切断されました。再接続してください。'));});
-   track.addEventListener('mute',()=>{if(id===generation){API.clearBodyInput();recognizer.suspend();setStatus('カメラ映像が中断されています','warning');}});
+   track.addEventListener('mute',()=>{if(id===generation){API.clearBodyInput();setStatus('映像を待っています・試合は継続します','warning');}});
   }
   await withTimeout(video.play(),12000,'カメラ映像を開始できませんでした。通常のブラウザで再接続してください。');checkSession(id);
   running=true;setStatus('認識モデルを読み込んでいます・映像は送信しません');$('bodyCameraState').textContent='CAMERA ON';
-  if(window.__FE_ENABLE_TEST__&&window.__FE_POSE_FACTORY__){mainPose=await window.__FE_POSE_FACTORY__();method='TEST DOUBLE';targetFPS=15;}
+  if(window.__FE_ENABLE_TEST__&&window.__FE_POSE_FACTORY__){mainPose=await window.__FE_POSE_FACTORY__();method='TEST DOUBLE';targetFPS=12;}
   else{
    try{await initWorker(id);}catch(workerError){
     checkSession(id);worker?.terminate();worker=null;if(workerURL)URL.revokeObjectURL(workerURL);workerURL=null;
@@ -58751,7 +58845,7 @@ async function begin(){
   checkSession(id);ready=true;loading=false;enabled=false;busy=false;lastCapture=0;lastVideoTime=-1;lastReceived=lastTracked=performance.now();
   recognizer=new window.FEBodyRecognizer(readOptions());lastOutput=null;lastLandmarks=null;
   $('bodyBegin').hidden=true;$('bodyBegin').disabled=false;$('bodyCameraState').textContent='CAMERA ON';$('bodyLive').hidden=false;
-  $('bodyMethod').textContent=method;setStatus('顔を正面に向け、頭と足先を映して3秒静止してください');
+  $('bodyMethod').textContent=method;setStatus('肩・腰・両足を映して静止してください・顔の向きは自由です');
   watchdog=setInterval(checkHealth,120);scheduleTick();
  }catch(error){if(id!==generation)return;fail(error);}
 }
@@ -58768,11 +58862,18 @@ function stop(options={}){
  if(!options.keepChoice){choice='touch';$('inputMode').value='touch';API.setInputMode('touch');document.body.classList.remove('body-selected');$('bodyModeState').textContent='タッチ / キーボード';}
 }
 function fail(error){
- sessionFailed=true;API.pause();const message=errorMessage(error);
+ const inPlay=enabled&&['play','goal','restart'].includes(API.state().phase);
+ const message=errorMessage(error);
+ if(inPlay){
+  // A broken inference stream cannot repeatedly interrupt the match. Stop the
+  // camera and fall back to the always-available touch controls, non-modally.
+  stop();sessionFailed=true;API.notify('カメラ認識を終了・試合は継続／タッチ操作へ',5);
+  $('cameraWarning').hidden=false;$('cameraWarningText').textContent=message+' 試合は継続しています。';return;
+ }
  stop({keepChoice:true,keepOverlay:true});sessionFailed=true;$('bodyScreen').hidden=false;
  $('bodyBegin').hidden=false;$('bodyBegin').textContent='カメラを再接続';setStatus(message,'error');
 }
-function scheduleTick(){clearTimeout(tickTimer);if(running&&ready)tickTimer=setTimeout(tick,Math.max(25,1000/targetFPS));}
+function scheduleTick(){clearTimeout(tickTimer);if(running&&ready)tickTimer=setTimeout(tick,Math.max(20,1000/targetFPS-(mainPose?inferenceCost:0)));}
 async function tick(){
  const id=generation;
  try{
@@ -58797,22 +58898,46 @@ async function tick(){
  }catch(error){busy=false;if(id===generation)fail(error);}
  finally{if(id===generation)scheduleTick();}
 }
+
+const failureText={NO_BALL:'動作は検出済み・自分のボールではありません',NO_INTENT:'動作は検出済み・パス選択の有効期限を確認',RECEIVER_LOST:'動作は検出済み・パス相手が無効です',NOT_PLAYING:'試合開始・再開を待っています',STALE_INPUT:'カメラ入力が古いため発射を保留',DUPLICATE:'同じ入力の重複発射を防止',SHOT:'シュートを実行しました',PASS:'パスを実行しました',PASS_SPACE:'方向パスを実行しました',TEST_SHOT:'テスト発射成功・ゲーム側は動いています'};
+function diagnosticView(out=null,age=0){
+ const state=API.state();
+ $('bodyDiagCounts').textContent=`動作 ${diagnostic.detected} → 発射 ${diagnostic.launched}`;
+ const recent=performance.now()-diagnostic.lastEventAt<2200;
+ const why=recent?(failureText[diagnostic.lastReason]||diagnostic.lastReason):out?.diagnostic?.reason==='FOOT_MISSING'?'足先が見えません・映像を表示して確認':out?.diagnostic?.reason==='KNEE_MISSING'?'膝まで映してください':!out?.valid?'体の認識待ち':out?.status||'キック待機';
+ const ball=state.ownsBall?'ボールあり':'ボールなし';
+ $('bodyDiagReason').textContent=`v0.6 · ${ball} · ${why}`;
+ if(performance.now()-lastDiagnosticAt>=220||recent&&diagnosticLog.at(-1)?.detected!==diagnostic.detected){
+  diagnosticLog.push({ms:Math.round(performance.now()),phase:state.phase,ownsBall:state.ownsBall,mode:recognizer.kickLevel,valid:!!out?.valid,feet:out?.feet||[false,false],stage:out?.stage||'WAIT',reason:out?.diagnostic?.reason||null,score:Math.round((out?.diagnostic?.score||0)*100),detected:diagnostic.detected,launched:diagnostic.launched,lastGameResult:diagnostic.lastReason,inferenceMs:Math.round(inferenceCost),frameAgeMs:Math.round(age)});
+  if(diagnosticLog.length>240)diagnosticLog.shift();lastDiagnosticAt=performance.now();
+ }
+}
+function saveDiagnostic(){
+ const data={version:'0.6.0',scope:'State only. No images, video, audio, body landmarks or identity data.',time:new Date().toISOString(),camera:method,profile:recognizer.profile,kickLevel:recognizer.kickLevel,counters:{...diagnostic},events:diagnosticLog};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='FIRST_ELEVEN_v0.6_diagnostic.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
 function receivePose(lm,world,time,cost=0){
  if(!running||!ready)return;
  const now=performance.now();lastReceived=now;inferenceCost=inferenceCost*.75+cost*.25;
- if(now-time>350){API.clearBodyInput();recognizer.suspend();lastLandmarks=null;setStatus('認識の遅延が大きいため操作停止・画質LOWをお試しください','warning');return;}
+ if(now-time>1200){API.clearBodyInput(false);lastLandmarks=null;setStatus('認識が遅れています・試合は継続／タッチ併用可','warning');diagnosticView(null,now-time);return;}
+ diagnostic.poses++;
  const state=API.state();const active=enabled&&state.phase==='play'&&$('bodyScreen').hidden;
- const out=recognizer.update(lm,world,time,{active,ownsBall:state.ownsBall});lastOutput=out;lastLandmarks=lm;
+ const out=recognizer.update(lm,world,time,{active,ownsBall:state.ownsBall,imageAspect:(video.videoWidth||640)/(video.videoHeight||480)});lastOutput=out;lastLandmarks=lm;
  if(out.valid)lastTracked=now;
  if(active){
   API.setBodyFrame(out);
-  for(const action of out.actions){API.bodyAction(action.type,action.value);if(action.type==='pause'){recognizer.suspend();enabled=true;}}
+  for(const action of out.actions){const ok=API.bodyAction(action.type,action.value);if(action.type==='kick'){
+   diagnostic.detected++;if(ok)diagnostic.launched++;else diagnostic.rejected++;
+   diagnostic.lastReason=API.state().lastBodyResult?.reason||(ok?'SHOT':'REJECTED');diagnostic.lastEventAt=now;
+   $('bodyLiveStatus').textContent=ok?'KICK ✓ '+(failureText[diagnostic.lastReason]||'発射成功'):(failureText[diagnostic.lastReason]||'動作検出・未発射');feedbackUntil=now+1800;
+  }}
  }else API.clearBodyInput();
  setStatus(out.status,out.valid?'normal':'warning');
- $('bodyProgress').style.width=`${Math.round(out.progress*100)}%`;$('bodyStage').textContent=out.stage||'WAIT';
+ diagnosticView(out,now-time);
+ $('bodyProgress').style.width=`${Math.round(out.progress*100)}%`;$('bodyStage').textContent=(out.stage==='BACKSWING'?'構え → 前へ':out.stage==='KICK'?'KICK ✓':'待機')+' · 足 '+(out.feet?.[0]?'左✓':'左−')+' '+(out.feet?.[1]?'右✓':'右−');
  $('bodyMeterFill').style.width=`${Math.round(out.charge*100)}%`;
  $('bodyMethod').textContent=`${method} · ${Math.round(inferenceCost)} ms / 検出`;
- if(worker&&inferenceCost>100)targetFPS=8;
+ if(worker)targetFPS=inferenceCost>100?12:18;
  if(!$('bodyScreen').hidden&&out.calibrated&&out.valid&&!countdown)startCountdown();
  if(countdown&&(!out.valid||!out.calibrated))clearCountdown();
 }
@@ -58824,7 +58949,7 @@ function startCountdown(){
   if(n<=0){
    clearCountdown();closeOverlay();enabled=true;recognizer.suspend();lastTracked=performance.now();
    if(returnTo==='resume'&&API.state().phase==='paused')API.resume();else API.startReady();
-   API.notify('顔で選択 → 足でキック。攻守ともに自動追視。両手で一時停止',3);$('bodyLive').hidden=false;
+   API.notify('片足を小さく前へ蹴るとシュート・指さし中はパス。動作数と発射数を表示します',3);$('bodyLive').hidden=false;
   }
  },100);
 }
@@ -58832,10 +58957,10 @@ function checkHealth(){
  if(!running||!ready)return;
  const now=performance.now(),state=API.state();
  if(enabled&&state.phase==='play'){
-  if(now-lastReceived>350||now-lastTracked>350)API.clearBodyInput();
-  if(now-lastReceived>1400||now-lastTracked>1400){API.pause();recognizer.suspend();setStatus('姿勢を見失ったため一時停止・位置を確認して再開してください','warning');}
+  if(now-lastReceived>550||now-lastTracked>550)API.clearBodyInput(false);
+  if(now-lastReceived>1400||now-lastTracked>1400){setStatus('認識待機・試合とボール追視は継続／映ると操作復帰','warning');diagnosticView(null,now-lastReceived);}
  }
- if(busy&&now-busyAt>9000){fail(new Error('認識処理が応答しません。画質LOWで再接続するか、タッチ操作へ切り替えてください。'));}
+ if(busy&&now-busyAt>9000)fail(new Error('認識処理の応答がありません。タッチ操作へ切り替えました。カメラは再接続できます。'));
 }
 function drawSkeleton(ctx,lm,w,h,mirrored=false){
  if(!lm)return;ctx.save();if(mirrored){ctx.translate(w,0);ctx.scale(-1,1);}
@@ -58843,45 +58968,64 @@ function drawSkeleton(ctx,lm,w,h,mirrored=false){
  for(const[a,b]of connections){if((lm[a]?.visibility||0)<.6||(lm[b]?.visibility||0)<.6)continue;ctx.beginPath();ctx.moveTo(lm[a].x*w,lm[a].y*h);ctx.lineTo(lm[b].x*w,lm[b].y*h);ctx.stroke();}
  for(const i of[0,7,8,11,12,13,14,15,16,23,24,25,26,27,28,31,32]){const p=lm[i];if((p?.visibility||0)<.6)continue;ctx.beginPath();ctx.arc(p.x*w,p.y*h,Math.max(2,w/110),0,Math.PI*2);ctx.fill();}ctx.restore();
 }
+function drawPointer(ctx,w,h,mirrored){
+ const ray=lastOutput?.pointRay;if(!lastOutput?.pointValid||!ray)return;
+ ctx.save();if(mirrored){ctx.translate(w,0);ctx.scale(-1,1);}ctx.strokeStyle='#75c5ff';ctx.lineWidth=Math.max(3,w/120);
+ const x=ray.start.x*w,y=ray.start.y*h,ex=ray.end.x*w,ey=ray.end.y*h;
+ ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex+(ex-x)*.45,ey+(ey-y)*.45);ctx.stroke();ctx.restore();
+}
 function drawPreviews(lm){
  const w=video.videoWidth||640,h=video.videoHeight||480;
  if(preview.width!==w){preview.width=w;}if(preview.height!==h){preview.height=h;}
- const ctx=preview.getContext('2d');ctx.clearRect(0,0,w,h);drawSkeleton(ctx,lm,w,h);
+ const ctx=preview.getContext('2d');ctx.clearRect(0,0,w,h);drawSkeleton(ctx,lm,w,h);drawPointer(ctx,w,h,false);
  if(!mini)return;
  const cw=256,ch=Math.round(cw*h/w);if(miniCanvas.width!==cw)miniCanvas.width=cw;if(miniCanvas.height!==ch)miniCanvas.height=ch;
  const c=miniCanvas.getContext('2d');c.clearRect(0,0,cw,ch);
- if(video.readyState>=2){c.save();if($('bodyMirror').checked){c.translate(cw,0);c.scale(-1,1);}c.drawImage(video,0,0,cw,ch);c.restore();}drawSkeleton(c,lm,cw,ch,$('bodyMirror').checked);
+ if(video.readyState>=2){c.save();if($('bodyMirror').checked){c.translate(cw,0);c.scale(-1,1);}c.drawImage(video,0,0,cw,ch);c.restore();}drawSkeleton(c,lm,cw,ch,$('bodyMirror').checked);drawPointer(c,cw,ch,$('bodyMirror').checked);
 }
 function recalibrate(){requestSetup(API.state().phase==='menu'?'start':'resume');}
 function onOptions(){labels();if(running){API.pause();enabled=false;clearCountdown();recognizer=new window.FEBodyRecognizer(readOptions());lastOutput=null;API.clearBodyInput();}}
+
+$('bodyTriggerLive').addEventListener('change',e=>{
+ const value=e.target.value;if(!['direct','knee','easy','normal'].includes(value))return;
+ $('bodyKickLevel').value=value;recognizer.kickLevel=value;recognizer.resetGestures();API.clearBodyInput(false);
+ setStatus(value==='knee'?'反応確認：片膝を軽く上げてください。足踏み移動はOFFです。':'判定を変更しました・両足を下ろして短く静止してください');
+});
+$('bodyLogSave').addEventListener('click',saveDiagnostic);
+$('bodyTestShot').addEventListener('click',()=>{
+ const ok=API.cameraTestShot();diagnostic.lastReason=API.state().lastBodyResult.reason;diagnostic.lastEventAt=performance.now();if(ok)diagnostic.testShots++;
+ $('bodyLiveStatus').textContent=failureText[diagnostic.lastReason]||'テスト未実行';feedbackUntil=performance.now()+2200;diagnosticView(lastOutput);
+});
 $('inputMode').addEventListener('change',e=>selectMode(e.target.value));
 $('bodySetupButton').addEventListener('click',()=>requestSetup());$('bodyHUDButton').addEventListener('click',()=>requestSetup());
 $('bodyPauseSetup').addEventListener('click',()=>requestSetup('resume'));$('bodyPauseStop').addEventListener('click',()=>{stop();API.notify('カメラOFF・タッチ操作へ切り替えました',2);});
 $('bodyBegin').addEventListener('click',begin);
 $('bodyClose').addEventListener('click',()=>{stop();API.notify('カメラOFF・タッチ操作を選択しました',2);});
-$('bodyStop').addEventListener('click',()=>{API.pause();stop();API.notify('カメラOFF・タッチ操作へ切り替えました',2);});
+$('bodyStop').addEventListener('click',()=>{stop();API.notify('カメラOFF・タッチ操作へ切り替えました',2);});
 $('bodyRecalibrate').addEventListener('click',recalibrate);
 $('bodyMiniToggle').addEventListener('click',()=>{mini=!mini;miniCanvas.hidden=!mini;$('bodyMiniToggle').textContent=mini?'映像を隠す':'映像を表示';});
-for(const id of['bodyProfile','bodyFoot','bodyMirror','bodySensitivity','bodyHeadSensitivity','bodyHeadInvert'])$(id).addEventListener('change',onOptions);
+for(const id of['bodyProfile','bodyFoot','bodyMirror','bodySensitivity','bodyPointSensitivity','bodyPointInvert','bodyKickLevel'])$(id).addEventListener('change',onOptions);
 $('bodyAutoTrack').addEventListener('change',()=>API.setBodyAssist($('bodyAutoTrack').checked));
 $('bodyLowQuality').addEventListener('change',()=>{if($('bodyLowQuality').checked)API.setQuality('low');});
 function stopOnExit(){if(running||loading){API.pause();stop({keepChoice:true});setStatus('カメラを停止しました。再開はカメラ設定から行ってください');}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stopOnExit();});
 addEventListener('pagehide',stopOnExit);
-addEventListener('orientationchange',()=>{if(running)recalibrate();});
+addEventListener('orientationchange',()=>{if(running){API.clearBodyInput(false);setTimeout(()=>drawPreviews(lastLandmarks),300);}});
 let resizeAt;
 addEventListener('resize',()=>{if(!running)return;clearTimeout(resizeAt);resizeAt=setTimeout(()=>{if(video.videoWidth&&video.videoHeight)drawPreviews(lastLandmarks);},250);});
 window.FEBodyControl={
  requestStart(){if(choice!=='camera')return false;if($('bodyLowQuality').checked)API.setQuality('low');API.setBodyAssist($('bodyAutoTrack').checked);requestSetup('start');return true;},
- requestResume(){if(choice==='camera'){requestSetup('resume');return true;}return false;},
+ requestResume(){if(choice==='camera'){if(running&&ready){enabled=true;recognizer.suspend();API.resume();}else requestSetup('resume');return true;}return false;},
  stop:()=>stop({keepChoice:true}),open:requestSetup,
- state:()=>({choice,running,loading,ready,enabled,method,calibrated:!!recognizer.baseline,stage:lastOutput?.stage||'WAIT',cameraOn:!!stream?.getVideoTracks().some(t=>t.readyState==='live')}),
+ state:()=>({choice,running,loading,ready,enabled,method,calibrated:!!recognizer.baseline,stage:lastOutput?.stage||'WAIT',cameraOn:!!stream?.getVideoTracks().some(t=>t.readyState==='live'),diagnostic:{...diagnostic}}),
 };
 if(window.__FE_ENABLE_TEST__){window.__FE_BODY_TEST__={recognizer:()=>recognizer,selectMode,open:requestSetup,begin,stop,receivePose,checkHealth,tick,
  // Test injection is deliberately inaccessible unless an explicit pre-init flag is set.
  injectReady(){choice='camera';API.setInputMode('camera');running=ready=enabled=true;lastTracked=lastReceived=performance.now();closeOverlay();},
- setEnabled(v){enabled=v;},setLastTracked(v){lastTracked=v;},setLastReceived(v){lastReceived=v;},getState:()=>window.FEBodyControl.state()};}
-labels();selectMode('touch');
+ getDiagnostic:()=>({counters:{...diagnostic},events:structuredClone(diagnosticLog)}),setEnabled(v){enabled=v;},setLastTracked(v){lastTracked=v;},setLastReceived(v){lastReceived=v;},fail,orientation:()=>dispatchEvent(new Event('orientationchange')),getState:()=>window.FEBodyControl.state()};}
+$('cameraReconnect').addEventListener('click',()=>{$('cameraWarning').hidden=true;requestSetup('resume');});
+$('cameraDismiss').addEventListener('click',()=>{$('cameraWarning').hidden=true;});
+miniCanvas.hidden=true;$('bodyMiniToggle').textContent='映像を表示';labels();selectMode('touch');
 })();
 
 </script>
