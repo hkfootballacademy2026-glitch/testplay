@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101918">
 <meta name="description" content="11対11のピッチへ。一人の選手を操作する、Babylon.js・スキニング・PBR・リアルタイムシャドウの一人称サッカーゲーム。">
-<title>FIRST ELEVEN 0.5 — FULL BODY CONTROL</title>
+<title>FIRST ELEVEN 0.5 — PORTRAIT PLAY</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101918'/%3E%3Cpath d='M17 15h31v8H26v8h18v8H26v12h-9z' fill='%23dcff72'/%3E%3C/svg%3E">
 <style>
 :root{--ink:#101918;--muted:#a6b8b0;--line:#ffffff25;--lime:#dcff72;--blue:#75c5ff;--red:#ff916f;--panel:#101918df;--sans:Inter,"Arial", "Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,sans-serif}
@@ -50,7 +50,7 @@
 @media(orientation:portrait) and (max-width:700px){.kick-intent{top:112px;max-width:92%;width:92%;font-size:10px}.body-selected .toast{top:314px}.auto-camera-state{top:74px;left:17px}}
 
 
-/* v0.7: compact diagnostic panel avoids covering the pass recipient. */
+/* v0.8: compact diagnostic panel avoids covering the pass recipient. */
 .body-live{width:192px}.body-live canvas{max-height:105px}.body-live #bodyLiveStatus{min-height:26px}
 .target-tag{overflow:hidden;text-overflow:ellipsis}
 .camera-warning{position:absolute;z-index:8;left:12px;right:12px;top:100px;background:#172923ee;border:1px solid #ffe7a3;padding:12px;font-size:11px;line-height:1.6;border-radius:6px;display:flex;gap:10px;align-items:center}
@@ -58,12 +58,12 @@
 @media(max-width:700px){.body-live{width:154px;top:145px;left:12px}.body-live canvas{max-height:96px}.kick-intent{font-size:10px;max-width:94%;width:max-content}.body-stage{flex-wrap:wrap}.camera-warning{top:145px}}
 @media(max-height:480px) and (min-width:600px){.body-live{top:126px;right:14px;left:auto;width:158px}.body-live footer{margin-top:4px}.body-live #bodyLiveStatus{font-size:8px;min-height:20px}}
 @media(orientation:portrait) and (max-width:700px){.body-live{top:auto;bottom:295px;left:auto;right:12px;width:154px}}
-/* v0.7: distinguish camera motion detection from actual ball launches. */
+/* v0.8: distinguish camera motion detection from actual ball launches. */
 .kick-diag-count{font-size:14px;font-weight:800;color:#dcff72;margin-top:6px;font-variant-numeric:tabular-nums}.kick-diag-reason{font-size:9px;line-height:1.55;color:#e3eeda;margin:4px 0;min-height:28px;overflow-wrap:anywhere}#bodyTriggerLive{width:100%;font:inherit;font-size:10px;padding:6px;color:#f0f6e9;background:#1c392d;border:1px solid #ffffff38;border-radius:4px}.kick-trigger-label{font-size:8px;color:#b8cbbf;display:block;margin:4px 0}.body-live{max-height:calc(100dvh - 140px);overflow-y:auto}.body-live footer button{min-height:28px}.body-stage{flex-wrap:wrap}.body-live #bodyStage{font-size:8px}.body-live #bodyMiniCanvas{display:block}.body-live #bodyMiniCanvas[hidden]{display:none!important}
 @media(max-height:480px) and (min-width:600px){.body-live{top:93px;max-height:calc(100dvh - 150px);width:170px}.body-live footer button{font-size:8px;min-height:24px}.kick-diag-count{font-size:12px}.kick-diag-reason{font-size:8px}}
 @media(max-height:480px) and (min-width:600px){.body-live #bodyLiveStatus,.body-live .kick-trigger-label,.body-live #bodyMethod{display:none}.body-live header{min-height:20px}.body-live footer{display:flex;margin-top:4px}.body-live .kick-diag-count{margin-top:3px}.body-live .kick-diag-reason{min-height:23px;margin:3px 0}.body-live #bodyTriggerLive{padding:4px}.body-live .body-stage{margin-top:3px}}
 
-/* v0.7: calibration camera occupies the ENTIRE viewport, not a small modal. */
+/* v0.8: calibration camera occupies the ENTIRE viewport, not a small modal. */
 #bodyScreen{padding:0;display:block;background:#06100e;backdrop-filter:none;overflow:hidden}
 #bodyScreen .body-dialog{position:absolute;inset:0;width:100%;height:100%;max-height:none;overflow:hidden;padding:0;border:0;border-radius:0;background:#06100e;box-shadow:none}
 #bodyScreen .body-grid{display:block}
@@ -116,15 +116,69 @@
  #bodyScreen .body-fullscreen-tip{display:none}
 }
 
+/* 0.8 responsive layout: actual viewport sets the projection, preference only
+   requests orientation. No CSS rotation/crop of either input or output. */
+.display-row{display:flex;gap:10px;align-items:end;margin:0 0 7px}.display-row .setting{flex:1}.display-help{font-size:10px;color:#c7d8bd;line-height:1.6;margin:0 0 14px}.display-row .body-setup-btn{min-height:38px;font-size:11px;padding:8px 10px}
+.orientation-banner{position:fixed;z-index:16;top:max(5px,env(safe-area-inset-top));left:8px;right:8px;padding:8px 10px;border:1px solid #c9e29980;background:#132b24f2;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:11px;line-height:1.5;box-shadow:0 4px 20px #0003}
+.orientation-banner span{flex:1}.orientation-banner button{background:#dcff72;color:#12271c;white-space:nowrap;padding:8px;border-radius:4px;font-size:10px}.orientation-banner #orientationDismiss{background:transparent;color:white;font-size:17px}
+.display-state{position:absolute;left:28px;top:97px;font-size:9px;color:#e6f3d6;text-shadow:0 1px 3px #000;background:#13281a80;padding:4px 7px;border-radius:4px}
+.pass-edge{position:absolute;top:43%;max-width:44%;border:1px solid #92cbf582;border-radius:7px;background:#0e252de3;color:#c7eaff;padding:10px 9px;font-size:12px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 3px 10px #0004}
+.pass-edge.left{left:8px}.pass-edge.right{right:8px}.pass-edge.selected{border-color:#dcff72;background:#dcff72;color:#183022}
+.body-reach-guide{position:absolute;pointer-events:none;border:1px dashed #75c5ff70;border-radius:15px}
+.body-range-check{position:absolute;z-index:2;left:16px;top:94px;max-width:265px;font-size:11px;color:#efffdf;pointer-events:none;line-height:1.5;text-shadow:0 1px 3px #000}
+#bodyCaptureInfo{font-size:10px;color:#d0dfcb;margin:4px 0}.range-chips{display:flex;gap:4px;flex-wrap:wrap}.range-chips span{border:1px solid #c6dcc565;border-radius:4px;padding:3px 6px;background:#0c211ec7;font-size:10px}.range-chips span.done{background:#dcff72;color:#16301c;border-color:#dcff72}.range-chips span.done:after{content:' ✓'}
+#bodyRangeSkip{pointer-events:auto;background:#172f27ce;color:#d8e9cc;border:1px solid #c6dcc55e;border-radius:4px;padding:5px 8px;margin-top:7px;font-size:10px}
+#bodyScreen.setup-open .body-range-check{opacity:.45}#bodyScreen.setup-open #bodyRangeSkip{pointer-events:none}
+#bodyScreen .body-options-column>.setting{margin-bottom:14px}
+#bodyLive{padding:10px;border:1px solid #ffffff35;background:#102720ed;border-radius:9px;scrollbar-width:thin}
+#bodyLive header{display:flex;flex-wrap:nowrap;align-items:center;gap:7px;font-size:9px;min-height:22px}#bodyLive header>span{flex:1}#bodyLive header button{min-height:26px;background:#294638;color:#eff8df;border-radius:4px;font-size:10px;padding:4px 7px}
+#bodyLive:not(.expanded) #bodyLiveStatus,#bodyLive:not(.expanded) .body-move-bars,#bodyLive:not(.expanded) .kick-diag-reason,#bodyLive:not(.expanded) .kick-trigger-label,#bodyLive:not(.expanded) #bodyTriggerLive,#bodyLive:not(.expanded) .body-stage,#bodyLive:not(.expanded) .body-meter,#bodyLive:not(.expanded) footer,#bodyLive:not(.expanded) #bodyMiniCanvas{display:none!important}
+#bodyLive .body-move-state{font-size:12px;margin-top:5px}#bodyLive .kick-diag-count{font-size:11px;margin-top:3px}#bodyLive.expanded footer{display:flex}#bodyLive.expanded #bodyLiveStatus{display:block}#bodyLive.expanded #bodyMiniCanvas{width:100%;object-fit:contain;max-height:170px;margin:7px 0}#bodyLive.expanded #bodyMethod{display:block}
+@media(orientation:portrait){
+ .menu{padding:22px 20px;display:flex;justify-content:flex-start;overflow:auto}.menu-top{gap:9px}.brand{font-size:11px;gap:8px}.build{font-size:8px;letter-spacing:.04em;text-align:right}.menu-main{display:block;width:100%;margin:14px 0}.menu h1{font-size:76px;line-height:.86;margin:14px 0}.menu .tagline{font-size:18px;margin:20px 0 8px}.menu .intro{font-size:11px;margin-bottom:18px}.menu-footer{font-size:8px;line-height:1.6}.hero-card{display:none}.display-help{font-size:10px}
+ .top-center,.render-stats{display:none}.topbar,.mobile .topbar{top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:block}
+ .scoreboard,.mobile .scoreboard{min-width:0;width:100%}.score-row,.mobile .score-row{padding:9px 11px;gap:9px}.team,.mobile .team{font-size:11px}.score,.mobile .score{font-size:23px}.score-meta,.mobile .score-meta{font-size:8px;padding:6px 10px}
+ .top-actions,.mobile .top-actions{position:absolute;top:79px;right:0;gap:5px}.icon-btn,.mobile .icon-btn{width:31px;height:33px;font-size:16px}.mobile #fullButton{display:grid}.mobile #soundButton,#soundButton{display:none}
+ .auto-camera-state,.mobile .auto-camera-state{top:94px;left:12px;font-size:9px}.display-state{left:12px;top:117px;font-size:8px;background:transparent;padding:0}
+ .kick-intent,.mobile .kick-intent{top:140px;left:12px;right:12px;max-width:none;width:auto;transform:none;padding:8px 10px;font-size:11px;line-height:1.5}
+ .toast,.body-selected .toast,.mobile .toast{top:191px;max-width:calc(100% - 24px);font-size:11px;white-space:normal;padding:9px 13px}
+ .minimap-box,.mobile .minimap-box{left:auto;right:12px;bottom:auto;top:244px;transform:none;width:86px;padding:5px}.mobile #radar,#radar{height:50px}.minimap-caption{font-size:5px}.body-selected .minimap-box{display:block}
+ #bodyLive{top:auto;bottom:max(8px,env(safe-area-inset-bottom));left:12px;right:12px;width:auto;max-height:45dvh}
+ #bodyLive:not(.expanded){max-height:110px}#bodyLive .body-move-state{font-size:12px}#bodyLive .kick-diag-count{position:static;font-size:10px}#bodyLive.expanded .kick-diag-count{position:static;font-size:13px}
+ .body-selected .player-panel{display:none}.body-selected .possession,.mobile.body-selected .possession{left:12px;top:244px;bottom:auto;max-width:220px;font-size:9px;padding:7px 9px}
+ .body-selected .joystick{left:12px;bottom:115px;width:80px;height:80px}.body-selected .stick{width:38px;height:38px;left:calc(50% - 19px);top:calc(50% - 19px)}
+ .body-selected .touch-action-group{right:8px;bottom:109px;transform:scale(.72);transform-origin:bottom right}.body-selected .touch-btn.sprint{display:none}.body-selected .touch-extras{top:309px;right:12px;gap:4px;flex-direction:column}.body-selected .touch-small{font-size:9px;padding:6px 8px}
+ .body-selected .hints{display:none}.pass-edge{top:45%;font-size:11px;padding:9px 7px;max-width:46%}.target-tag,.mobile .target-tag{font-size:11px;padding:7px 8px;max-width:calc(100% - 24px)}
+ #bodyScreen .body-dialog-head{padding:12px 10px}#bodyScreen .body-dialog-head h2{font-size:15px}#bodyScreen .body-dialog-head h2 span{font-size:9px}#bodyScreen .body-dialog-head button{min-height:36px}.body-settings-toggle{font-size:10px}
+ #bodyScreen .body-camera-badge{top:68px;left:12px}.body-range-check{top:93px;left:12px;right:12px;max-width:none;font-size:10px}#bodyOrientationState{font-size:10px}#bodyCaptureInfo{font-size:9px}.range-chips span{font-size:9px;padding:3px 5px}
+ #bodyScreen .body-overlay-status{bottom:max(8px,env(safe-area-inset-bottom));left:12px;right:12px;font-size:14px;padding:10px 12px}#bodyScreen .body-status-wrap{left:15px;right:15px;bottom:67px}
+ #bodyScreen .body-options-column{top:65px;bottom:12px;left:12px;right:12px;width:auto;padding:16px}
+}
+@media(orientation:portrait) and (max-height:740px){
+ .menu h1{font-size:60px}.menu-main{margin:5px 0}.menu .tagline{margin-top:14px}.menu .intro{margin-bottom:12px}.menu .mode-tab{padding:11px 9px}.menu .settings-row{margin-bottom:10px}.menu .display-help{margin-bottom:10px}
+ .body-selected .minimap-box{top:231px;width:73px}.body-selected .possession{top:231px;max-width:210px}.body-selected .touch-extras{top:291px}.pass-edge{top:47%}
+}
+@media(orientation:landscape){
+ #bodyScreen .body-range-check{top:99px;left:16px;max-width:min(25%,260px);font-size:10px}#bodyScreen .body-overlay-status{top:auto;bottom:28px;left:16px;right:auto;width:min(25%,275px);font-size:13px}#bodyScreen .body-fullscreen-tip{display:none}
+ #bodyLive{top:124px;left:auto;right:14px;bottom:auto;width:192px;max-height:calc(100dvh - 140px)}#bodyLive:not(.expanded){max-height:108px}
+ .display-state{top:96px;font-size:8px}.pass-edge{top:46%;font-size:11px}
+}
+@media(orientation:landscape) and (max-height:640px){
+ .menu{display:block;padding:14px 22px}.menu-main{width:min(790px,100%);display:grid;grid-template-columns:minmax(180px,.8fr) minmax(290px,1.2fr);gap:8px 24px;align-items:start;margin-top:12px}.menu-main>.eyebrow{grid-column:1;grid-row:1}.menu h1{grid-column:1;grid-row:2/5;font-size:66px;margin:6px 0}.menu-main>.tagline{grid-column:1;grid-row:5;font-size:15px;margin:5px 0}.menu-main>.intro{grid-column:1;grid-row:6;font-size:10px}.menu-main>.mode-tabs{grid-column:2;grid-row:1/3;margin:0}.menu-main>.settings-row:not(.visual-settings){grid-column:2;grid-row:3;margin:0}.menu-main>.visual-settings{grid-column:2;grid-row:4;margin:0}.menu-main>.body-mode-row{grid-column:2;grid-row:5;margin:0}.menu-main>.display-row{grid-column:2;grid-row:6;margin:0}.menu-main>.display-help{grid-column:2;grid-row:7;margin:0;font-size:9px}.menu-main>#startButton{grid-column:2;grid-row:8;margin:0;padding:11px 14px}.menu-main>.under-start{grid-column:2;grid-row:9;margin:0}.menu-footer{margin-top:14px}.hero-card{display:none}
+ .display-state{top:83px;left:17px}.body-selected .possession{max-width:190px}.body-selected .minimap-box{display:none}
+ #bodyLive{top:110px;width:186px;max-height:calc(100dvh - 130px);padding:8px}#bodyLive header>span{font-size:8px}#bodyLive header button{padding:3px 5px;font-size:9px}#bodyLive .body-move-state{font-size:10px}.pass-edge{top:56%}
+ #bodyScreen .body-range-check{top:84px;font-size:9px}#bodyScreen .body-camera-badge{top:56px}#bodyScreen .body-overlay-status{bottom:18px;font-size:12px;padding:8px}#bodyRangeSkip{font-size:9px}.range-chips span{font-size:9px}
+}
+
 </style>
 </head>
 <body>
-<div id="loading" class="loading-screen"><div><div class="brand-icon">FE</div><h2>FULL BODY CONTROL</h2><p>ピッチと3D描画を準備しています…</p><span>BABYLON.JS · ORIGINAL PROCEDURAL ASSETS</span></div></div>
+<div id="loading" class="loading-screen"><div><div class="brand-icon">FE</div><h2>PORTRAIT PLAY</h2><p>ピッチと3D描画を準備しています…</p><span>BABYLON.JS · ORIGINAL PROCEDURAL ASSETS</span></div></div>
 <div id="contextNotice" class="context-notice" hidden>描画を再接続しています。復帰しない場合は再読み込みしてください。</div>
 <canvas id="world" aria-label="全身視点3Dサッカーフィールド"></canvas>
-<div id="vignette"></div>
+<div id="vignette"></div><div id="orientationHint" class="orientation-banner" hidden><span id="orientationHintText"></span><button id="orientationKeep">横で続ける</button><button id="orientationDismiss" aria-label="向きの案内を閉じる">×</button></div>
 <section id="menu" class="screen menu">
-  <header class="menu-top"><div class="brand"><span class="brand-icon">FE</span><span>FIRST ELEVEN</span></div><div class="build"><i class="status-dot"></i> FULL BODY CONTROL / 0.7</div></header>
+  <header class="menu-top"><div class="brand"><span class="brand-icon">FE</span><span>FIRST ELEVEN</span></div><div class="build"><i class="status-dot"></i> PORTRAIT PLAY / 0.8</div></header>
   <main class="menu-main">
     <div class="eyebrow">ONE PLAYER. ALL HEART.</div>
     <h1>FIRST<br><span class="outlined">ELEVEN.</span></h1>
@@ -140,18 +194,20 @@
     </div>
     <div class="settings-row visual-settings"><div class="setting"><label for="quality">GRAPHICS / 画質</label><select id="quality"><option value="auto">AUTO — 端末に合わせる</option><option value="high">HIGH — 高画質</option><option value="balanced">BALANCED — 標準</option><option value="low">LOW — 軽量</option></select></div><div class="setting"><label for="atmosphere">LIGHT / 光の雰囲気</label><select id="atmosphere"><option value="day">DAY — 晴れた午後</option><option value="sunset">SUNSET — 夕方の色調</option></select></div></div>
     <div class="body-mode-row"><div class="setting"><label for="inputMode">CONTROL / 操作方法</label><select id="inputMode"><option value="touch">タッチ / キーボード</option><option value="camera">前面カメラで体を動かす</option></select></div><button id="bodySetupButton" class="body-setup-btn">カメラ設定</button></div>
+<div class="display-row"><div class="setting"><label for="displayOrientation">DISPLAY / 画面の向き</label><select id="displayOrientation"><option value="portrait">縦 — 全身操作の標準</option><option value="landscape">横 — 左右の展開を広く</option></select></div><button id="orientationApply" type="button" class="body-setup-btn">全画面で適用</button></div><p class="display-help">縦向きに端末を固定。横でもプレーできます。認識映像は切り抜きません。</p>
     <button disabled id="startButton" class="primary"><span id="startText">キックオフ</span><span class="arrow">↗</span></button>
     <div class="under-start"><button id="helpButton" class="text-btn">操作方法 / 設定</button><span class="offline">タッチは通信不要 · カメラは初回通信あり</span></div>
   </main>
   <aside class="hero-card"><div class="number">10</div><span class="hero-line"></span><h3>YOUR BODY. YOUR GAME.</h3><p>視点は一つ。可能性は、無限。</p></aside>
-  <footer class="menu-footer"><span>ORIGINAL FOOTBALL · BABYLON.JS · 0.6</span><span id="deviceLabel">WASD + MOUSE / TOUCH SUPPORTED</span></footer>
+  <footer class="menu-footer"><span>ORIGINAL FOOTBALL · BABYLON.JS · 0.8</span><span id="deviceLabel">WASD + MOUSE / TOUCH SUPPORTED</span></footer>
 </section>
 <div id="hud" class="hud" hidden>
   <div class="topbar">
     <div class="scoreboard"><div class="score-meta"><span id="matchLabel">EXHIBITION · 11 v 11</span><span id="levelLabel">NORMAL</span></div><div class="score-row"><div class="team"><i class="team-dot"></i><span>GRIT</span></div><strong id="score" class="score">0 : 0</strong><div class="team away"><span>NOVA</span><i class="team-dot"></i></div><div id="timer" class="timer">03:00</div></div></div>
     <div class="top-actions"><button id="bodyHUDButton" class="icon-btn" title="カメラ操作を設定" aria-label="カメラ操作を設定">◉</button><button id="trackButton" class="icon-btn" title="ボール追視 (F)" aria-label="ボール追視">◎</button><button id="soundButton" class="icon-btn active" title="音声切替 (M)" aria-label="音声切替">♪</button><button id="fullButton" class="icon-btn" title="全画面" aria-label="全画面">⛶</button><button id="pauseButton" class="icon-btn" title="一時停止 (P / Esc)" aria-label="一時停止">Ⅱ</button></div>
   </div>
-  <div class="render-stats" id="renderStats">FULL BODY CONTROL</div><div class="top-center"><div class="label">THIRD PERSON FOOTBALL</div><strong>FIRST ELEVEN</strong></div>
+  <div class="render-stats" id="renderStats">PORTRAIT PLAY</div><div class="top-center"><div class="label">THIRD PERSON FOOTBALL</div><strong>FIRST ELEVEN</strong></div>
+  <div id="displayState" class="display-state">縦画面 · 全身の後方視点</div><div id="passEdgeLeft" class="pass-edge left" hidden></div><div id="passEdgeRight" class="pass-edge right" hidden></div>
   <div id="crosshair" class="crosshair"></div>
   <div id="chargeBox" class="charge-box" hidden><span class="charge-title">SHOT POWER</span><div class="charge-track"><div id="chargeFill" class="charge-fill"></div></div></div>
   <div id="possession" class="possession mine">YOUR BALL · ドリブルできます</div>
@@ -168,8 +224,8 @@
   <div class="touch-extras"><button id="touchCall" class="touch-small">パス要求</button><button id="touchThrough" class="touch-small">スルー</button><button id="touchGoal" class="touch-small">ゴールを見る</button></div>
 </div>
 <div id="event" class="event" hidden><small id="eventSmall"></small><strong id="eventTitle"></strong><p id="eventText"></p></div>
-<section id="pauseScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">TAKE A BREATHER</div><h2>TIME OUT.</h2><p>画面右側のドラッグでも、視点を動かせます。<br>追視は初期状態でON。スワイプ後も自動で戻ります。</p><div class="options"><label>描画品質<select id="pauseQuality"><option value="auto">AUTO — 端末に合わせる</option><option value="high">HIGH — 高画質</option><option value="balanced">BALANCED — 標準</option><option value="low">LOW — 軽量</option></select></label><label>光の雰囲気<select id="pauseAtmosphere"><option value="day">DAY — 晴れた午後</option><option value="sunset">SUNSET — 夕方の色調</option></select></label><label>攻守の自動ボール追視<input id="pauseAutoTrack" type="checkbox" checked></label><label>シュートの方向アシスト<input id="aimAssist" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="headBob" type="checkbox"></label><label>サウンド<input id="audioEnabled" type="checkbox" checked></label><label>視点の感度<input id="sensitivity" type="range" min="0.4" max="2" step="0.1" value="1"></label></div><div class="body-pause-tools"><span id="bodyModeState">タッチ / キーボード</span><button id="bodyPauseSetup" class="secondary">カメラ操作・位置合わせ</button><button id="bodyPauseStop" class="text-btn">カメラOFF / タッチへ</button></div><button id="resumeButton" class="primary"><span>試合に戻る</span><span class="arrow">↗</span></button><button id="restartButton" class="secondary">最初からやり直す</button><button id="menuButton" class="secondary">タイトルに戻る</button></div></section>
-<section id="helpScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">YOUR FIRST TOUCH</div><h2>HOW TO PLAY.</h2><div class="orientation-hint">スマートフォンは横向きでのプレーがおすすめです。</div><div class="help-grid"><span>W / A / S / D</span><span>前後左右に移動</span><span>マウス / ドラッグ</span><span>視点移動。← → キーでも左右を向けます</span><span>Shift</span><span>ダッシュ。ゲージが減ると速度が落ちます</span><span>Space / 左クリック</span><span>押してパワーをため、離してシュート</span><span>E / 右クリック</span><span>見ている方向の味方へパス</span><span>Q / C</span><span>スルーパス / 近くのボールを奪う</span><span>R</span><span>味方にパス要求。練習ではボールを戻す</span><span>F / G</span><span>ボール追視の切替 / 相手ゴールを見る</span><span>P / Esc</span><span>一時停止。M で音の切替</span></div><p class="help-note"><b>スマホ：</b>左スティックで移動、画面右側をドラッグして視点移動。右下のボタンでキックします。<br><b>ドリブル：</b>近いボールは自動でトラップ。所持中は移動するだけで運べます。<br><b>画質：</b>重い場合は「LOW」を選択。視点の揺れは初期状態でオフです。下を見ると自分の脚とスパイクが見えます。<br><b>ルール：</b>スローイン・コーナー・ゴールキックは簡易再開。オフサイド、ファウル、交代はありません。</p><div class="options"><label>シュートの方向アシスト<input id="helpAim" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="helpBob" type="checkbox"></label><label>サウンド<input id="helpAudio" type="checkbox" checked></label></div><button id="closeHelp" class="primary"><span>ピッチに向かう</span><span class="arrow">↗</span></button></div></section>
+<section id="pauseScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">TAKE A BREATHER</div><h2>TIME OUT.</h2><p>画面右側のドラッグでも、視点を動かせます。<br>追視は初期状態でON。スワイプ後も自動で戻ります。</p><div class="options"><label>画面の向き<select id="pauseOrientation"><option value="portrait">縦 — 全身操作の標準</option><option value="landscape">横 — 左右の展開を広く</option></select></label><label>描画品質<select id="pauseQuality"><option value="auto">AUTO — 端末に合わせる</option><option value="high">HIGH — 高画質</option><option value="balanced">BALANCED — 標準</option><option value="low">LOW — 軽量</option></select></label><label>光の雰囲気<select id="pauseAtmosphere"><option value="day">DAY — 晴れた午後</option><option value="sunset">SUNSET — 夕方の色調</option></select></label><label>攻守の自動ボール追視<input id="pauseAutoTrack" type="checkbox" checked></label><label>シュートの方向アシスト<input id="aimAssist" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="headBob" type="checkbox"></label><label>サウンド<input id="audioEnabled" type="checkbox" checked></label><label>視点の感度<input id="sensitivity" type="range" min="0.4" max="2" step="0.1" value="1"></label></div><div class="body-pause-tools"><span id="bodyModeState">タッチ / キーボード</span><button id="bodyPauseSetup" class="secondary">カメラ操作・位置合わせ</button><button id="bodyPauseStop" class="text-btn">カメラOFF / タッチへ</button></div><button id="resumeButton" class="primary"><span>試合に戻る</span><span class="arrow">↗</span></button><button id="restartButton" class="secondary">最初からやり直す</button><button id="menuButton" class="secondary">タイトルに戻る</button></div></section>
+<section id="helpScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">YOUR FIRST TOUCH</div><h2>HOW TO PLAY.</h2><div class="orientation-hint">全身の動作検出は縦向きが標準です。横画面も設定から選べます。</div><div class="help-grid"><span>W / A / S / D</span><span>前後左右に移動</span><span>マウス / ドラッグ</span><span>視点移動。← → キーでも左右を向けます</span><span>Shift</span><span>ダッシュ。ゲージが減ると速度が落ちます</span><span>Space / 左クリック</span><span>押してパワーをため、離してシュート</span><span>E / 右クリック</span><span>見ている方向の味方へパス</span><span>Q / C</span><span>スルーパス / 近くのボールを奪う</span><span>R</span><span>味方にパス要求。練習ではボールを戻す</span><span>F / G</span><span>ボール追視の切替 / 相手ゴールを見る</span><span>P / Esc</span><span>一時停止。M で音の切替</span></div><p class="help-note"><b>スマホ：</b>左スティックで移動、画面右側をドラッグして視点移動。右下のボタンでキックします。<br><b>ドリブル：</b>近いボールは自動でトラップ。所持中は移動するだけで運べます。<br><b>画質：</b>重い場合は「LOW」を選択。視点の揺れは初期状態でオフです。下を見ると自分の脚とスパイクが見えます。<br><b>ルール：</b>スローイン・コーナー・ゴールキックは簡易再開。オフサイド、ファウル、交代はありません。</p><div class="options"><label>シュートの方向アシスト<input id="helpAim" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="helpBob" type="checkbox"></label><label>サウンド<input id="helpAudio" type="checkbox" checked></label></div><button id="closeHelp" class="primary"><span>ピッチに向かう</span><span class="arrow">↗</span></button></div></section>
 <section id="resultScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">FULL TIME</div><h2 id="resultTitle">WELL PLAYED.</h2><div id="resultScore" class="result-score">0 : 0</div><p id="resultText" style="text-align:center"></p><div id="stats" class="stats"></div><button id="againButton" class="primary"><span>もう一試合</span><span class="arrow">↗</span></button><button id="resultMenuButton" class="secondary">タイトルに戻る</button></div></section>
 <div id="fatal" class="error-box" hidden><div><div class="eyebrow">DISPLAY UNAVAILABLE</div><h2>3D画面を開始できませんでした</h2><p id="fatalMessage">WebGL が利用できるブラウザで開いてください。<br>アプリ内プレビューの場合は、通常のブラウザに切り替えてください。</p><button onclick="location.reload()" class="primary">再読み込み</button></div></div>
 <noscript><div class="error-box">このゲームには JavaScript が必要です。</div></noscript>
@@ -180,33 +236,33 @@
   <header class="body-dialog-head"><div><span class="eyebrow">MOVE YOUR BODY. PLAY YOUR GAME.</span><h2 id="bodyTitle">CAMERA CONTROL<span>前面カメラで、ピッチへ。</span></h2></div><button id="bodySettingsToggle" class="body-settings-toggle" type="button" aria-expanded="true">設定を閉じる</button><button id="bodyClose" class="body-close" aria-label="カメラを止めてタッチ操作に戻る">✕</button></header>
   <div class="body-grid">
    <div class="body-camera-column">
-    <div class="body-preview"><div class="body-empty">端末を固定して、体をフレームの中央へ。<br><small>映像はカメラを許可した後に表示されます。</small></div><video id="bodyVideo" autoplay muted playsinline aria-label="位置合わせ用の前面カメラ映像"></video><canvas id="bodySkeleton" width="640" height="480" aria-label="推定した骨格"></canvas><div class="body-frame-guide" id="bodyFrameGuide"></div><div class="body-fullscreen-tip" id="bodyFrameHint">頭から足先まで、映像の中に入れてください</div><div id="bodyOverlayStatus" class="body-overlay-status">カメラの許可後、約2秒静止して位置合わせ</div><b id="bodyCountdown" hidden>3</b><div class="body-camera-badge"><i></i><span id="bodyCameraState">CAMERA OFF</span></div></div>
+    <div class="body-preview"><div class="body-empty">端末を固定して、体をフレームの中央へ。<br><small>映像はカメラを許可した後に表示されます。</small></div><video id="bodyVideo" autoplay muted playsinline aria-label="位置合わせ用の前面カメラ映像"></video><canvas id="bodySkeleton" width="640" height="480" aria-label="推定した骨格"></canvas><div class="body-reach-guide" id="bodyReachGuide"></div><div class="body-frame-guide" id="bodyFrameGuide"></div><div class="body-range-check" id="bodyRangePanel"><div id="bodyOrientationState">縦画面・切り抜きなし</div><div id="bodyCaptureInfo">撮影サイズを確認中</div><div class="range-chips"><span id="rangeStance">全身</span><span id="rangeLeft">左の手</span><span id="rangeRight">右の手</span><span id="rangeKick">足の動き</span></div><button id="bodyRangeSkip" type="button" disabled>動作チェックを省略</button></div><div class="body-fullscreen-tip" id="bodyFrameHint">頭から足先まで、映像の中に入れてください</div><div id="bodyOverlayStatus" class="body-overlay-status">カメラの許可後、約2秒静止して位置合わせ</div><b id="bodyCountdown" hidden>3</b><div class="body-camera-badge"><i></i><span id="bodyCameraState">CAMERA OFF</span></div></div>
     <div class="body-status-wrap"><div id="bodyStatus" role="status" aria-live="polite">準備したらカメラを許可してください</div><div class="body-progress-track"><div id="bodyProgress"></div></div></div>
     <p id="bodyCaptureTip" class="body-note"></p>
     <p class="body-safety">実物のボールは不要です。小さな動作で遊んでください。端末・家具・人に足が当たらない場所を確保し、足を高く蹴り上げないでください。</p>
    </div>
-   <div class="body-options-column">
+   <div class="body-options-column"><div class="setting"><label for="bodyOrientation">画面の向き</label><select id="bodyOrientation"><option value="portrait">縦 — 全身操作の標準</option><option value="landscape">横 — 左右の展開を広く</option></select></div>
     <div class="body-profile-row"><div class="setting"><label for="bodyProfile">認識する範囲</label><select id="bodyProfile"><option value="full">全身 — 足のキック（試作）</option><option value="upper">上半身 — 手の合図</option></select></div><div class="setting body-foot-setting"><label for="bodyFoot">蹴る足</label><select id="bodyFoot"><option value="auto">左右どちらでも</option><option value="right">右足</option><option value="left">左足</option></select></div></div>
     <div class="setting" style="margin-top:12px"><label for="bodyMoveMode">移動方法</label><select id="bodyMoveMode"><option value="hybrid">体重移動＋交互の足踏み（推奨）</option><option value="lean">体重移動のみ（キックと分離）</option><option value="march">交互の足踏み＋左右移動</option></select></div><div class="setting" style="margin-top:12px"><label for="bodyKickLevel">キック判定</label><select id="bodyKickLevel"><option value="direct">反応優先 — 前へ小さく蹴る（推奨）</option><option value="knee">ひざ上げ — 反応確認用</option><option value="easy">従来式 — 構え＋振り出し</option><option value="normal">標準 — やや大きめの構え</option></select></div>
     <div class="body-mappings" id="bodyFullHelp"><div><b>胸の高さで、パスしたい方向を指さす</b><span>腕と手の向きでカーソル移動。味方がいれば #番号 PASS、いなければ方向パス</span></div><div><b>片足を小さく前へ蹴る（大きな構えは不要）</b><span>いったん移動を止めて蹴ります。指さし選択中はパス、それ以外はシュート</span></div><div><b>選んだ味方へ、キックでパス</b><span>指さしをやめても1秒保持。従来式では構えから相手を固定します</span></div><div><b>両腕を下ろして1秒待つ</b><span>パス選択を解除 → SHOTに戻ります</span></div><div><b>少し近づく／離れる・体を左右へ寄せる</b><span>前進／後退・左右移動。元の位置で停止。交互の小さな足踏みでも前進</span></div><div><b>ボールがない時に片手を上げる</b><span>味方へパス要求。タックルは「奪う」ボタン</span></div></div>
     <div class="body-mappings" id="bodyUpperHelp" hidden><div><b>胸の高さで指さす</b><span>パスの方向・相手を選択します</span></div><div><b>右手を肩より高く上げ、下ろす</b><span>足の代わりのキック合図。何も選んでいなければシュート</span></div><div><b>体を少し近づける / 左右に寄せる</b><span>前進 / 左右移動</span></div><div><b>ボールがない時に片手を上げる</b><span>パス要求</span></div></div>
     <p class="body-note">認識が途切れても試合とボール追視を続け、映り直すと操作が戻ります。両手上げによる一時停止、腕を伸ばすタックルは廃止しました。<br>指さしは肩・肘・手首と人さし指の推定位置による大まかな方向操作です。指先だけの精密な追跡ではありません。端末・家具に当たらない場所で小さく蹴ってください。</p>
-    <div class="body-checks"><label><input id="bodyMirror" type="checkbox" checked>鏡表示・左右操作を合わせる</label><label><input id="bodyAutoTrack" type="checkbox" checked>攻守とも自動でボールを追視</label><label><input id="bodyLowQuality" type="checkbox" checked>カメラ中は画質LOWで開始</label><label><input id="bodyPointInvert" type="checkbox">指さしの左右を反転</label><label>指さし感度 <input id="bodyPointSensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label><label>移動感度 <input id="bodySensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label></div>
+    <div class="body-checks"><label><input id="bodyRangeRequired" type="checkbox" checked>開始前に指さし・足の映る範囲を確認</label><label><input id="bodyMirror" type="checkbox" checked>鏡表示・左右操作を合わせる</label><label><input id="bodyAutoTrack" type="checkbox" checked>攻守とも自動でボールを追視</label><label><input id="bodyLowQuality" type="checkbox" checked>カメラ中は画質LOWで開始</label><label><input id="bodyPointInvert" type="checkbox">指さしの左右を反転</label><label>指さし感度 <input id="bodyPointSensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label><label>移動感度 <input id="bodySensitivity" type="range" min="0.6" max="1.6" step="0.1" value="1"></label></div>
     <p id="bodyConsentNote" class="body-privacy"></p>
     <label class="body-consent"><input id="bodyConsent" type="checkbox">認識ファイルの取得とGoogleへの利用・性能情報の送信を確認し、カメラ認識に同意する。</label><a class="body-privacy-link" href="https://developers.google.com/edge/mediapipe/solutions/tasks#mediapipe_tasks_privacy_notice" target="_blank" rel="noopener noreferrer">MediaPipeのプライバシー説明</a>
     <p class="body-requirement">カメラにはHTTPSの公開ページ（または同じ端末のlocalhost）が必要です。アプリ内プレビューではなく、通常のブラウザで開いてください。</p>
     <button id="bodyBegin" class="primary">カメラを許可して位置合わせ</button>
-    <p class="body-auto-note">約2秒静止して位置合わせ → 3秒カウント後に自動開始。<br>足の判定は映像からの推定です。実際のボール接触・キック力を測るものではありません。</p>
+    <p class="body-auto-note">全身で静止 → 左右へ小さく指さし → 片膝を少し上げる → 元の位置で静止 → 3秒で開始。動作チェックは省略できます。<br>足の判定は映像からの推定です。実際のボール接触・キック力を測るものではありません。</p>
    </div>
   </div>
  </div>
 </section>
 <div id="bodyLive" class="body-live" hidden>
- <header><span><i></i> CAMERA ON · <b id="bodyProfileShort">FULL BODY</b></span><button id="bodyMiniToggle">映像を隠す</button></header>
+ <header><span><i></i> CAMERA ON · <b id="bodyProfileShort">FULL BODY</b></span><button id="bodyMiniToggle">映像</button><button id="bodyDetailsToggle" aria-expanded="false">詳細</button></header>
  <canvas id="bodyMiniCanvas" width="256" height="192" aria-label="カメラと骨格の確認映像"></canvas>
  <div id="bodyLiveStatus" role="status">位置合わせ中</div>
  <div id="bodyMoveState" class="body-move-state" role="status">移動：認識待ち</div><div class="body-move-bars"><span>左右</span><i><b id="bodyMoveX"></b></i><span>前後</span><i><b id="bodyMoveZ"></b></i></div><div class="kick-diag-count" id="bodyDiagCounts">動作 0 → 発射 0</div>
- <div id="bodyDiagReason" class="kick-diag-reason">v0.7 · カメラ待機</div>
+ <div id="bodyDiagReason" class="kick-diag-reason">v0.8 · カメラ待機</div>
  <label class="kick-trigger-label" for="bodyTriggerLive">キック判定</label><select id="bodyTriggerLive" aria-label="プレー中のキック判定"><option value="direct">前へ蹴る</option><option value="knee">ひざ上げ（確認用）</option><option value="easy">従来式</option><option value="normal">従来式・標準</option></select><div class="body-stage"><span id="bodyStage">WAIT</span><small id="bodyMethod">未接続</small></div><div class="body-meter"><div id="bodyMeterFill"></div></div>
  <footer><button id="bodyTestShot" title="カメラ判定を通さずに発射を確認。自分のボールのみ。">テスト発射</button><button id="bodyLogSave" title="映像・骨格を含まない状態ログを保存">診断ログ</button></footer>
  <footer><button id="bodyRecalibrate">位置合わせ</button><button id="bodyStop">カメラOFF</button></footer>
@@ -58295,6 +58351,88 @@ root.FEBodyRecognizer=Recognizer;if(typeof module!=='undefined'&&module.exports)
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
+<!-- src/layout.js -->
+<script>
+/* FIRST ELEVEN 0.8 — portrait display, uncropped capture and movement-range check.
+ * Pure helpers shared by the UI and tests. No camera/permission requests here. */
+(function(root){'use strict';
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const delta=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+ function fitRect(sw,sh,vw,vh){const s=Math.min(sw/Math.max(1,vw),sh/Math.max(1,vh));return{x:(sw-vw*s)/2,y:(sh-vh*s)/2,width:vw*s,height:vh*s};}
+ function inferenceSize(w,h,max=512){const s=Math.min(1,max/Math.max(1,w,h));return{width:Math.max(1,Math.round(w*s)),height:Math.max(1,Math.round(h*s))};}
+ function captureConstraints(supported={}){
+  // Do not request the game's narrow aspect ratio. Prefer uncropped native
+  // capture where supported; ideal (not exact) constraints permit fallback.
+  const video={facingMode:{ideal:'user'},width:{ideal:960},height:{ideal:960},frameRate:{ideal:24,max:30}};
+  if(supported.resizeMode)video.resizeMode={ideal:'none'};
+  return{audio:false,video};
+ }
+ function peek(current,{portrait,ownsBall,pointing,manual=false,viewYaw,aimYaw},dt){
+  const target=portrait&&ownsBall&&pointing&&!manual&&Number.isFinite(aimYaw)?clamp(delta(aimYaw,viewYaw)*.30,-.24,.24):0;
+  return current+clamp((target-current)*(1-Math.exp(-Math.max(0,dt)*5)),-.85*dt,.85*dt);
+ }
+ function edgeCandidates(hero,players,project,{yaw,width,height,selectedId=null}){
+  const out={left:null,right:null};
+  for(const p of players){
+   if(!p.active||p.team!==hero.team||p.id===hero.id)continue;
+   const d=Math.hypot(p.x-hero.x,p.z-hero.z);if(d<2.2||d>46)continue;
+   const q=project(p.x,2.2,p.z);
+   if(q.depth>.25&&q.x>32&&q.x<width-32&&q.y>105&&q.y<height*.73)continue;
+   const rel=delta(Math.atan2(p.x-hero.x,p.z-hero.z),yaw),side=rel<0?'left':'right';
+   const rank=(p.id===selectedId?-10:0)+Math.abs(rel)+d*.005;
+   if(!out[side]||rank<out[side].rank)out[side]={id:p.id,n:p.n,d,rank,selected:p.id===selectedId};
+  }
+  return out;
+ }
+ const visible=(p,margin=.025)=>!!p&&Number.isFinite(p.x)&&Number.isFinite(p.y)&&(p.visibility??1)>=.40&&p.x>margin&&p.x<1-margin&&p.y>margin&&p.y<1-margin;
+ const foot=(lm,side)=>[27+side,29+side,31+side].map(i=>lm?.[i]).find(p=>visible(p));
+ class RangeCheck{
+  constructor(){this.reset();}
+  reset(){this.base=null;this.left=false;this.right=false;this.kick=false;this.ready=false;this.skipped=false;this.hold={};this.returnSince=0;this.lastTime=0;this.status='頭・肩・腰・両足先を映し、手を下ろして静止';}
+  dwell(key,yes,time,ms=180){if(!yes){delete this.hold[key];return false;}if(this.hold[key]===undefined)this.hold[key]=time;return time-this.hold[key]>=ms;}
+  snapshot(){return{stance:!!this.base,left:this.left,right:this.right,kick:this.kick,ready:this.ready,skipped:this.skipped,status:this.status};}
+  update(lm,out,time,{full=true,kneeOnly=false,mirror=true,required=true}={}){
+   if(time-this.lastTime>650){this.hold={};this.returnSince=0;}this.lastTime=time;
+   const torso=!!lm&&[11,12,23,24].every(i=>visible(lm[i]));
+   const head=!!lm&&[0,7,8].some(i=>visible(lm[i]));
+   const legs=!full||(!!lm&&[25,26].every(i=>visible(lm[i]))&&(kneeOnly||!!foot(lm,0)&&!!foot(lm,1)));
+   const framed=torso&&legs&&(head||this.skipped);
+   this.ready=false;
+   if(!out?.calibrated||!out?.valid||!framed){this.returnSince=0;this.hold={};this.status=!torso?'肩と腰を映してください':!legs?'少し離れて、膝と足先を映してください':!head&&!this.skipped?'頭から足先まで映してください':'手を下ろして約2秒静止';return this.snapshot();}
+   const center=(lm[23].x+lm[24].x)/2,hipY=(lm[23].y+lm[24].y)/2,shoulderY=(lm[11].y+lm[12].y)/2;
+   const sw=Math.abs(lm[11].x-lm[12].x),torsoH=Math.max(.05,hipY-shoulderY);
+   if(!this.base)this.base={center,hipY,sw,knees:[lm[25]?.y||0,lm[26]?.y||0],feet:[foot(lm,0)?.y||0,foot(lm,1)?.y||0]};
+   if(!full)this.kick=true;
+   if(!required||this.skipped){this.ready=true;this.status='位置合わせ完了・3秒で開始';return this.snapshot();}
+   const projected=p=>mirror?1-p.x:p.x,pc=mirror?1-center:center;
+   let left=false,right=false;
+   for(const [s,e,w] of [[11,13,15],[12,14,16]]){
+    const hand=lm[w],elbow=lm[e];if(!visible(hand,.04)||!visible(elbow)||hand.y>hipY-torsoH*.16||hand.y<shoulderY-torsoH*.65)continue;
+    if(Math.abs(hand.x-lm[s].x)<sw*.44)continue;
+    const dx=projected(hand)-pc;
+    if(dx<-Math.max(.09,sw*.65))left=true;if(dx>Math.max(.09,sw*.65))right=true;
+   }
+   if(this.dwell('left',left,time))this.left=true;
+   if(this.dwell('right',right,time))this.right=true;
+   if(full&&this.left&&this.right){
+    const raised=[0,1].some(s=>this.base.knees[s]-(lm[25+s]?.y||1)>torsoH*.12||this.base.feet[s]-(foot(lm,s)?.y||1)>torsoH*.15);
+    if(this.dwell('kick',raised,time,100))this.kick=true;
+   }
+   if(!this.left||!this.right){this.status=!this.left?'画面の左へ小さく指さす・手を映したまま':'画面の右へ小さく指さす・手を映したまま';return this.snapshot();}
+   if(!this.kick){this.status='片膝を少し上げる・足先が映る範囲を確認';return this.snapshot();}
+   const atCenter=Math.abs(center-this.base.center)<Math.max(.012,sw*.12)&&Math.abs(sw/Math.max(.02,this.base.sw)-1)<.15;
+   const handsDown=[15,16].every(i=>visible(lm[i])&&lm[i].y>shoulderY+torsoH*.40);
+   const feetDown=!full||[0,1].every(s=>Math.abs((lm[25+s]?.y||0)-this.base.knees[s])<torsoH*.12);
+   if(this.dwell('neutral',atCenter&&handsDown&&feetDown,time,550)){this.ready=true;this.status='動作範囲OK・3秒で開始';}else this.status='元の位置で手と足を下ろして静止';
+   return this.snapshot();
+  }
+  skip(){this.skipped=true;}
+ }
+ const api={fitRect,inferenceSize,captureConstraints,peek,edgeCandidates,RangeCheck};
+ root.FELayout=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
 <!-- src/intent-assist.js -->
 <script>
 /* FIRST ELEVEN 0.5 — pointing selects a pass. An unselected kick is a shot.
@@ -58359,19 +58497,21 @@ root.FEIntentAssist={IntentSelector,followBall,delta};if(typeof module!=='undefi
 </script>
 <!-- src/view-camera.js -->
 <script>
-/* FIRST ELEVEN 0.7 — full-body follow camera. Original MIT code. */
+/* FIRST ELEVEN 0.8 — full-body view with portrait-safe framing. */
 (function(root){'use strict';
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function compose(hero,view,opts={}){
   const portrait=(opts.width||852)<(opts.height||393),fov=portrait?64:60;
   const air=Math.max(0,(opts.ball?.y||0)-2.5);
-  const distance=(portrait?5.4:5.8)+Math.min(7,air*.9),eyeY=3.05+Math.min(.8,air*.10),tan=Math.tan(fov*Math.PI/360);
-  // Bound pitch analytically so head and boots stay in the central viewport.
-  const minPitch=Math.atan2(2.65-eyeY,distance)-Math.atan(.54*tan);
-  const maxPitch=Math.atan2(.015-eyeY,distance)+Math.atan(.60*tan);
-  const pitch=clamp(Number.isFinite(view.pitch)?view.pitch:-.24,minPitch,maxPitch);
+  const distance=5.8+Math.min(7,air*.9),eyeY=3.05+Math.min(.8,air*.10),tan=Math.tan(fov*Math.PI/360);
+  // Portrait leaves the top for the field and keeps head/boots above the dock.
+  const top=portrait?.30:.23,bottom=portrait?.78:.80;
+  const minPitch=Math.atan2(2.65-eyeY,distance)-Math.atan((1-2*top)*tan);
+  const maxPitch=Math.atan2(.015-eyeY,distance)+Math.atan((2*bottom-1)*tan);
+  const requested=(Number.isFinite(view.pitch)?view.pitch:-.24)+(portrait?.12:0);
+  const pitch=clamp(requested,minPitch,maxPitch);
   return {x:hero.x-Math.sin(view.yaw)*distance,y:eyeY,z:hero.z-Math.cos(view.yaw)*distance,
-   yaw:view.yaw,pitch,fov,mode:'third',distance};
+   yaw:view.yaw,pitch,fov,mode:'third',distance,portrait};
  }
  root.FEViewCamera={compose};if(typeof module!=='undefined'&&module.exports)module.exports=root.FEViewCamera;
 })(typeof window!=='undefined'?window:globalThis);
@@ -58380,7 +58520,7 @@ root.FEIntentAssist={IntentSelector,followBall,delta};if(typeof module!=='undefi
 <!-- src/game.js -->
 <script>
 'use strict';
-/* FIRST ELEVEN 0.7: original v0.1 fixed-step simulation, upgraded renderer.
+/* FIRST ELEVEN 0.8: original v0.1 fixed-step simulation, upgraded renderer.
    World +Z = GRIT attack, +X = right; metres and seconds. */
 (() => {
 const $=id=>document.getElementById(id), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), lerp=(a,b,t)=>a+(b-a)*t;
@@ -58396,7 +58536,7 @@ try{const saved=JSON.parse(localStorage.getItem('first-eleven-settings-v5')||loc
 function saveSettings(){try{localStorage.setItem('first-eleven-settings-v5',JSON.stringify(settings));}catch(e){}}
 let mobile=matchMedia('(pointer:coarse)').matches;
 if(mobile)document.body.classList.add('mobile');
-$('deviceLabel').textContent=mobile?'TOUCH TO PLAY / 横向き推奨':'WASD + MOUSE / TOUCH SUPPORTED';
+$('deviceLabel').textContent=mobile?'縦が標準 / 横も選択可':'WASD + MOUSE / TOUCH SUPPORTED';
 const FIELD={w:60,l:92,halfW:30,halfL:46,goal:7.32,bar:2.44};
 const C={blue:[.14,.49,.77],blueDark:[.08,.19,.30],red:[.95,.32,.18],redDark:[.25,.12,.11],lime:[.84,1,.42],white:[.93,.95,.85],skin:[[.79,.54,.36],[.51,.31,.19],[.90,.70,.51],[.34,.20,.13],[.69,.44,.27]]};
 try{graphics=new window.FEGraphics(canvas,settings,mobile);}catch(error){console.error('FIRST ELEVEN: graphics initialization failed',error);fatal('3D画面を初期化できませんでした。通常のChrome / Edge / Safariで開き、WebGLとハードウェアアクセラレーションを確認してください。詳細: '+error.message);return;}
@@ -58418,7 +58558,7 @@ const input={keys:new Set(),joyX:0,joyY:0,sprint:false,charging:false,charge:0,y
 let bodyFrame=null,inputMode='touch';
 let bodyResult={ok:false,reason:'WAIT',kind:null,at:0},bodySequence=0;
 const intent=new window.FEIntentAssist.IntentSelector();
-let manualViewUntil=0;
+let manualViewUntil=0,pointViewOffset=0;
 const windupStages=new Set(['BACKSWING','SWING','IMPACT','FOLLOW_THROUGH','KICK']);
 let modeChoice='match',toastTime=0,passTarget=null,rafTime=0,accumulator=0;
 function notify(text,seconds=2){$('toast').textContent=text;$('toast').classList.add('show');toastTime=seconds;}
@@ -58450,7 +58590,7 @@ function resetPositions(kickoff=0){
 }
 function setMode(mode){modeChoice=mode;for(const b of document.querySelectorAll('.mode-tab')){const chosen=b.dataset.mode===mode;b.classList.toggle('active',chosen);b.setAttribute('aria-pressed',String(chosen));}$('duration').disabled=mode==='practice';$('practiceSetting').hidden=mode!=='practice';$('durationSetting').hidden=mode==='practice';$('startText').textContent=mode==='practice'?'トレーニングを始める':'キックオフ';}
 function startGame(){
- initAudio();resetMotion();game.mode=modeChoice;game.practiceType=$('practiceKind').value;game.difficulty=$('difficulty').value;game.duration=Number($('duration').value)||180;game.remaining=game.duration;game.score=[0,0];game.stats=newStats();game.practiceHits=0;game.t=0;game.phase='play';game.track=settings.autoTrack;game.eventTimer=0;game.restart=null;resetPositions(0);cam.fov=mobile?77:74;
+ initAudio();resetMotion();pointViewOffset=0;game.mode=modeChoice;game.practiceType=$('practiceKind').value;game.difficulty=$('difficulty').value;game.duration=Number($('duration').value)||180;game.remaining=game.duration;game.score=[0,0];game.stats=newStats();game.practiceHits=0;game.t=0;game.phase='play';game.track=settings.autoTrack;game.eventTimer=0;game.restart=null;resetPositions(0);cam.fov=mobile?77:74;
  for(const id of['menu','pauseScreen','helpScreen','resultScreen','event'])$(id).hidden=true;
  $('hud').hidden=false;$('touchControls').hidden=!mobile;syncTrack();
  $('matchLabel').textContent=game.mode==='practice'?'TRAINING · YOU vs GK':'EXHIBITION · 11 v 11';$('levelLabel').textContent=game.difficulty.toUpperCase();$('callHint').textContent=game.mode==='practice'?'ボールを戻す':'パス要求';$('touchCall').textContent=game.mode==='practice'?'ボールを戻す':'パス要求';
@@ -58630,6 +58770,8 @@ function step(dt){game.real+=dt;game.frame++;
  if(keys.has('ArrowUp')){input.pitch=clamp(input.pitch+dt*.85,-1.22,.6);input.lookIdle=0;}if(keys.has('ArrowDown')){input.pitch=clamp(input.pitch-dt*.85,-1.22,.6);input.lookIdle=0;}
  autoCamera(dt);
  updateIntent();
+ const mark=intent.target(),peekYaw=mark?.kind==='pass'?heading(hero,players[mark.id]||mark):intent.aimYaw;
+ pointViewOffset=window.FELayout?.peek(pointViewOffset,{portrait:screenW<screenH,ownsBall:ball.owner===hero.id,pointing:inputMode==='camera'&&(intent.pointing||intent.winding)&&intent.valid,manual:!game.track||game.real<manualViewUntil,viewYaw:input.yaw,aimYaw:peekYaw},dt)||0;
  let mx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0)+input.joyX,mz=(keys.has('KeyW')?1:0)-(keys.has('KeyS')?1:0)-input.joyY;const manualMove=hypot(mx,mz)>.05;if(!manualMove&&body){mx=body.x;mz=body.forward;}const mag=hypot(mx,mz);if(mag>1){mx/=mag;mz/=mag;}
  const sprint=(keys.has('ShiftLeft')||keys.has('ShiftRight')||input.sprint||(!manualMove&&body?.sprint))&&hero.stamina>3&&mag>.2;
  if(sprint)hero.stamina=Math.max(0,hero.stamina-dt*19);else hero.stamina=Math.min(100,hero.stamina+dt*12);
@@ -58709,11 +58851,20 @@ function render(){
  if(game.phase==='menu'){
   cam.x=-5.2+Math.sin(game.real*.07)*.4;cam.y=2.15;cam.z=-18.0;cam.yaw=.40+Math.sin(game.real*.04)*.015;cam.pitch=-.10;cam.fov=67;
  }else{
-  Object.assign(cam,window.FEViewCamera.compose(hero,input,{width:screenW,height:screenH,ball}));
+  Object.assign(cam,window.FEViewCamera.compose(hero,{yaw:input.yaw+pointViewOffset,pitch:input.pitch},{width:screenW,height:screenH,ball}));
  }
  graphics.render({players,hero,ball,game,cam,input,passTarget,bodyPose:inputMode==='camera'&&bodyFrame&&performance.now()-bodyFrame.at<550?bodyFrame.avatarPose:null});
  if(game.phase!=='menu')updateMarkers();
 }
+
+function updatePassEdges(){
+ const left=$('passEdgeLeft'),right=$('passEdgeRight');if(!left||!right)return;
+ left.hidden=right.hidden=true;
+ if(!window.FELayout||game.phase!=='play'||ball.owner!==hero.id)return;
+ const t=intent.target(),edges=window.FELayout.edgeCandidates(hero,players,project,{yaw:cam.yaw,width:screenW,height:screenH,selectedId:t?.kind==='pass'?t.id:null});
+ for(const [side,el]of [['left',left],['right',right]]){const p=edges[side];if(!p)continue;el.hidden=false;el.dataset.player=String(p.id);el.classList.toggle('selected',p.selected);el.textContent=(side==='left'?'← ':'')+'#'+p.n+(side==='right'?' →':'')+' · '+Math.round(p.d)+'m'+(p.selected?(intent.winding?' LOCK':' PASS'):'');}
+}
+
 const radarCtx=$('radar').getContext('2d');
 function drawRadar(){const c=radarCtx,w=308,h=204,pad=8,px=z=>pad+(z+46)/92*(w-2*pad),py=x=>pad+(x+30)/60*(h-2*pad);c.clearRect(0,0,w,h);c.strokeStyle='#dcebd461';c.lineWidth=1.4;c.strokeRect(pad,pad,w-pad*2,h-pad*2);c.beginPath();c.moveTo(w/2,pad);c.lineTo(w/2,h-pad);c.stroke();c.beginPath();c.ellipse(w/2,h/2,9.15/92*(w-16),9.15/60*(h-16),0,0,TAU);c.stroke();for(const s of[-1,1]){const x=s===-1?pad:w-pad-16.5/92*(w-16);c.strokeRect(x,py(-20.16),16.5/92*(w-16),40.32/60*(h-16));c.strokeRect(s===-1?pad-4:w-pad,py(-3.66),4,7.32/60*(h-16));}
  const hx=px(hero.z),hy=py(hero.x),angle=input.yaw;
@@ -58723,6 +58874,7 @@ function drawRadar(){const c=radarCtx,w=308,h=204,pad=8,px=z=>pad+(z+46)/92*(w-2
 }
 function updateMarkers(){
  if($('hud').hidden)return;
+ updatePassEdges();
  const d=dist(hero,ball),at=project(ball.x,ball.y+.1,ball.z),onScreen=at.depth>.3&&at.x>40&&at.x<screenW-40&&at.y>93&&at.y<screenH-35;
  $('ballMarker').hidden=ball.owner===hero.id||!onScreen||d<1;
  if(!$('ballMarker').hidden){$('ballMarker').style.left=at.x+'px';$('ballMarker').style.top=at.y+'px';$('ballDistance').textContent=Math.round(d)+'m';}
@@ -58807,7 +58959,7 @@ function sanitizeBodyPose(p){
  return {arms:[0,1].map(i=>({lift:clamp(Number(p.arms[i]?.lift)||0,0,2.7),bend:clamp(Number(p.arms[i]?.bend)||0,0,2.1),point:!!p.arms[i]?.point})),knees:[0,1].map(i=>clamp(Number(p.knees[i])||0,0,1.05))};
 }
 window.FEGame={
- state:()=>({phase:game.phase,ownsBall:ball.owner===hero.id,mode:game.mode,inputMode,autoTrack:game.track,intent:intent.snapshot(),version:'0.7.0',lastBodyResult:{...bodyResult},movement:{x:hero.x,z:hero.z,speed:hypot(hero.vx,hero.vz),distance:game.stats.distance,inputX:bodyFrame?.x||0,inputForward:bodyFrame?.forward||0,source:bodyFrame?.movementSource||'none',receiving:!!bodyFrame&&performance.now()-bodyFrame.at<550},shots:game.stats.shots,passes:game.stats.passes}),
+ state:()=>({phase:game.phase,ownsBall:ball.owner===hero.id,mode:game.mode,inputMode,autoTrack:game.track,intent:intent.snapshot(),version:'0.8.0',lastBodyResult:{...bodyResult},movement:{x:hero.x,z:hero.z,speed:hypot(hero.vx,hero.vz),distance:game.stats.distance,inputX:bodyFrame?.x||0,inputForward:bodyFrame?.forward||0,source:bodyFrame?.movementSource||'none',receiving:!!bodyFrame&&performance.now()-bodyFrame.at<550},shots:game.stats.shots,passes:game.stats.passes}),
  setInputMode(mode){inputMode=mode==='camera'?'camera':'touch';resetMotion();$('pointAim').hidden=true;$('kickIntent').hidden=true;},
  setBodyFrame(v){if(inputMode!=='camera'||game.phase!=='play'||!v?.valid){this.clearBodyInput(false);return;}
   const n=k=>Number.isFinite(v[k])?clamp(v[k],-1,1):0;
@@ -58837,14 +58989,14 @@ window.FEGame={
 // A guarded test interface is available only when explicitly requested in the URL.
 if(new URLSearchParams(location.search).has('test')||window.__FE_ENABLE_TEST__===true){
  window.__FIRST_ELEVEN_TEST__={
-  snapshot:()=>({phase:game.phase,mode:game.mode,score:[...game.score],remaining:game.remaining,stats:{...game.stats},hero:{...hero},ball:{...ball},players:players.map(p=>({...p})),camera:{...cam},body:bodyFrame?{x:bodyFrame.x,forward:bodyFrame.forward,source:bodyFrame.movementSource}:null,input:{yaw:input.yaw,pitch:input.pitch,joyX:input.joyX,joyY:input.joyY,charging:input.charging},mobile,webgl:!graphics.isTestStub,graphics:graphics.diagnostics(),track:game.track,intent:intent.snapshot(),passTarget:passTarget?.id??null}),
+  snapshot:()=>({phase:game.phase,mode:game.mode,score:[...game.score],remaining:game.remaining,stats:{...game.stats},hero:{...hero},ball:{...ball},players:players.map(p=>({...p})),camera:{...cam,pointViewOffset},body:bodyFrame?{x:bodyFrame.x,forward:bodyFrame.forward,source:bodyFrame.movementSource}:null,input:{yaw:input.yaw,pitch:input.pitch,joyX:input.joyX,joyY:input.joyY,charging:input.charging},mobile,webgl:!graphics.isTestStub,graphics:graphics.diagnostics(),track:game.track,intent:intent.snapshot(),passTarget:passTarget?.id??null}),
   start:(mode='match',difficulty='normal')=>{setMode(mode);$('difficulty').value=difficulty;startGame();},
   step:(count=1,dt=1/60)=>{for(let i=0;i<count;i++)step(dt);render();updateHUD();},
   setBall:v=>Object.assign(ball,v),setHero:v=>{Object.assign(hero,v);if(v.dir!==undefined)input.yaw=v.dir;},setPlayer:(i,v)=>Object.assign(players[i],v),
   setClock:v=>{game.remaining=v;},setPhase:v=>{game.phase=v;},
   shoot:p=>shoot(hero,p),pass:through=>passBall(hero,through),tackle,callPass,pause:pauseGame,resume:resumeGame,goal,reset:resetPositions,
   setKeys:keys=>{input.keys=new Set(keys);},setLook:(yaw,pitch)=>{input.yaw=yaw;input.pitch=pitch;},
-  render,updateHUD,updateIntent,autoCamera,setAutoTrack,look,project,physics:physicsStep,version:'0.7.0'
+  render,updateHUD,updateIntent,autoCamera,setAutoTrack,look,project,physics:physicsStep,version:'0.8.0'
  };
 }
 function frame(now){try{const dt=rafTime?Math.min(.10,(now-rafTime)/1000):1/60;rafTime=now;accumulator+=dt;let count=0;while(accumulator>=1/60&&count<6){step(1/60);accumulator-=1/60;count++;}render();if(game.frame%4===0&&game.phase!=='menu')updateHUD();if(master)master.gain.value=settings.audio?(game.phase==='menu'||game.phase==='paused'?.025:.14):0;if(!window.__FE_DISABLE_RAF__)requestAnimationFrame(frame);}catch(error){console.error(error);fatal('描画を継続できませんでした。詳細: '+error.message);}}
@@ -58856,7 +59008,7 @@ try{render();$('loading').hidden=true;$('startButton').disabled=false;window.__F
 </script>
 <!-- src/body-controls.js -->
 <script>
-/* FIRST ELEVEN 0.7: opt-in front camera, local pose inference, session-safe cleanup.
+/* FIRST ELEVEN 0.8: opt-in front camera, local pose inference, session-safe cleanup.
  * Worker is preferred. On browsers without worker video support use a throttled
  * main-thread CPU fallback. No raw frames/landmarks are persisted or transmitted.
  */
@@ -58881,6 +59033,19 @@ let diagnostic={detected:0,launched:0,testShots:0,rejected:0,poses:0,lastReason:
 let targetFPS=18,inferenceCost=0,method='未接続',mini=false,prevPhase='menu',feedbackUntil=0;
 const video=$('bodyVideo'),preview=$('bodySkeleton'),miniCanvas=$('bodyMiniCanvas');
 let recognizer=new window.FEBodyRecognizer(readOptions());
+let rangeCheck=window.FELayout?new window.FELayout.RangeCheck():null,rangeReady=false,lastCaptureAspect=0;
+function resetRange(){rangeCheck?.reset();rangeReady=false;clearCountdown();}
+function rangeUpdate(lm,out,time){
+ const full=$('bodyProfile').value==='full';
+ const info=rangeCheck?.update(lm,out,time,{full,kneeOnly:$('bodyKickLevel').value==='knee',mirror:$('bodyMirror').checked,required:$('bodyRangeRequired').checked});
+ rangeReady=info?info.ready:!!out?.calibrated&&!!out?.valid;
+ for(const [id,k]of [['rangeStance','stance'],['rangeLeft','left'],['rangeRight','right'],['rangeKick','kick']]){$(id).classList.toggle('done',!!info?.[k]);$(id).dataset.done=String(!!info?.[k]);}
+ $('rangeKick').hidden=!full;$('bodyRangeSkip').disabled=!out?.calibrated||!out?.valid;
+ if(info&&out?.calibrated)setStatus(info.status,rangeReady?'normal':'warning');
+ return rangeReady;
+}
+$('bodyRangeSkip').addEventListener('click',()=>{if(!lastOutput?.calibrated||!lastOutput?.valid)return;rangeCheck?.skip();rangeUpdate(lastLandmarks,lastOutput,performance.now());});
+$('bodyRangeRequired').addEventListener('change',()=>{resetRange();if(lastOutput)rangeUpdate(lastLandmarks,lastOutput,performance.now());});
 function readOptions(){return{profile:$('bodyProfile').value,foot:$('bodyFoot').value,mirror:$('bodyMirror').checked,sensitivity:Number($('bodySensitivity').value),pointSensitivity:Number($('bodyPointSensitivity').value),pointInvert:$('bodyPointInvert').checked,kickLevel:$('bodyKickLevel').value,moveMode:$('bodyMoveMode').value};}
 function setStatus(text,kind='normal'){$('bodyOverlayStatus').textContent=text;$('bodyStatus').textContent=text;$('bodyStatus').dataset.kind=kind;if(performance.now()>feedbackUntil)$('bodyLiveStatus').textContent=text;}
 function labels(){
@@ -58905,7 +59070,7 @@ $('bodySettingsToggle').addEventListener('click',()=>setupSheet(!$('bodyScreen')
 function requestSetup(next){
  returnTo=next||(API.state().phase==='menu'||API.state().phase==='finished'?'start':'resume');
  if(['play','goal','restart'].includes(API.state().phase))API.pause();
- API.clearBodyInput();selectMode('camera');enabled=false;clearCountdown();
+ API.clearBodyInput();selectMode('camera');enabled=false;resetRange();
  $('bodyScreen').hidden=false;setupSheet(!(running&&ready));$('bodyBegin').disabled=loading;labels();drawPreviews(lastLandmarks);
  if(running&&ready){recognizer.recalibrate();lastOutput=null;$('bodyBegin').hidden=true;setStatus('手を下ろして約2秒静止してください');}
  else{$('bodyBegin').hidden=false;$('bodyBegin').textContent='カメラを許可して位置合わせ';setStatus('準備したら下のボタンを押してください');}
@@ -58953,13 +59118,13 @@ async function begin(){
  if(loading)return;
  if(!$('bodyConsent').checked){setStatus('通信とプライバシーの説明を確認し、同意欄にチェックしてください','warning');$('bodyConsent').focus();return;}
  if($('bodyLowQuality').checked)API.setQuality('low');API.setBodyAssist($('bodyAutoTrack').checked);
- stop({keepChoice:true,keepOverlay:true});selectMode('camera');labels();$('cameraWarning').hidden=true;
+ stop({keepChoice:true,keepOverlay:true});resetRange();lastCaptureAspect=0;selectMode('camera');labels();$('cameraWarning').hidden=true;
  const id=++generation;loading=true;sessionFailed=false;$('bodyBegin').disabled=true;$('bodyBegin').hidden=false;
  setStatus('カメラの許可を確認しています');
  try{
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Object.assign(new Error('カメラ操作はHTTPS（または同じ端末のlocalhost）で開いてください。HTMLのプレビューや通常のHTTPでは利用できません。'),{name:'SecurityError'});
   // No microphone permission and no hidden camera enumeration.
-  const camera=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'user'},width:{ideal:innerWidth>=innerHeight?960:540},height:{ideal:innerWidth>=innerHeight?540:960},aspectRatio:{ideal:innerWidth/innerHeight},frameRate:{ideal:24,max:30}}});
+  const camera=await navigator.mediaDevices.getUserMedia(window.FELayout?window.FELayout.captureConstraints(navigator.mediaDevices.getSupportedConstraints?.()||{}):{audio:false,video:{facingMode:{ideal:'user'},width:{ideal:960},height:{ideal:960},frameRate:{ideal:24,max:30}}});
   if(id!==generation){camera.getTracks().forEach(t=>t.stop());return;}
   stream=camera;video.srcObject=stream;setupSheet(false);
   for(const track of stream.getVideoTracks()){
@@ -59020,7 +59185,9 @@ async function tick(){
    lastVideoTime=video.currentTime;lastCapture=now;busy=true;busyAt=now;
    if(worker){
     const scale=Math.min(1,512/Math.max(video.videoWidth,video.videoHeight));
-    const bitmap=await createImageBitmap(video,{resizeWidth:Math.max(1,Math.round(video.videoWidth*scale)),resizeHeight:Math.max(1,Math.round(video.videoHeight*scale))});
+    // Resize the WHOLE frame, preserving its native aspect. No ROI/crop.
+    const size=window.FELayout?.inferenceSize(video.videoWidth,video.videoHeight)||{width:Math.max(1,Math.round(video.videoWidth*scale)),height:Math.max(1,Math.round(video.videoHeight*scale))};
+    const bitmap=await createImageBitmap(video,{resizeWidth:size.width,resizeHeight:size.height});
     if(id!==generation){bitmap.close();return;}
     worker.postMessage({type:'frame',bitmap,time:now},[bitmap]);
    }else if(mainPose){
@@ -59047,15 +59214,15 @@ function diagnosticView(out=null,age=0){
  const recent=performance.now()-diagnostic.lastEventAt<2200;
  const why=recent?(failureText[diagnostic.lastReason]||diagnostic.lastReason):out?.diagnostic?.reason==='FOOT_MISSING'?'足先が見えません・映像を表示して確認':out?.diagnostic?.reason==='KNEE_MISSING'?'膝まで映してください':!out?.valid?'体の認識待ち':out?.status||'キック待機';
  const ball=state.ownsBall?'ボールあり':'ボールなし';
- $('bodyDiagReason').textContent=`v0.7 · ${ball} · ${why}`;
+ $('bodyDiagReason').textContent=`v0.8 · ${ball} · ${why}`;
  if(performance.now()-lastDiagnosticAt>=220||recent&&diagnosticLog.at(-1)?.detected!==diagnostic.detected){
   diagnosticLog.push({ms:Math.round(performance.now()),phase:state.phase,ownsBall:state.ownsBall,mode:recognizer.kickLevel,valid:!!out?.valid,feet:out?.feet||[false,false],stage:out?.stage||'WAIT',reason:out?.diagnostic?.reason||null,score:Math.round((out?.diagnostic?.score||0)*100),detected:diagnostic.detected,launched:diagnostic.launched,lastGameResult:diagnostic.lastReason,inferenceMs:Math.round(inferenceCost),frameAgeMs:Math.round(age),moveX:Math.round(x*100)/100,moveForward:Math.round(z*100)/100,speed:Math.round((m.speed||0)*100)/100,movementSource:m.source||'none'});
   if(diagnosticLog.length>240)diagnosticLog.shift();lastDiagnosticAt=performance.now();
  }
 }
 function saveDiagnostic(){
- const data={version:'0.7.0',scope:'State only. No images, video, audio, body landmarks or identity data.',time:new Date().toISOString(),camera:method,profile:recognizer.profile,kickLevel:recognizer.kickLevel,counters:{...diagnostic},events:diagnosticLog};
- const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='FIRST_ELEVEN_v0.7_diagnostic.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ const data={version:'0.8.0',scope:'State only. No images, video, audio, body landmarks or identity data.',time:new Date().toISOString(),camera:method,capture:{width:video.videoWidth,height:video.videoHeight,cropped:false},display:window.FEDisplay?.state()||null,profile:recognizer.profile,kickLevel:recognizer.kickLevel,counters:{...diagnostic},events:diagnosticLog};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='FIRST_ELEVEN_v0.8_diagnostic.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
 }
 function receivePose(lm,world,time,cost=0){
  if(!running||!ready)return;
@@ -59063,7 +59230,12 @@ function receivePose(lm,world,time,cost=0){
  if(now-time>1200){API.clearBodyInput(false);lastLandmarks=null;setStatus('認識が遅れています・試合は継続／タッチ併用可','warning');diagnosticView(null,now-time);return;}
  diagnostic.poses++;
  const state=API.state();const active=enabled&&state.phase==='play'&&$('bodyScreen').hidden;
- const out=recognizer.update(lm,world,time,{active,ownsBall:state.ownsBall,imageAspect:(video.videoWidth||640)/(video.videoHeight||480)});lastOutput=out;lastLandmarks=lm;
+ const aspect=(video.videoWidth||640)/(video.videoHeight||480);
+ // If rotation changes the actual source shape, rebase neutral posture without
+ // reopening a modal or stopping match time. A CSS-only resize changes nothing.
+ if(lastCaptureAspect&&Math.abs(Math.log(aspect/lastCaptureAspect))>.12){recognizer.recalibrate();API.clearBodyInput(false);resetRange();}
+ lastCaptureAspect=aspect;
+ const out=recognizer.update(lm,world,time,{active,ownsBall:state.ownsBall,imageAspect:aspect});lastOutput=out;lastLandmarks=lm;
  if(out.valid)lastTracked=now;
  if(active){
   API.setBodyFrame(out);
@@ -59079,14 +59251,15 @@ function receivePose(lm,world,time,cost=0){
  $('bodyMeterFill').style.width=`${Math.round(out.charge*100)}%`;
  $('bodyMethod').textContent=`${method} · ${Math.round(inferenceCost)} ms / 検出`;
  if(worker)targetFPS=inferenceCost>100?12:18;
- if(!$('bodyScreen').hidden&&!$('bodyScreen').classList.contains('setup-open')&&out.calibrated&&out.valid&&!countdown)startCountdown();
- if(countdown&&(!out.valid||!out.calibrated||$('bodyScreen').classList.contains('setup-open')))clearCountdown();
+ if(!$('bodyScreen').hidden)rangeUpdate(lm,out,time);
+ if(!$('bodyScreen').hidden&&!$('bodyScreen').classList.contains('setup-open')&&out.calibrated&&out.valid&&rangeReady&&!countdown)startCountdown();
+ if(countdown&&(!out.valid||!out.calibrated||!rangeReady||$('bodyScreen').classList.contains('setup-open')))clearCountdown();
  drawPreviews(lm);
 }
 function startCountdown(){
  countdownAt=performance.now();$('bodyCountdown').hidden=false;$('bodyCountdown').textContent='3';
  countdown=setInterval(()=>{
-  if(!running||!lastOutput?.valid||performance.now()-lastTracked>600){clearCountdown();return;}
+  if(!running||!lastOutput?.valid||!rangeReady||performance.now()-lastTracked>600){clearCountdown();return;}
   const n=3-Math.floor((performance.now()-countdownAt)/1000);$('bodyCountdown').textContent=String(Math.max(1,n));
   if(n<=0){
    clearCountdown();closeOverlay();enabled=true;recognizer.suspend();lastTracked=performance.now();
@@ -59119,6 +59292,8 @@ function drawPointer(ctx,w,h,mirrored){
 function drawPreviews(lm){
  const w=video.videoWidth||640,h=video.videoHeight||480;
  const area=preview.parentElement.getBoundingClientRect(),scale=Math.min(area.width/w,area.height/h),vw=w*scale,vh=h*scale;
+ const reach=$('bodyReachGuide');reach.style.left=((area.width-vw)/2+vw*.04)+'px';reach.style.top=((area.height-vh)/2+vh*.025)+'px';reach.style.width=vw*.92+'px';reach.style.height=vh*.95+'px';
+ $('bodyCaptureInfo').textContent=video.videoWidth?`撮影 ${w}×${h} · 全範囲を認識`:'撮影サイズを確認中';
  const guide=$('bodyFrameGuide');guide.style.inset='auto';guide.style.left=((area.width-vw)/2+vw*.29)+'px';guide.style.top=((area.height-vh)/2+vh*.05)+'px';guide.style.width=vw*.42+'px';guide.style.height=vh*.90+'px';
  guide.classList.toggle('ready',!!lastOutput?.calibrated);guide.classList.toggle('incomplete',!!lastOutput?.valid&&!lastOutput?.calibrated);
  $('bodyFrameHint').textContent=$('bodyProfile').value==='full'?'頭から足先まで映す → 手を下ろして静止':'肩・両手・腰を映す → 手を下ろして静止';
@@ -59131,7 +59306,7 @@ function drawPreviews(lm){
  if(video.readyState>=2){c.save();if($('bodyMirror').checked){c.translate(cw,0);c.scale(-1,1);}c.drawImage(video,0,0,cw,ch);c.restore();}drawSkeleton(c,lm,cw,ch,$('bodyMirror').checked);drawPointer(c,cw,ch,$('bodyMirror').checked);
 }
 function recalibrate(){requestSetup(API.state().phase==='menu'?'start':'resume');}
-function onOptions(){labels();if(running){API.pause();enabled=false;clearCountdown();recognizer=new window.FEBodyRecognizer(readOptions());lastOutput=null;API.clearBodyInput();$('bodyScreen').hidden=false;}}
+function onOptions(){labels();resetRange();if(running){API.pause();enabled=false;clearCountdown();recognizer=new window.FEBodyRecognizer(readOptions());lastOutput=null;API.clearBodyInput();$('bodyScreen').hidden=false;}}
 
 $('bodyTriggerLive').addEventListener('change',e=>{
  const value=e.target.value;if(!['direct','knee','easy','normal'].includes(value))return;
@@ -59169,10 +59344,54 @@ window.FEBodyControl={
 if(window.__FE_ENABLE_TEST__){window.__FE_BODY_TEST__={recognizer:()=>recognizer,selectMode,open:requestSetup,begin,stop,receivePose,checkHealth,tick,
  // Test injection is deliberately inaccessible unless an explicit pre-init flag is set.
  injectReady(){choice='camera';API.setInputMode('camera');running=ready=enabled=true;lastTracked=lastReceived=performance.now();closeOverlay();},
- getDiagnostic:()=>({counters:{...diagnostic},events:structuredClone(diagnosticLog)}),setEnabled(v){enabled=v;},setLastTracked(v){lastTracked=v;},setLastReceived(v){lastReceived=v;},fail,orientation:()=>dispatchEvent(new Event('orientationchange')),getState:()=>window.FEBodyControl.state()};}
+ range:()=>rangeCheck?.snapshot(),getDiagnostic:()=>({counters:{...diagnostic},events:structuredClone(diagnosticLog)}),setEnabled(v){enabled=v;},setLastTracked(v){lastTracked=v;},setLastReceived(v){lastReceived=v;},fail,orientation:()=>dispatchEvent(new Event('orientationchange')),getState:()=>window.FEBodyControl.state()};}
 $('cameraReconnect').addEventListener('click',()=>{$('cameraWarning').hidden=true;requestSetup('resume');});
 $('cameraDismiss').addEventListener('click',()=>{$('cameraWarning').hidden=true;});
 miniCanvas.hidden=true;$('bodyMiniToggle').textContent='映像を表示';labels();selectMode('touch');
+})();
+
+</script>
+<!-- src/display-controls.js -->
+<script>
+/* Display preference does not rotate/crop camera pixels, stop the match or
+ * restart media tracks. Unsupported orientation lock falls back to a hint. */
+(() => {'use strict';
+ const $=id=>document.getElementById(id),key='first-eleven-display-v8';
+ let preference='portrait';try{const saved=localStorage.getItem(key);if(['portrait','landscape'].includes(saved))preference=saved;}catch(e){}
+ let dismissed=false;
+ const ids=['displayOrientation','bodyOrientation','pauseOrientation'];
+ const actual=()=>innerWidth<innerHeight?'portrait':'landscape';
+ function sync(){
+  document.body.dataset.orientation=actual();document.body.dataset.orientationPreference=preference;
+  ids.forEach(id=>{if($(id))$(id).value=preference;});
+  const camera=document.body.classList.contains('body-selected'),mismatch=actual()!==preference;
+  $('orientationHint').hidden=!camera||!mismatch||dismissed||$('menu').hidden||!$('bodyScreen').hidden;
+  $('orientationHintText').textContent=preference==='portrait'?'全身操作は縦が標準です。端末を縦に固定してください。':'横画面を選択中。端末を横向きに固定してください。';
+  $('orientationKeep').textContent=actual()==='portrait'?'縦で続ける':'横で続ける';
+  const text=(actual()==='portrait'?'縦画面':'横画面')+' · 全身の後方視点';
+  $('displayState').textContent=text;$('bodyOrientationState').textContent=text+' / 撮影映像は切り抜きなし';
+ }
+ function set(value){preference=value==='landscape'?'landscape':'portrait';dismissed=false;try{localStorage.setItem(key,preference);}catch(e){}sync();}
+ async function applyLock(){
+  // Only called from an explicit click/fullscreen transition, never on load.
+  try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen?.();
+   if(typeof screen.orientation?.lock==='function')await screen.orientation.lock(preference);
+   else throw new Error('orientation lock unsupported');
+  }catch(e){window.FEGame?.notify('端末を選んだ向きに回してください。自動回転は端末設定をご確認ください',3);}
+  sync();
+ }
+ ids.forEach(id=>$(id)?.addEventListener('change',e=>{set(e.target.value);if(document.fullscreenElement)applyLock();}));
+ $('orientationKeep').addEventListener('click',()=>set(actual()));
+ $('orientationDismiss').addEventListener('click',()=>{dismissed=true;sync();});
+ $('orientationApply').addEventListener('click',applyLock);
+ $('bodyDetailsToggle').addEventListener('click',()=>{const open=$('bodyLive').classList.toggle('expanded');$('bodyDetailsToggle').textContent=open?'閉じる':'詳細';$('bodyDetailsToggle').setAttribute('aria-expanded',String(open));});
+ $('bodyMiniToggle').addEventListener('click',()=>{if(!$('bodyMiniCanvas').hidden){$('bodyLive').classList.add('expanded');$('bodyDetailsToggle').textContent='閉じる';$('bodyDetailsToggle').setAttribute('aria-expanded','true');}});
+ $('inputMode').addEventListener('change',()=>{dismissed=false;sync();});
+ new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});
+ for(const el of [$('menu'),$('bodyScreen')])new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['hidden']});
+ addEventListener('resize',sync);screen.orientation?.addEventListener?.('change',sync);
+ document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)try{screen.orientation?.unlock?.();}catch(e){}sync();});
+ window.FEDisplay={set,refresh:sync,state:()=>({preference,actual:actual()})};sync();
 })();
 
 </script>
