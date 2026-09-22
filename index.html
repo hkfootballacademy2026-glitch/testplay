@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101918">
 <meta name="description" content="11対11のピッチへ。一人の選手を操作する、Babylon.js・スキニング・PBR・リアルタイムシャドウの一人称サッカーゲーム。">
-<title>FIRST ELEVEN 0.9.2 — STEP & TURN / 足踏みと半身で操作</title>
+<title>FIRST ELEVEN 0.9.3 — LIVE CAMERA / 足踏みと半身で操作</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101918'/%3E%3Cpath d='M17 15h31v8H26v8h18v8H26v12h-9z' fill='%23dcff72'/%3E%3C/svg%3E">
 <style>
 :root{--ink:#101918;--muted:#a6b8b0;--line:#ffffff25;--lime:#dcff72;--blue:#75c5ff;--red:#ff916f;--panel:#101918df;--sans:Inter,"Arial", "Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,sans-serif}
@@ -134,8 +134,8 @@
 #bodyScreen .body-options-column>.setting{margin-bottom:14px}
 #bodyLive{padding:10px;border:1px solid #ffffff35;background:#102720ed;border-radius:9px;scrollbar-width:thin}
 #bodyLive header{display:flex;flex-wrap:nowrap;align-items:center;gap:7px;font-size:9px;min-height:22px}#bodyLive header>span{flex:1}#bodyLive header button{min-height:26px;background:#294638;color:#eff8df;border-radius:4px;font-size:10px;padding:4px 7px}
-#bodyLive:not(.expanded) #bodyLiveStatus,#bodyLive:not(.expanded) .body-move-bars,#bodyLive:not(.expanded) .kick-diag-reason,#bodyLive:not(.expanded) .kick-trigger-label,#bodyLive:not(.expanded) #bodyTriggerLive,#bodyLive:not(.expanded) .body-stage,#bodyLive:not(.expanded) .body-meter,#bodyLive:not(.expanded) footer,#bodyLive:not(.expanded) #bodyMiniCanvas{display:none!important}
-#bodyLive .body-move-state{font-size:12px;margin-top:5px}#bodyLive .kick-diag-count{font-size:11px;margin-top:3px}#bodyLive.expanded footer{display:flex}#bodyLive.expanded #bodyLiveStatus{display:block}#bodyLive.expanded #bodyMiniCanvas{width:100%;object-fit:contain;max-height:170px;margin:7px 0}#bodyLive.expanded #bodyMethod{display:block}
+#bodyLive:not(.expanded) #bodyLiveStatus,#bodyLive:not(.expanded) .body-move-bars,#bodyLive:not(.expanded) .kick-diag-reason,#bodyLive:not(.expanded) .kick-trigger-label,#bodyLive:not(.expanded) #bodyTriggerLive,#bodyLive:not(.expanded) .body-stage,#bodyLive:not(.expanded) .body-meter,#bodyLive:not(.expanded) footer{display:none!important}
+#bodyLive .body-move-state{font-size:12px;margin-top:5px}#bodyLive .kick-diag-count{font-size:11px;margin-top:3px}#bodyLive.expanded footer{display:flex}#bodyLive.expanded #bodyLiveStatus{display:block}#bodyLive.expanded #bodyMethod{display:block}
 @media(orientation:portrait){
  .menu{padding:22px 20px;display:flex;justify-content:flex-start;overflow:auto}.menu-top{gap:9px}.brand{font-size:11px;gap:8px}.build{font-size:8px;letter-spacing:.04em;text-align:right}.menu-main{display:block;width:100%;margin:14px 0}.menu h1{font-size:76px;line-height:.86;margin:14px 0}.menu .tagline{font-size:18px;margin:20px 0 8px}.menu .intro{font-size:11px;margin-bottom:18px}.menu-footer{font-size:8px;line-height:1.6}.hero-card{display:none}.display-help{font-size:10px}
  .top-center,.render-stats{display:none}.topbar,.mobile .topbar{top:max(12px,env(safe-area-inset-top));left:12px;right:12px;display:block}
@@ -172,7 +172,7 @@
  #bodyScreen .body-range-check{top:84px;font-size:9px}#bodyScreen .body-camera-badge{top:56px}#bodyScreen .body-overlay-status{bottom:18px;font-size:12px;padding:8px}#bodyRangeSkip{font-size:9px}.range-chips span{font-size:9px}
 }
 
-/* 0.9.2 knee-only start. No lower-leg/foot guide. */
+/* 0.9.3 knee-only start. No lower-leg/foot guide. */
 #bodyFrameGuide{border-radius:38px 38px 9px 9px!important;border-bottom:3px dashed #dcff72!important}
 .knee-guide-top,.knee-guide-bottom{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;background:#10251ee8;color:#efffce;font-size:12px;font-weight:700;border-radius:6px;padding:5px 10px;text-align:center}
 .knee-guide-top{top:-13px}.knee-guide-bottom{bottom:-13px}.knee-guide-bottom small{font-size:10px;font-weight:400}
@@ -186,17 +186,49 @@
 
 #bodyScreen.camera-live .body-empty{display:none}
 
+/* A dedicated, non-cropping real video inset. It is not part of diagnostics. */
+.self-camera{position:fixed;z-index:6;left:max(16px,env(safe-area-inset-left));top:112px;width:112px;border:1px solid #a5d4b97a;border-radius:9px;overflow:hidden;background:#0b1719f5;box-shadow:0 5px 22px #0005;touch-action:manipulation}
+.self-camera header{height:32px;padding:0 3px 0 7px;display:flex;align-items:center;justify-content:space-between;gap:3px;background:#162b29;color:#f0f8ef;font-size:10px;font-weight:700;white-space:nowrap}
+.self-camera header span{display:flex;align-items:center;gap:4px}.self-camera header i{width:5px;height:5px;display:inline-block;border-radius:50%;background:#dcff72}
+.self-camera header button{flex:0 0 30px;width:30px;height:30px;border-radius:5px;background:#28413a;color:#fff;font-size:22px;line-height:1;touch-action:manipulation}
+.self-camera-media{position:relative;aspect-ratio:3/4;background:#060c0c;overflow:hidden}
+.self-camera-media video{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.self-camera-media button,.self-camera-media>span{position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;background:#08120fd9;color:#f5ffe8;font-size:11px;line-height:1.5}
+.self-camera-media>span{pointer-events:none}
+.self-camera-status{padding:4px 3px;min-height:22px;text-align:center;color:#cbe5d0;font-size:9px;white-space:nowrap}
+@media(orientation:portrait){
+ .self-camera{--self-width:clamp(96px,27vw,112px);left:max(12px,env(safe-area-inset-left));top:132px;width:var(--self-width)}
+ .camera-preview-visible .kick-intent,.mobile.camera-preview-visible .kick-intent{left:calc(clamp(96px,27vw,112px) + 24px);right:12px;top:140px;max-width:none;width:auto;font-size:10px;padding:7px}
+ .camera-preview-visible .possession,.mobile.camera-preview-visible .possession{left:calc(clamp(96px,27vw,112px) + 24px);right:12px;top:210px;max-width:none;width:auto;font-size:9px}
+ .camera-preview-visible .toast,.body-selected.camera-preview-visible .toast,.mobile.camera-preview-visible .toast{top:337px}
+}
+@media(orientation:landscape){
+ .self-camera{top:112px;width:112px}.self-camera-media{aspect-ratio:4/3}
+ .camera-preview-visible .pass-edge.left{top:63%}
+}
+@media(orientation:landscape) and (max-height:480px){
+ .self-camera{top:102px;width:104px}.self-camera-status{font-size:8px;min-height:19px}.self-camera header{height:30px;font-size:9px}
+}
+@media(orientation:portrait) and (max-height:700px){
+ .self-camera{top:130px;width:96px}.self-camera-media{aspect-ratio:1/1}
+ .camera-preview-visible .toast,.body-selected.camera-preview-visible .toast,.mobile.camera-preview-visible .toast{top:289px}
+}
+/* Do not cover the ball-possession caption in the short landscape HUD. */
+@media(orientation:landscape){
+ .camera-preview-visible .possession,.mobile.camera-preview-visible .possession{left:144px;top:190px;bottom:auto;max-width:210px}
+}
+
 .motion-tuning{margin:14px 0;border:1px solid #ffffff30;padding:12px;border-radius:8px;font-size:12px}.motion-tuning summary{cursor:pointer}.motion-tuning label{display:grid;grid-template-columns:1fr 110px 36px;align-items:center;gap:7px;margin:13px 0}.motion-tuning input{width:100%;accent-color:var(--lime)}.motion-tuning output{font-size:10px;text-align:right}
 
 </style>
 </head>
 <body>
-<div id="loading" class="loading-screen"><div><div class="brand-icon">FE</div><h2>STEP & TURN · 0.9.2</h2><p>ピッチと3D描画を準備しています…</p><span>BABYLON.JS · ORIGINAL PROCEDURAL ASSETS</span></div></div>
+<div id="loading" class="loading-screen"><div><div class="brand-icon">FE</div><h2>LIVE CAMERA · 0.9.3</h2><p>ピッチと3D描画を準備しています…</p><span>BABYLON.JS · ORIGINAL PROCEDURAL ASSETS</span></div></div>
 <div id="contextNotice" class="context-notice" hidden>描画を再接続しています。復帰しない場合は再読み込みしてください。</div>
 <canvas id="world" aria-label="全身視点3Dサッカーフィールド"></canvas>
 <div id="vignette"></div><div id="orientationHint" class="orientation-banner" hidden><span id="orientationHintText"></span><button id="orientationKeep">横で続ける</button><button id="orientationDismiss" aria-label="向きの案内を閉じる">×</button></div>
 <section id="menu" class="screen menu">
-  <header class="menu-top"><div class="brand"><span class="brand-icon">FE</span><span>FIRST ELEVEN</span></div><div class="build"><i class="status-dot"></i> STEP & TURN / 0.9.2</div></header>
+  <header class="menu-top"><div class="brand"><span class="brand-icon">FE</span><span>FIRST ELEVEN</span></div><div class="build"><i class="status-dot"></i> LIVE CAMERA / 0.9.3</div></header>
   <main class="menu-main">
     <div class="eyebrow">ONE PLAYER. ALL HEART.</div>
     <h1>FIRST<br><span class="outlined">ELEVEN.</span></h1>
@@ -208,7 +240,7 @@
     </div>
     <div class="settings-row">
       <div class="setting"><label for="difficulty">DIFFICULTY / 難易度</label><select id="difficulty"><option value="easy">EASY — 初めてのプレー</option><option value="normal" selected>NORMAL — 標準</option><option value="hard">HARD — 強いプレス</option></select></div>
-      <div class="setting" id="durationSetting" style="flex:.65"><label for="duration">MATCH TIME / 試合時間</label><select id="duration"><option value="180">3 分</option><option value="300">5 分</option><option value="600">10 分</option></select></div><div class="setting" id="practiceSetting" hidden style="flex:.75"><label for="practiceKind">練習内容</label><select id="practiceKind"><option value="shoot">シュート / GK</option><option value="passing">パス / 味方3人</option><option value="aerial">浮き球 / トラップ・ボレー・ヘッド</option></select></div>
+      <div class="setting" id="durationSetting" style="flex:.65"><label for="duration">MATCH TIME / 試合時間</label><select id="duration"><option value="180">3 分</option><option value="300">5 分</option><option value="600">10 分</option></select></div><div class="setting" id="practiceSetting" hidden style="flex:.75"><label for="practiceKind">練習内容</label><select id="practiceKind"><option value="shoot">シュート / GK</option><option value="passing">パス / 味方3人</option><option value="aerial">浮き球 / ボレー・ヘッド</option></select></div>
     </div>
     <div class="settings-row visual-settings"><div class="setting"><label for="quality">GRAPHICS / 画質</label><select id="quality"><option value="auto">AUTO — 端末に合わせる</option><option value="high">HIGH — 高画質</option><option value="balanced">BALANCED — 標準</option><option value="low">LOW — 軽量</option></select></div><div class="setting"><label for="atmosphere">LIGHT / 光の雰囲気</label><select id="atmosphere"><option value="day">DAY — 晴れた午後</option><option value="sunset">SUNSET — 夕方の色調</option></select></div></div>
     <div class="body-mode-row"><div class="setting"><label for="inputMode">CONTROL / 操作方法</label><select id="inputMode"><option value="touch">タッチ / キーボード</option><option value="camera">前面カメラで体を動かす</option></select></div><button id="bodySetupButton" class="body-setup-btn">カメラ設定</button></div>
@@ -217,7 +249,7 @@
     <div class="under-start"><button id="helpButton" class="text-btn">操作方法 / 設定</button><span class="offline">タッチは通信不要 · カメラは初回通信あり</span></div>
   </main>
   <aside class="hero-card"><div class="number">10</div><span class="hero-line"></span><h3>YOUR BODY. YOUR GAME.</h3><p>視点は一つ。可能性は、無限。</p></aside>
-  <footer class="menu-footer"><span>ORIGINAL FOOTBALL · BABYLON.JS · 0.9.2</span><span id="deviceLabel">WASD + MOUSE / TOUCH SUPPORTED</span></footer>
+  <footer class="menu-footer"><span>ORIGINAL FOOTBALL · BABYLON.JS · 0.9.3</span><span id="deviceLabel">WASD + MOUSE / TOUCH SUPPORTED</span></footer>
 </section>
 <div id="hud" class="hud" hidden>
   <div class="topbar">
@@ -243,7 +275,7 @@
 </div>
 <div id="event" class="event" hidden><small id="eventSmall"></small><strong id="eventTitle"></strong><p id="eventText"></p></div>
 <section id="pauseScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">TAKE A BREATHER</div><h2>TIME OUT.</h2><p>画面右側のドラッグでも、視点を動かせます。<br>追視は初期状態でON。スワイプ後も自動で戻ります。</p><div class="options"><label>画面の向き<select id="pauseOrientation"><option value="portrait">縦 — 全身操作の標準</option><option value="landscape">横 — 左右の展開を広く</option></select></label><label>描画品質<select id="pauseQuality"><option value="auto">AUTO — 端末に合わせる</option><option value="high">HIGH — 高画質</option><option value="balanced">BALANCED — 標準</option><option value="low">LOW — 軽量</option></select></label><label>光の雰囲気<select id="pauseAtmosphere"><option value="day">DAY — 晴れた午後</option><option value="sunset">SUNSET — 夕方の色調</option></select></label><label>攻守の自動ボール追視<input id="pauseAutoTrack" type="checkbox" checked></label><label>シュートの方向アシスト<input id="aimAssist" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="headBob" type="checkbox"></label><label>サウンド<input id="audioEnabled" type="checkbox" checked></label><label>視点の感度<input id="sensitivity" type="range" min="0.4" max="2" step="0.1" value="1"></label></div><div class="body-pause-tools"><span id="bodyModeState">タッチ / キーボード</span><button id="bodyPauseSetup" class="secondary">カメラ操作・位置合わせ</button><button id="bodyPauseStop" class="text-btn">カメラOFF / タッチへ</button></div><button id="resumeButton" class="primary"><span>試合に戻る</span><span class="arrow">↗</span></button><button id="restartButton" class="secondary">最初からやり直す</button><button id="menuButton" class="secondary">タイトルに戻る</button></div></section>
-<section id="helpScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">YOUR FIRST TOUCH</div><h2>HOW TO PLAY.</h2><div class="orientation-hint">全身の動作検出は縦向きが標準です。横画面も設定から選べます。</div><div class="help-grid"><span>W / A / S / D</span><span>前後左右に移動</span><span>マウス / ドラッグ</span><span>視点移動。← → キーでも左右を向けます</span><span>Shift</span><span>ダッシュ。ゲージが減ると速度が落ちます</span><span>Space / 左クリック</span><span>押してパワーをため、離してシュート</span><span>E / 右クリック</span><span>見ている方向の味方へパス</span><span>Q / C</span><span>スルーパス / 近くのボールを奪う</span><span>R</span><span>味方にパス要求。練習ではボールを戻す</span><span>F / G</span><span>ボール追視の切替 / 相手ゴールを見る</span><span>P / Esc</span><span>一時停止。M で音の切替</span></div><p class="help-note"><b>スマホ：</b>左スティックで移動、画面右側をドラッグして視点移動。右下のボタンでキックします。<br><b>ドリブル：</b>近いボールは自動でトラップ。所持中は移動するだけで運べます。<br><b>画質：</b>重い場合は「LOW」を選択。視点の揺れは初期状態でオフです。後方視点で自分の全身を表示します。<br><b>ルール：</b>スローイン・コーナー・ゴールキックは簡易再開。オフサイド、ファウル、交代はありません。</p><div class="options"><label>シュートの方向アシスト<input id="helpAim" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="helpBob" type="checkbox"></label><label>サウンド<input id="helpAudio" type="checkbox" checked></label></div><button id="closeHelp" class="primary"><span>ピッチに向かう</span><span class="arrow">↗</span></button></div></section>
+<section id="helpScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">YOUR FIRST TOUCH</div><h2>HOW TO PLAY.</h2><div class="orientation-hint">全身の動作検出は縦向きが標準です。横画面も設定から選べます。</div><div class="help-grid"><span>W / A / S / D</span><span>前後左右に移動</span><span>マウス / ドラッグ</span><span>視点移動。← → キーでも左右を向けます</span><span>Shift</span><span>ダッシュ。ゲージが減ると速度が落ちます</span><span>Space / 左クリック</span><span>押してパワーをため、離してシュート</span><span>E / 右クリック</span><span>見ている方向の味方へパス</span><span>Q / C</span><span>スルーパス / 近くのボールを奪う</span><span>R</span><span>味方にパス要求。練習ではボールを戻す</span><span>F / G</span><span>ボール追視の切替 / 相手ゴールを見る</span><span>P / Esc</span><span>一時停止。M で音の切替</span></div><p class="help-note"><b>スマホ：</b>左スティックで移動、画面右側をドラッグして視点移動。右下のボタンでキックします。<br><b>ドリブル：</b>足元に届いたボールは自動で受けます。所持中は移動するだけで運べます。<br><b>画質：</b>重い場合は「LOW」を選択。視点の揺れは初期状態でオフです。後方視点で自分の全身を表示します。<br><b>ルール：</b>スローイン・コーナー・ゴールキックは簡易再開。オフサイド、ファウル、交代はありません。</p><div class="options"><label>シュートの方向アシスト<input id="helpAim" type="checkbox" checked></label><label>走行時の視点の揺れ<input id="helpBob" type="checkbox"></label><label>サウンド<input id="helpAudio" type="checkbox" checked></label></div><button id="closeHelp" class="primary"><span>ピッチに向かう</span><span class="arrow">↗</span></button></div></section>
 <section id="resultScreen" class="screen modal-screen" hidden><div class="modal"><div class="eyebrow">FULL TIME</div><h2 id="resultTitle">WELL PLAYED.</h2><div id="resultScore" class="result-score">0 : 0</div><p id="resultText" style="text-align:center"></p><div id="stats" class="stats"></div><button id="againButton" class="primary"><span>もう一試合</span><span class="arrow">↗</span></button><button id="resultMenuButton" class="secondary">タイトルに戻る</button></div></section>
 <div id="fatal" class="error-box" hidden><div><div class="eyebrow">DISPLAY UNAVAILABLE</div><h2>3D画面を開始できませんでした</h2><p id="fatalMessage">WebGL が利用できるブラウザで開いてください。<br>アプリ内プレビューの場合は、通常のブラウザに切り替えてください。</p><button onclick="location.reload()" class="primary">再読み込み</button></div></div>
 <noscript><div class="error-box">このゲームには JavaScript が必要です。</div></noscript>
@@ -267,7 +299,7 @@
      <div><b>足踏み＋半身 → 左右へ</b><span>正面で前進。胸と腰を左右へ向けると斜め→横移動。90度まで向かなくてもOK。足踏みを止めると停止します。</span></div>
      <div><b>腕を伸ばす → 味方選択</b><span>肩・肘・手首で方向を選びます。指先不要。腕を戻しても約1.2秒保持。</span></div>
      <div><b>同じ脚振り → パス／シュート／ボレー</b><span>膝を軽く上げて脚を前へ。選択中はパス、それ以外はボール状況でシュートかボレー。</span></div>
-     <div><b>到着時に片膝を軽く上げる → トラップ</b><span>膝を少し上げて短く保持。前へ振り出すキックとは分けて判定します。</span></div>
+     <div><b>ボールは自動で受ける</b><span>ボールが足元の受け取り範囲に入ると自動でコントロール。受けるための膝上げ操作は不要です。</span></div>
      <div><b>上半身を左右に振る → フェイント</b><span>ドリブル中、左→右または右→左。選択中は誤発動を抑えます。</span></div>
      <div><b>浮き球に頭を少し前へ → ヘディング</b><span>ジャンプ不要。ボールが頭の高さ・近くにあるときだけ発動。</span></div>
     </div>
@@ -293,16 +325,20 @@
  </div>
 </section>
 <div id="bodyLive" class="body-live" hidden>
- <header><span><i></i> CAMERA ON · <b id="bodyProfileShort">膝まで / 0.9.2</b></span><button id="bodyMiniToggle">映像</button><button id="bodyDetailsToggle" aria-expanded="false">詳細</button></header>
- <canvas id="bodyMiniCanvas" width="256" height="192" aria-label="カメラと骨格の確認映像"></canvas>
+ <header><span><i></i> CAMERA ON · <b id="bodyProfileShort">膝まで / 0.9.3</b></span><button id="bodyMiniToggle" type="button" aria-controls="selfCamera" aria-pressed="true">小窓OFF</button><button id="bodyDetailsToggle" aria-expanded="false">詳細</button></header>
  <div id="bodyLiveStatus" role="status">位置合わせ中</div>
  <div id="bodyMoveState" class="body-move-state" role="status">移動：認識待ち</div><div id="bodyGaitState" class="body-gait-state" role="status">足踏み：左 − / 右 − · 向き 正面</div><div class="body-move-bars"><span>左右</span><i><b id="bodyMoveX"></b></i><span>前進</span><i><b id="bodyMoveZ"></b></i></div><div class="kick-diag-count" id="bodyDiagCounts">動作 0 → 実行 0</div>
- <div id="bodyDiagReason" class="kick-diag-reason">v0.9.2 · カメラ待機</div>
+ <div id="bodyDiagReason" class="kick-diag-reason">v0.9.3 · カメラ待機</div>
  <label class="kick-trigger-label" for="bodyTriggerLive">キック判定</label><select id="bodyTriggerLive" aria-label="プレー中のキック判定"><option value="direct">共通キック（足先不要）</option></select><div class="body-stage"><span id="bodyStage">WAIT</span><small id="bodyMethod">未接続</small></div><div class="body-meter"><div id="bodyMeterFill"></div></div>
  <footer><button id="bodyTestShot" title="カメラ判定を通さずに発射を確認。自分のボールのみ。">テスト発射</button><button id="bodyLogSave" title="映像・骨格を含まない状態ログを保存">診断ログ</button></footer>
  <footer><button id="bodyRecalibrate">位置合わせ</button><button id="bodyStop">カメラOFF</button></footer>
 </div>
 
+<aside id="selfCamera" class="self-camera" hidden aria-label="自分の動きを確認するカメラ小窓">
+ <header><span><i></i> 自分の動き</span><button id="selfCameraHide" type="button" aria-label="カメラ小窓だけを隠す" title="小窓だけを隠す（カメラ操作は継続）">−</button></header>
+ <div class="self-camera-media"><video id="selfCameraVideo" autoplay muted playsinline disablepictureinpicture aria-label="リアルタイムの前面カメラ映像"></video><button id="selfCameraRetry" type="button" hidden>映像を表示</button><span id="selfCameraWaiting" hidden>映像待機中</span></div>
+ <div id="selfCameraStatus" class="self-camera-status">映像準備中</div>
+</aside>
 <div id="cameraWarning" class="camera-warning" hidden><span id="cameraWarningText"></span><button id="cameraReconnect">再接続</button><button id="cameraDismiss" aria-label="閉じる">×</button></div>
 <script type="text/plain" id="pose-worker-source">/* Embedded as text and spawned as a classic worker (WASM loader may use importScripts).
  * Raw frames stay within this browser; no fetch uploads or recordings. */
@@ -58081,7 +58117,6 @@ class PlayerVisual{
   if(p.kick>0){const t=clamp(1-p.kick/.36,0,1);this.rotate(6,.55*Math.cos(t*PI)-.82*Math.sin(t*PI));this.rotate(7,Math.max(0,.7*(1-t*2)));this.rotate(8,-.13);this.rotate(9,-.32,0,-.34);this.rotate(12,.22,0,.44);this.rotate(1,.08,-.15,0);}
   if(p.specialTimer>0){
    if(p.special==='HEADER'){const u=Math.sin((1-p.specialTimer/.5)*PI);this.rotate(1,.32*u);this.rotate(2,.25*u);this.rotate(9,-.4,0,-.4);this.rotate(12,-.4,0,.4);}
-   if(p.special==='TRAP'){this.rotate(6,-.65*Math.sin((1-p.specialTimer/.45)*PI));this.rotate(7,.8);}
    if(p.special==='VOLLEY'){this.rotate(6,-1.05*Math.sin((1-p.specialTimer/.45)*PI));this.rotate(1,-.16);}
    if(p.special==='FEINT'){const u=Math.sin((1-p.specialTimer/.55)*PI*2);this.rotate(0,0,u*.16,u*.08);this.rotate(3,-.18,0,-u*.23);this.rotate(6,.18,0,u*.23);this.rotate(9,0,0,-.38);this.rotate(12,0,0,.38);}
   }
@@ -58108,22 +58143,20 @@ const defaults={
  move:{kneeUp:.035,kneeDown:.012,minStepMs:110,maxStepMs:1250,holdMs:600,maxHoldMs:950,missingGraceMs:200,occlusionMs:1000,steerDead:.055,steerFull:.28,diagonal:.72,speed:.70,sprintSteps:5},
  turn:{deadDegrees:18,fullDegrees:55,smoothMs:120,holdMs:450,singleKneeDegrees:30},
  point:{reach:.44,elbowDegrees:108,dwellMs:140,holdMs:1200,maxDistance:46},
- kick:{lift:.14,returnDelta:.075,forwardDelta:.14,sideTravel:.15,minMs:65,maxMs:850,graceMs:150,cooldownMs:520,power:.68},
- trap:{lift:.08,holdMs:200,cooldownMs:600},
+ kick:{armLift:.08,lift:.14,returnDelta:.075,forwardDelta:.14,sideTravel:.15,minMs:65,maxMs:850,graceMs:150,cooldownMs:520,power:.68},
  feint:{lean:.16,maxMs:430,minMs:90,cooldownMs:900,recoveryMs:210},
  header:{forward:.14,screenNod:.13,minSpeed:.28,cooldownMs:850},
- play:{kickRadius:2.05,trapRadius:1.9,headerRadius:1.95,volleyMin:.65,volleyMax:1.75,headerMin:1.2,headerMax:2.65,trapMax:1.65,lookahead:.30,bufferMs:260,recoveryMs:180}
+ play:{kickRadius:2.05,headerRadius:1.95,volleyMin:.65,volleyMax:1.75,headerMin:1.2,headerMax:2.65,lookahead:.30,bufferMs:260,recoveryMs:180}
 };
 const bounds={
  tracking:{visibility:[.15,.9],kneeVisibility:[.15,.9],liveVisibility:[.1,.6],liveKneeVisibility:[.1,.6],maxFrameAgeMs:[600,1500],calibrationMs:[700,4000],minSamples:[4,30],settleMs:[0,700],gapMs:[600,2000],inputTTL:[200,1500]},
  move:{kneeUp:[.015,.24],kneeDown:[.004,.10],minStepMs:[70,400],maxStepMs:[500,1800],holdMs:[250,1000],maxHoldMs:[500,1300],missingGraceMs:[0,400],occlusionMs:[300,1500],steerDead:[.02,.20],steerFull:[.10,.6],diagonal:[.2,1],speed:[.3,1],sprintSteps:[3,9]},
  turn:{deadDegrees:[8,40],fullDegrees:[30,85],smoothMs:[40,400],holdMs:[100,900],singleKneeDegrees:[20,60]},
  point:{reach:[.25,.9],elbowDegrees:[85,165],dwellMs:[0,600],holdMs:[300,3000],maxDistance:[10,55]},
- kick:{lift:[.08,.35],returnDelta:[.025,.2],forwardDelta:[.05,.5],sideTravel:[.05,.4],minMs:[30,300],maxMs:[350,1500],graceMs:[60,350],cooldownMs:[250,1400],power:[.25,1]},
- trap:{lift:[.04,.3],holdMs:[100,450],cooldownMs:[300,1500]},
+ kick:{armLift:[.04,.3],lift:[.08,.35],returnDelta:[.025,.2],forwardDelta:[.05,.5],sideTravel:[.05,.4],minMs:[30,300],maxMs:[350,1500],graceMs:[60,350],cooldownMs:[250,1400],power:[.25,1]},
  feint:{lean:[.08,.4],maxMs:[200,900],minMs:[50,250],cooldownMs:[500,2000],recoveryMs:[80,400]},
  header:{forward:[.05,.4],screenNod:[.05,.4],minSpeed:[.1,1],cooldownMs:[350,1600]},
- play:{kickRadius:[1.2,2.5],trapRadius:[1.1,2.3],headerRadius:[1.1,2.3],volleyMin:[.4,1],volleyMax:[1.2,2.1],headerMin:[1,1.8],headerMax:[2,2.9],trapMax:[1,1.9],lookahead:[.1,.5],bufferMs:[80,450],recoveryMs:[80,400]}
+ play:{kickRadius:[1.2,2.5],headerRadius:[1.1,2.3],volleyMin:[.4,1],volleyMax:[1.2,2.1],headerMin:[1,1.8],headerMax:[2,2.9],lookahead:[.1,.5],bufferMs:[80,450],recoveryMs:[80,400]}
 };
 const copy=v=>JSON.parse(JSON.stringify(v));
 function sanitize(patch,base=defaults){const out=copy(base);for(const group of Object.keys(defaults))for(const key of Object.keys(defaults[group])){const v=patch?.[group]?.[key];if(typeof v==='number'&&Number.isFinite(v)){const [lo,hi]=bounds[group][key];out[group][key]=Math.max(lo,Math.min(hi,v));}}out.move.kneeDown=Math.min(out.move.kneeDown,out.move.kneeUp*.65);out.move.steerFull=Math.max(out.move.steerFull,out.move.steerDead+.04);out.move.maxHoldMs=Math.max(out.move.maxHoldMs,out.move.holdMs);out.turn.fullDegrees=Math.max(out.turn.fullDegrees,out.turn.deadDegrees+10);return out;}
@@ -58216,7 +58249,7 @@ class Recognizer{
  parameters(){return this.tuning||Config.get();}
  setTuning(patch){this.tuning=Config.sanitize(patch,this.parameters());this.resetGestures();}
  resetKick(){this.legs=[null,null];this.pendingKick=null;}
- resetGestures(){this.gait=new KneeGait();this.turnAngle=0;this.turnAt=-Infinity;this.resetKick();this.stepDown=[true,true];this.steps=[];this.lastStep=-Infinity;this.lastSide=-1;this.runUntil=0;this.armed=false;this.settleAt=null;this.nextKick=0;this.nextTrap=0;this.nextHeader=0;this.nextFeint=0;this.recoveryUntil=0;this.pointSide=null;this.smoothPoint=0;this.lastLean=null;this.leanPeak=null;this.lastHead=null;this.headerReady=true;this.callAt=null;this.callFired=false;this.upperAt=null;}
+ resetGestures(){this.gait=new KneeGait();this.turnAngle=0;this.turnAt=-Infinity;this.resetKick();this.stepDown=[true,true];this.steps=[];this.lastStep=-Infinity;this.lastSide=-1;this.runUntil=0;this.armed=false;this.settleAt=null;this.nextKick=0;this.nextHeader=0;this.nextFeint=0;this.recoveryUntil=0;this.pointSide=null;this.smoothPoint=0;this.lastLean=null;this.leanPeak=null;this.lastHead=null;this.headerReady=true;this.callAt=null;this.callFired=false;this.upperAt=null;}
  resetCalibrationSamples(){this.samples=[];this.calibrationStart=null;this.calibrationGoodMs=0;this.calibrationGoodAt=null;this.calibrationSampleAt=null;}
  calibrationMiss(out,now,status){
   // Missing frames never contribute to elapsed good-frame time.
@@ -58323,15 +58356,14 @@ class Recognizer{
   out.movement={source:running?gait.source:'idle',steps:gait.steps,totalSteps:gait.total,mode:this.moveMode,lean,yaw:Math.round(this.turnAngle),steering,signals:gait.signals,threshold:gait.threshold,lastStep:gait.lastStep,periodMs:gait.periodMs,knees:gait.visible};
   const targetActive=!!context.passTargetActive||!!pointer;
   const needPlay=!!context.ownsBall||!!context.canKick||!!context.ballIncoming;
-  const canTrap=!!context.canTrap||!!context.trapSoon;
-  let hardKick=null,softKick=null,trap=null;
+  let hardKick=null,softKick=null;
   if(this.profile==='full')for(let s=0;s<2;s++){
    const q=f.knees[s];if(!q)continue;
    const lift=lifts[s],depth=Number.isFinite(q.depth)&&Number.isFinite(this.baseline.kneeDepth[s])?q.depth-this.baseline.kneeDepth[s]:0,travel=Math.abs(q.x-this.baseline.kneeX[s]);
    let leg=this.legs[s];
    if(!leg){this.legs[s]=leg={started:null,peak:0,baseDepth:depth,lastLift:lift,lastTime:now,downSeen:lift<P.move.kneeDown,used:false,march:running};}
    if(lift<P.move.kneeDown&&leg.started===null){leg.downSeen=true;leg.used=false;leg.march=false;}
-   if(lift>P.trap.lift/this.sensitivity&&leg.started===null&&leg.downSeen&&!leg.used){leg.started=now;leg.peak=lift;leg.march=running;leg.downSeen=false;}
+   if(lift>P.kick.armLift/this.sensitivity&&leg.started===null&&leg.downSeen&&!leg.used){leg.started=now;leg.peak=lift;leg.march=running;leg.downSeen=false;}
    if(leg.started!==null){
     leg.peak=Math.max(leg.peak,lift);const age=now-leg.started;
     const strong=depth>P.kick.forwardDelta||travel>P.kick.sideTravel;
@@ -58343,7 +58375,6 @@ class Recognizer{
      if(swing){hardKick={side:s,value:clamp(P.kick.power+depth*.1,.3,.95),method:'KNEE_SWING'};}
      else if(lowered&&!leg.march&&!running){softKick={side:s,value:P.kick.power,method:'KNEE_RETURN'};}
     }
-    if(!leg.used&&canTrap&&lift>P.trap.lift&&age>=P.trap.holdMs&&!strong&&!lowered&&now>=this.nextTrap)trap={side:s};
     // Finish a lowered leg even when it was a marching step. Otherwise the
     // old started timestamp can consume the NEXT deliberate kick at timeout.
     if(age>P.kick.maxMs||lift<P.move.kneeDown){leg.started=null;leg.peak=0;leg.downSeen=lift<P.move.kneeDown;}
@@ -58370,7 +58401,6 @@ class Recognizer{
   }else this.leanPeak=null;
   if(header){this.emit(out,'header',now);this.headerReady=false;this.nextHeader=now+P.header.cooldownMs;this.pendingKick=null;for(const q of this.legs)if(q)q.used=true;}
   else if(kick&&now>=this.nextKick){this.emit(out,'kick',now,kick);this.nextKick=now+P.kick.cooldownMs;this.pendingKick=null;for(const q of this.legs)if(q){q.used=true;q.started=null;}this.runUntil=0;this.steps=[];this.gait.runUntil=0;}
-  else if(trap){this.emit(out,'trap',now,trap);this.nextTrap=now+P.trap.cooldownMs;this.pendingKick=null;if(this.legs[trap.side])this.legs[trap.side].used=true;}
   else if(feint){this.emit(out,'feint',now,{side:feintSide});this.nextFeint=now+P.feint.cooldownMs;this.recoveryUntil=now+P.feint.recoveryMs;this.leanPeak=null;}
   else if(this.profile==='upper'){
    // Retained explicit accessibility fallback: does not create leaning-only movement.
@@ -58384,7 +58414,7 @@ class Recognizer{
   const freeze=(targetActive&&needPlay)||windup||now<this.recoveryUntil||out.actions.some(a=>a.type!=='call');
   if(freeze){out.x=out.forward=0;out.sprint=false;if(!out.actions.length&&!windup&&targetActive)out.controlState='PASS_TARGET';out.movement.source='play-priority';}
   if(!f.knees.some(Boolean)&&this.profile==='full'){out.status='膝の認識待ち・足先は不要';}
-  else{const labels={IDLE:'停止・足踏みで前進',RUN:'RUN・前進',RUN_LEFT:out.forward>.12?'RUN・左斜め前':'RUN・左へ',RUN_RIGHT:out.forward>.12?'RUN・右斜め前':'RUN・右へ',PASS_TARGET:'PASS TARGET・腕を戻しても選択保持',KICK_PREP:'脚を前へ振る・KICK準備',KICK:'KICK検出',TRAP:'TRAP検出',FEINT:'FEINT検出',HEADER:'HEADER検出'};out.status=labels[out.controlState]||'操作待機';}
+  else{const labels={IDLE:'停止・足踏みで前進',RUN:'RUN・前進',RUN_LEFT:out.forward>.12?'RUN・左斜め前':'RUN・左へ',RUN_RIGHT:out.forward>.12?'RUN・右斜め前':'RUN・右へ',PASS_TARGET:'PASS TARGET・腕を戻しても選択保持',KICK_PREP:'脚を前へ振る・KICK準備',KICK:'KICK検出',FEINT:'FEINT検出',HEADER:'HEADER検出'};out.status=labels[out.controlState]||'操作待機';}
   out.diagnostic={reason:!f.knees.some(Boolean)?'KNEE_MISSING':out.controlState,mode:'STEP_TURN',knees:f.knees.map(Boolean),feet:out.feet,score:clamp(Math.max(...lifts)/P.kick.lift,0,2),method:out.actions[0]?.method||null};
   this.lastOutput=out;return out;
  }
@@ -58412,8 +58442,6 @@ function context(hero,ball,{passTargetActive=false,phase='play'}={}){
  return{ownsBall:own,passTargetActive,ballDistance:d,ballHeight:ball.y,ballIncoming:eligible&&incoming,
   canKick:eligible&&(own||free&&d<=p.kickRadius&&ball.y<=p.volleyMax),
   canVolley:eligible&&volley,canHeader:eligible&&free&&d<=p.headerRadius&&ball.y>=p.headerMin&&ball.y<=p.headerMax,
-  canTrap:eligible&&free&&d<=p.trapRadius&&ball.y<=p.trapMax,
-  trapSoon:eligible&&incoming&&aheadD<=p.trapRadius&&aheadY<=p.trapMax,
   headerSoon:eligible&&incoming&&aheadD<=p.headerRadius&&aheadY>=p.headerMin&&aheadY<=p.headerMax,
   kickSoon:eligible&&incoming&&aheadY<=p.volleyMax,
   canFeint:own&&phase==='play'};
@@ -58426,7 +58454,6 @@ function resolve(type,c,selected=null){
   return{ok:false,reason:c.kickSoon?'BUFFERED':'NO_BALL'};
  }
  if(type==='header')return c.canHeader?{ok:true,play:'HEADER'}:{ok:false,reason:c.headerSoon?'BUFFERED':'HEADER_RANGE'};
- if(type==='trap')return c.canTrap?{ok:true,play:'TRAP'}:{ok:false,reason:c.trapSoon?'BUFFERED':'TRAP_RANGE'};
  if(type==='feint')return c.canFeint?{ok:true,play:'FEINT'}:{ok:false,reason:'NO_BALL'};
  return{ok:false,reason:'UNKNOWN_ACTION'};
 }
@@ -58618,7 +58645,7 @@ for(let team=0;team<2;team++)for(let i=0;i<11;i++){const f=formation[i],dir=team
 const hero=players[6];
 const ball={x:0,y:.22,z:-5.5,vx:0,vy:0,vz:0,r:.22,owner:hero.id,lastTouch:hero.id,immune:0,flight:0,spin:0,passFrom:-1,passTeam:-1,shotBy:-1};
 const game={mode:'match',practiceType:'shoot',difficulty:'normal',duration:180,remaining:180,phase:'menu',prevPhase:'play',score:[0,0],t:0,real:0,eventTimer:0,restart:null,goalTeam:-1,goalLast:-1,callUntil:0,track:settings.autoTrack,tackleCD:0,practiceTimer:0,practiceHits:0,stats:{},kickoffShield:2,frame:0};
-function newStats(){return{shots:0,goals:0,passes:0,completed:0,tackles:0,assists:0,distance:0,teamPoss:0,totalPoss:0,volleys:0,traps:0,headers:0,feints:0};}
+function newStats(){return{shots:0,goals:0,passes:0,completed:0,tackles:0,assists:0,distance:0,teamPoss:0,totalPoss:0,volleys:0,headers:0,feints:0};}
 game.stats=newStats();
 const input={keys:new Set(),joyX:0,joyY:0,sprint:false,charging:false,charge:0,yaw:0,pitch:-.24,lookIdle:0,mouseDown:false};
 let bodyFrame=null,inputMode='touch',pendingPlay=null;
@@ -58635,12 +58662,12 @@ function heading(a,b){return Math.atan2(b.x-a.x,b.z-a.z);}
 function getOwner(){return ball.owner>=0?players[ball.owner]:null;}
 function teamAttack(team){return team===0?1:-1;}
 function resetMotion(){bodyFrame=null;pendingPlay=null;usedBodyEvents.clear();intent.reset();input.keys.clear();input.joyX=input.joyY=0;input.sprint=false;input.charging=false;input.charge=0;input.mouseDown=false;$('stick').style.transform='translate(0px,0px)';document.querySelectorAll('.pressed').forEach(b=>b.classList.remove('pressed'));}
-function putOwner(p,notifyTrap=true){
+function putOwner(p,notifyReceive=true){
  const prev=ball.owner;
- if(ball.passFrom>=0){if(ball.passFrom===hero.id&&p.team===hero.team&&p.id!==hero.id){game.stats.completed++;if(notifyTrap)notify('パス成功 · 味方が受けました',1.25);}ball.passFrom=-1;ball.passTeam=-1;}
+ if(ball.passFrom>=0){if(ball.passFrom===hero.id&&p.team===hero.team&&p.id!==hero.id){game.stats.completed++;if(notifyReceive)notify('パス成功 · 味方が受けました',1.25);}ball.passFrom=-1;ball.passTeam=-1;}
  if(prev!==p.id)intent.reset();
  ball.owner=p.id;ball.lastTouch=p.id;ball.shotBy=-1;ball.vx=ball.vz=ball.vy=0;ball.immune=.22;p.held=0;
- if(p.id===hero.id&&prev!==hero.id&&notifyTrap){notify('YOUR BALL · 前を向いて仕掛けよう',1.3);sfx('trap');}
+ if(p.id===hero.id&&prev!==hero.id&&notifyReceive){notify('YOUR BALL · 前を向いて仕掛けよう',1.3);sfx('receive');}
 }
 function placeBallAtOwner(){const p=getOwner();if(!p)return;const f=p.id===hero.id?1.58:.86;ball.x=p.x+Math.sin(p.dir)*f;ball.z=p.z+Math.cos(p.dir)*f;ball.y=ball.r;}
 function resetPositions(kickoff=0){
@@ -58902,9 +58929,8 @@ function performResolved(kind,power,selected,eventId=null,side=1,allowBuffer=tru
   else ok=looseStrike('SHOT',power);
  }else if(r.play==='VOLLEY'){ok=looseStrike('VOLLEY',power);if(ok)game.stats.volleys++;}
  else if(r.play==='HEADER'){ok=looseStrike('HEADER',power);if(ok)game.stats.headers++;}
- else if(r.play==='TRAP'){putOwner(hero,false);placeBallAtOwner();hero.special='TRAP';hero.specialTimer=.45;hero.kick=0;game.stats.traps++;ok=true;sfx('trap');}
  else if(r.play==='FEINT'){hero.special='FEINT';hero.specialTimer=.55;hero.feintSide=side<0?-1:1;game.stats.feints++;game.kickoffShield=Math.max(game.kickoffShield,.30);ok=true;}
- if(ok){pendingPlay=null;intent.reset();passTarget=null;manualViewUntil=0;const titles={PASS:'パス！',SHOT:'シュート！',VOLLEY:'ボレー！',TRAP:'トラップ！',HEADER:'ヘディング！',FEINT:'フェイント！'};notify(titles[r.play],1.2);}
+ if(ok){pendingPlay=null;intent.reset();passTarget=null;manualViewUntil=0;const titles={PASS:'パス！',SHOT:'シュート！',VOLLEY:'ボレー！',HEADER:'ヘディング！',FEINT:'フェイント！'};notify(titles[r.play],1.2);}
  return recordBody(ok,ok?r.play:'RECEIVER_LOST',r.play.toLowerCase(),eventId);
 }
 function performIntentKick(power,eventId=null,side=1){
@@ -58994,7 +59020,7 @@ function updateHUD(){
 let audioContext=null,master=null,crowdGain=null,audioStarted=false,lastBounce=-9;
 function initAudio(){if(!settings.audio)return;try{if(!audioContext){const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;audioContext=new Audio();master=audioContext.createGain();master.gain.value=.14;master.connect(audioContext.destination);const n=audioContext.sampleRate*3,buffer=audioContext.createBuffer(1,n,audioContext.sampleRate),data=buffer.getChannelData(0);let v=0;for(let i=0;i<n;i++){v=v*.96+(Math.random()*2-1)*.04;data[i]=v;}const source=audioContext.createBufferSource();source.buffer=buffer;source.loop=true;const filter=audioContext.createBiquadFilter();filter.type='lowpass';filter.frequency.value=950;crowdGain=audioContext.createGain();crowdGain.gain.value=.4;source.connect(filter);filter.connect(crowdGain);crowdGain.connect(master);source.start();}if(audioContext.state==='suspended'){const p=audioContext.resume();if(p?.catch)p.catch(()=>{});}audioStarted=true;}catch(e){audioStarted=false;}}
 function tone(freq,duration,type='sine',gain=.45,endFreq){if(!audioContext||!settings.audio||!master)return;try{const t=audioContext.currentTime,o=audioContext.createOscillator(),g=audioContext.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),t+duration);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(gain,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(master);o.start(t);o.stop(t+duration+.02);}catch(e){}}
-function sfx(kind){if(!settings.audio||!audioStarted)return;if(kind==='shot')tone(120,.19,'sine',1,42);else if(kind==='pass'||kind==='trap')tone(170,.095,'sine',.55,55);else if(kind==='tackle')tone(95,.14,'triangle',.65,34);else if(kind==='whistle')tone(1800,.32,'sine',.20,2300);else if(kind==='out')tone(1300,.16,'sine',.15,1400);else if(kind==='post')tone(650,.32,'triangle',.45,470);else if(kind==='save')tone(130,.15,'triangle',.65,50);else if(kind==='call')tone(710,.12,'sine',.25,950);else if(kind==='bounce'){if(game.real-lastBounce>.13){lastBounce=game.real;tone(95,.08,'sine',.30,45);}}else if(kind==='goal'){tone(523,.38,'sine',.45);tone(659,.50,'sine',.38);tone(784,.70,'sine',.36);if(crowdGain){const t=audioContext.currentTime;crowdGain.gain.cancelScheduledValues(t);crowdGain.gain.setValueAtTime(.4,t);crowdGain.gain.linearRampToValueAtTime(2,t+.15);crowdGain.gain.linearRampToValueAtTime(.4,t+2.4);}}}
+function sfx(kind){if(!settings.audio||!audioStarted)return;if(kind==='shot')tone(120,.19,'sine',1,42);else if(kind==='pass'||kind==='receive')tone(170,.095,'sine',.55,55);else if(kind==='tackle')tone(95,.14,'triangle',.65,34);else if(kind==='whistle')tone(1800,.32,'sine',.20,2300);else if(kind==='out')tone(1300,.16,'sine',.15,1400);else if(kind==='post')tone(650,.32,'triangle',.45,470);else if(kind==='save')tone(130,.15,'triangle',.65,50);else if(kind==='call')tone(710,.12,'sine',.25,950);else if(kind==='bounce'){if(game.real-lastBounce>.13){lastBounce=game.real;tone(95,.08,'sine',.30,45);}}else if(kind==='goal'){tone(523,.38,'sine',.45);tone(659,.50,'sine',.38);tone(784,.70,'sine',.36);if(crowdGain){const t=audioContext.currentTime;crowdGain.gain.cancelScheduledValues(t);crowdGain.gain.setValueAtTime(.4,t);crowdGain.gain.linearRampToValueAtTime(2,t+.15);crowdGain.gain.linearRampToValueAtTime(.4,t+2.4);}}}
 function syncSettings(){syncTrack();for(const id of["quality","pauseQuality"])$(id).value=settings.quality;for(const id of["atmosphere","pauseAtmosphere"])$(id).value=settings.atmosphere;for(const[id,key]of[['aimAssist','assist'],['headBob','bob'],['audioEnabled','audio'],['helpAim','assist'],['helpBob','bob'],['helpAudio','audio']])$(id).checked=settings[key];$('sensitivity').value=settings.sensitivity;$('soundButton').classList.toggle('active',settings.audio);$('soundButton').setAttribute('aria-pressed',String(settings.audio));if(master)master.gain.value=settings.audio?.14:0;}
 function setAudio(){settings.audio=!settings.audio;syncSettings();saveSettings();if(settings.audio)initAudio();}
 for(const[id,key]of[['aimAssist','assist'],['headBob','bob'],['audioEnabled','audio'],['helpAim','assist'],['helpBob','bob'],['helpAudio','audio']])$(id).addEventListener('change',e=>{settings[key]=e.target.checked;syncSettings();saveSettings();if(settings.audio)initAudio();});
@@ -59057,7 +59083,7 @@ function sanitizeBodyPose(p){
  return {arms:[0,1].map(i=>({lift:clamp(Number(p.arms[i]?.lift)||0,0,2.7),bend:clamp(Number(p.arms[i]?.bend)||0,0,2.1),point:!!p.arms[i]?.point})),knees:[0,1].map(i=>clamp(Number(p.knees[i])||0,0,1.05))};
 }
 window.FEGame={
- state:()=>({phase:game.phase,ownsBall:ball.owner===hero.id,mode:game.mode,inputMode,autoTrack:game.track,intent:intent.snapshot(),version:'0.9.2',lastBodyResult:{...bodyResult},movement:{x:hero.x,z:hero.z,speed:hypot(hero.vx,hero.vz),distance:game.stats.distance,inputX:bodyFrame&&performance.now()-bodyFrame.at<window.FEControlConfig.get().tracking.inputTTL?bodyFrame.x:0,inputForward:bodyFrame&&performance.now()-bodyFrame.at<window.FEControlConfig.get().tracking.inputTTL?bodyFrame.forward:0,source:bodyFrame?.movementSource||'none',receiving:!!bodyFrame&&performance.now()-bodyFrame.at<window.FEControlConfig.get().tracking.inputTTL},shots:game.stats.shots,passes:game.stats.passes,control:motionContext(),gestureStats:{volleys:game.stats.volleys,traps:game.stats.traps,headers:game.stats.headers,feints:game.stats.feints},pendingPlay:pendingPlay?{kind:pendingPlay.kind,eventId:pendingPlay.eventId}:null}),
+ state:()=>({phase:game.phase,ownsBall:ball.owner===hero.id,mode:game.mode,inputMode,autoTrack:game.track,intent:intent.snapshot(),version:'0.9.3',lastBodyResult:{...bodyResult},movement:{x:hero.x,z:hero.z,speed:hypot(hero.vx,hero.vz),distance:game.stats.distance,inputX:bodyFrame&&performance.now()-bodyFrame.at<window.FEControlConfig.get().tracking.inputTTL?bodyFrame.x:0,inputForward:bodyFrame&&performance.now()-bodyFrame.at<window.FEControlConfig.get().tracking.inputTTL?bodyFrame.forward:0,source:bodyFrame?.movementSource||'none',receiving:!!bodyFrame&&performance.now()-bodyFrame.at<window.FEControlConfig.get().tracking.inputTTL},shots:game.stats.shots,passes:game.stats.passes,control:motionContext(),gestureStats:{volleys:game.stats.volleys,headers:game.stats.headers,feints:game.stats.feints},pendingPlay:pendingPlay?{kind:pendingPlay.kind,eventId:pendingPlay.eventId}:null}),
  setInputMode(mode){inputMode=mode==='camera'?'camera':'touch';resetMotion();$('pointAim').hidden=true;$('kickIntent').hidden=true;},
  setBodyFrame(v){if(inputMode!=='camera'||game.phase!=='play'||!v?.valid){this.clearBodyInput(false);return;}
   const now=performance.now(),observed=Number.isFinite(v.observedAt)?v.observedAt:now;
@@ -59075,7 +59101,7 @@ window.FEGame={
  },
  bodyAction(kind,power=.68,meta={}){
   if(inputMode!=='camera'||game.phase!=='play'||!bodyFrame||performance.now()-bodyFrame.at>=window.FEControlConfig.get().tracking.inputTTL)return recordBody(false,game.phase!=='play'?'NOT_PLAYING':'STALE_INPUT',kind,meta.eventId);
-  if(['kick','trap','header','feint'].includes(kind)){
+  if(['kick','header','feint'].includes(kind)){
    const id=meta.eventId===undefined?'frame:'+bodyFrame.sequence:meta.eventId;
    if(bodyFrame.consumed||usedBodyEvents.has(id))return recordBody(false,'DUPLICATE',kind,id);
    bodyFrame.consumed=true;usedBodyEvents.add(id);if(usedBodyEvents.size>200)usedBodyEvents.delete(usedBodyEvents.values().next().value);
@@ -59102,13 +59128,91 @@ if(new URLSearchParams(location.search).has('test')||window.__FE_ENABLE_TEST__==
   setClock:v=>{game.remaining=v;},setPhase:v=>{game.phase=v;},
   shoot:p=>shoot(hero,p),pass:through=>passBall(hero,through),tackle,callPass,pause:pauseGame,resume:resumeGame,goal,reset:resetPositions,
   setKeys:keys=>{input.keys=new Set(keys);},setLook:(yaw,pitch)=>{input.yaw=yaw;input.pitch=pitch;},
-  render,updateHUD,updateIntent,autoCamera,setAutoTrack,look,project,physics:physicsStep,version:'0.9.2'
+  render,updateHUD,updateIntent,autoCamera,setAutoTrack,look,project,physics:physicsStep,version:'0.9.3'
  };
 }
 function frame(now){try{const dt=rafTime?Math.min(.10,(now-rafTime)/1000):1/60;rafTime=now;accumulator+=dt;let count=0;while(accumulator>=1/60&&count<6){step(1/60);accumulator-=1/60;count++;}render();if(game.frame%4===0&&game.phase!=='menu')updateHUD();if(master)master.gain.value=settings.audio?(game.phase==='menu'||game.phase==='paused'?.025:.14):0;if(!window.__FE_DISABLE_RAF__)requestAnimationFrame(frame);}catch(error){console.error(error);fatal('描画を継続できませんでした。詳細: '+error.message);}}
 titleScreen();
 try{render();$('loading').hidden=true;$('startButton').disabled=false;window.__FIRST_ELEVEN_READY__=true;if(!window.__FE_DISABLE_RAF__)if(!window.__FE_DISABLE_RAF__)requestAnimationFrame(frame);}catch(error){console.error('FIRST ELEVEN: first frame failed',error);fatal('描画処理で問題が発生しました。通常のブラウザで開き直してください。詳細: '+error.message);}
 
+})();
+
+</script>
+<!-- src/self-view.js -->
+<script>
+/* LIVE CAMERA 0.9.3. Display-only camera inset.
+ * Shares the already-permitted MediaStream. NEVER requests a camera, stops a
+ * track, records frames, or feeds gestures. Hiding affects this <video> only.
+ * Direct video playback is deliberately independent of pose inference timing.
+ */
+(() => {
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const panel=$('selfCamera'),video=$('selfCameraVideo'),toggle=$('bodyMiniToggle');
+ if(!panel||!video||!toggle)return;
+ const retry=$('selfCameraRetry'),waiting=$('selfCameraWaiting'),status=$('selfCameraStatus');
+ let stream=null,wanted=true,tracked=false,muted=false,session=0,playPending=false;
+ let unsubscribe=[];
+ video.muted=true;video.defaultMuted=true;video.playsInline=true;
+ const alive=()=>!!stream?.getVideoTracks().some(t=>t.readyState==='live');
+ const inGame=()=>!document.hidden&&['menu','bodyScreen','pauseScreen','resultScreen','fatal'].every(id=>!$(id)||$(id).hidden)&&!!$('hud')&&!$('hud').hidden;
+ function setMirror(value){video.style.transform=value?'scaleX(-1)':'none';}
+ function setText(){status.textContent=muted?'カメラ映像待機':tracked?'LIVE · 動作認識中':'LIVE · 認識待機';}
+ function play(){
+  if(!stream||panel.hidden||muted||playPending)return;
+  const id=session;playPending=true;retry.hidden=true;
+  try{
+   Promise.resolve(video.play()).then(()=>{
+    if(id!==session)return;
+    if(panel.hidden)video.pause();
+    retry.hidden=true;
+   }).catch(()=>{if(id===session&&!panel.hidden)retry.hidden=false;})
+     .finally(()=>{if(id===session)playPending=false;});
+  }catch(e){playPending=false;retry.hidden=false;}
+ }
+ function refresh(){
+  const show=alive()&&wanted&&inGame(),wasShown=!panel.hidden;
+  if(panel.hidden===show)panel.hidden=!show;
+  document.body.classList.toggle('camera-preview-visible',show);
+  toggle.textContent=wanted?'小窓OFF':'小窓ON';
+  toggle.setAttribute('aria-pressed',String(wanted));
+  waiting.hidden=!muted;video.style.visibility=muted?'hidden':'visible';setText();
+  if(!show){if(!video.paused)video.pause();retry.hidden=true;}
+  else if(!wasShown||video.paused)play();
+ }
+ function detach(){
+  ++session;playPending=false;unsubscribe.forEach(fn=>fn());unsubscribe=[];
+  // The controller owns the tracks. Do not stop the shared capture from here.
+  video.pause();video.srcObject=null;stream=null;tracked=false;muted=false;
+  retry.hidden=true;waiting.hidden=true;panel.hidden=true;
+  document.body.classList.remove('camera-preview-visible');
+  status.textContent='カメラOFF';
+ }
+ function attach(source,mirror=true){
+  detach();if(!source?.getVideoTracks)return;
+  stream=source;wanted=true;video.srcObject=stream;setMirror(mirror);
+  for(const track of stream.getVideoTracks()){
+   const onEnded=()=>{if(!alive())detach();else refresh();};
+   const onMute=()=>{muted=stream.getVideoTracks().some(t=>t.muted);refresh();};
+   for(const [name,fn]of [['ended',onEnded],['mute',onMute],['unmute',onMute]]){
+    track.addEventListener(name,fn);unsubscribe.push(()=>track.removeEventListener(name,fn));
+   }
+  }
+  muted=stream.getVideoTracks().some(t=>t.muted);refresh();
+ }
+ function setWanted(value){wanted=!!value;refresh();}
+ $('selfCameraHide').addEventListener('click',()=>{setWanted(false);toggle.focus({preventScroll:true});});
+ toggle.addEventListener('click',()=>setWanted(!wanted));retry.addEventListener('click',play);
+ video.addEventListener('loadedmetadata',refresh);
+ // Overlay changes cannot accidentally display camera pixels over menus or calibration.
+ const observer=new MutationObserver(refresh);
+ for(const id of ['menu','hud','bodyScreen','pauseScreen','resultScreen','fatal'])if($(id))observer.observe($(id),{attributes:true,attributeFilter:['hidden']});
+ document.addEventListener('visibilitychange',refresh);addEventListener('resize',refresh);
+ window.FESelfView={attach,detach,setMirror,refresh,
+  setTracking(value){tracked=!!value;setText();},
+  state:()=>({connected:alive(),visible:!panel.hidden,wanted,tracked,muted})
+ };
+ refresh();
 })();
 
 </script>
@@ -59137,8 +59241,8 @@ let ready=false,sessionFailed=false,returnTo='start',countdown=null,countdownAt=
 let busy=false,busyAt=0,lastCapture=0,lastVideoTime=-1,lastReceived=0,lastTracked=0,lastOutput=null,lastLandmarks=null;
 let lastResultSerial=0;
 let diagnostic={detected:0,launched:0,testShots:0,rejected:0,poses:0,lastReason:'WAIT',lastEventAt:0},diagnosticLog=[],lastDiagnosticAt=0;
-let targetFPS=18,inferenceCost=0,method='未接続',mini=false,prevPhase='menu',feedbackUntil=0;
-const video=$('bodyVideo'),preview=$('bodySkeleton'),miniCanvas=$('bodyMiniCanvas');
+let targetFPS=18,inferenceCost=0,method='未接続',prevPhase='menu',feedbackUntil=0;
+const video=$('bodyVideo'),preview=$('bodySkeleton');
 let recognizer=new window.FEBodyRecognizer(readOptions());
 let rangeCheck=window.FELayout?new window.FELayout.RangeCheck():null,rangeReady=false,lastRangeReadyAt=-Infinity,lastCaptureAspect=0;
 function resetRange(){rangeCheck?.reset();rangeReady=false;lastRangeReadyAt=-Infinity;$('bodyStartNow').disabled=true;clearCountdown();}
@@ -59165,12 +59269,12 @@ function setStatus(text,kind='normal'){$('bodyOverlayStatus').textContent=text;$
 function labels(){
  const full=$('bodyProfile').value==='full';
  $('bodyFullHelp').hidden=!full;$('bodyUpperHelp').hidden=full;$('bodyFoot').disabled=!full;
- $('bodyProfileShort').textContent=full?'膝まで / 0.9.2':'上半身 / 0.9.2';
+ $('bodyProfileShort').textContent=full?'膝まで / 0.9.3':'上半身 / 0.9.3';
  $('bodyCaptureTip').textContent=full?'端末を固定し、肩・腰・両膝を映してください。すね・足首・足先は映らなくてOK。頭と腕は映ったときに追加操作へ使います。大きく移動せず、小さい足踏みで操作します。':'端末を固定し、肩・両手・腰を映してください。足の代わりに右手の上げ下げでキックします。';
  $('bodyConsentNote').textContent=isLocalAssets?'カメラ映像は端末内で処理します。録画・映像送信・マイク使用はしません。認識モデルはこのサイトから取得します。':'カメラ映像は端末内で処理します。録画・映像送信・マイク使用はしません。認識用ファイルを初回にjsDelivrとGoogleから取得します（通信が必要）。';
  $('bodyConsentNote').textContent+=' MediaPipeは利用状況・性能指標をGoogleに送信します。映像そのものの送信ではありません。';
  $('bodyTriggerLive').value=$('bodyKickLevel').value;
- video.style.transform=$('bodyMirror').checked?'scaleX(-1)':'none';preview.style.transform=video.style.transform;
+ video.style.transform=$('bodyMirror').checked?'scaleX(-1)':'none';preview.style.transform=video.style.transform;window.FESelfView?.setMirror($('bodyMirror').checked);
 }
 function selectMode(value){
  choice=value==='camera'?'camera':'touch';$('inputMode').value=choice;$('bodyModeState').textContent=choice==='camera'?'カメラ操作を選択中':'タッチ / キーボード';
@@ -59246,7 +59350,7 @@ async function begin(){
    track.addEventListener('mute',()=>{if(id===generation){API.clearBodyInput();setStatus('映像を待っています・試合は継続します','warning');}});
   }
   await withTimeout(video.play(),12000,'カメラ映像を開始できませんでした。通常のブラウザで再接続してください。');checkSession(id);
-  running=true;setStatus('認識モデルを読み込んでいます・映像は送信しません');$('bodyCameraState').textContent='CAMERA ON';
+  running=true;window.FESelfView?.attach(stream,$('bodyMirror').checked);setStatus('認識モデルを読み込んでいます・映像は送信しません');$('bodyCameraState').textContent='CAMERA ON';
   if(window.__FE_ENABLE_TEST__&&window.__FE_POSE_FACTORY__){mainPose=await window.__FE_POSE_FACTORY__();method='TEST DOUBLE';targetFPS=12;}
   else{
    try{await initWorker(id);}catch(workerError){
@@ -59267,10 +59371,10 @@ function clearCountdown(){if(countdown)clearInterval(countdown);countdown=null;c
 function stop(options={}){
  ++generation;enabled=ready=running=loading=busy=false;sessionFailed=false;clearCountdown();clearTimeout(tickTimer);clearInterval(watchdog);tickTimer=watchdog=null;
  API.clearBodyInput();recognizer?.suspend();killWorker();mainPose?.close?.();mainPose=null;
- if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;
+ window.FESelfView?.detach();if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}video.pause();video.srcObject=null;
  lastLandmarks=null;lastOutput=null;lastReceived=lastTracked=0;
  $('bodyScreen').classList.remove('camera-live');$('bodyLive').hidden=true;$('bodyCameraState').textContent='CAMERA OFF';$('bodyBegin').hidden=false;$('bodyBegin').disabled=false;
- preview.getContext('2d').clearRect(0,0,preview.width,preview.height);miniCanvas.getContext('2d').clearRect(0,0,miniCanvas.width,miniCanvas.height);
+ preview.getContext('2d').clearRect(0,0,preview.width,preview.height);
  if(!options.keepOverlay)closeOverlay();
  if(!options.keepChoice){choice='touch';$('inputMode').value='touch';API.setInputMode('touch');document.body.classList.remove('body-selected');$('bodyModeState').textContent='タッチ / キーボード';}
 }
@@ -59314,10 +59418,10 @@ async function tick(){
  finally{if(id===generation)scheduleTick();}
 }
 
-const failureText={BUFFERED:'ボール到達を短く待機',WINDOW_MISSED:'ボールが操作範囲を外れました',NO_TARGET:'その方向に味方がいません・腕を戻して選び直す',HEADER_RANGE:'ヘディング可能な高さ・距離ではありません',TRAP_RANGE:'ボールがトラップ範囲外です',VOLLEY:'ボレーを実行しました',HEADER:'ヘディングを実行しました',TRAP:'トラップを実行しました',FEINT:'フェイントを実行しました',NO_BALL:'動作は検出済み・自分のボールではありません',NO_INTENT:'動作は検出済み・パス選択の有効期限を確認',RECEIVER_LOST:'動作は検出済み・パス相手が無効です',NOT_PLAYING:'試合開始・再開を待っています',STALE_INPUT:'カメラ入力が古いため発射を保留',DUPLICATE:'同じ入力の重複発射を防止',SHOT:'シュートを実行しました',PASS:'パスを実行しました',PASS_SPACE:'方向パスを実行しました',TEST_SHOT:'テスト発射成功・ゲーム側は動いています'};
+const failureText={BUFFERED:'ボール到達を短く待機',WINDOW_MISSED:'ボールが操作範囲を外れました',NO_TARGET:'その方向に味方がいません・腕を戻して選び直す',HEADER_RANGE:'ヘディング可能な高さ・距離ではありません',VOLLEY:'ボレーを実行しました',HEADER:'ヘディングを実行しました',FEINT:'フェイントを実行しました',NO_BALL:'動作は検出済み・自分のボールではありません',NO_INTENT:'動作は検出済み・パス選択の有効期限を確認',RECEIVER_LOST:'動作は検出済み・パス相手が無効です',NOT_PLAYING:'試合開始・再開を待っています',STALE_INPUT:'カメラ入力が古いため発射を保留',DUPLICATE:'同じ入力の重複発射を防止',SHOT:'シュートを実行しました',PASS:'パスを実行しました',PASS_SPACE:'方向パスを実行しました',TEST_SHOT:'テスト発射成功・ゲーム側は動いています'};
 function diagnosticView(out=null,age=0){
  const state=API.state();
- if(state.lastBodyResult?.serial>lastResultSerial){const r=state.lastBodyResult;if(['SHOT','PASS','VOLLEY','TRAP','HEADER','FEINT'].includes(r.reason)&&r.ok)diagnostic.launched++;if(r.reason==='WINDOW_MISSED')diagnostic.rejected++;diagnostic.lastReason=r.reason;diagnostic.lastEventAt=performance.now();lastResultSerial=r.serial;}
+ if(state.lastBodyResult?.serial>lastResultSerial){const r=state.lastBodyResult;if(['SHOT','PASS','VOLLEY','HEADER','FEINT'].includes(r.reason)&&r.ok)diagnostic.launched++;if(r.reason==='WINDOW_MISSED')diagnostic.rejected++;diagnostic.lastReason=r.reason;diagnostic.lastEventAt=performance.now();lastResultSerial=r.serial;}
  const m=state.movement||{},x=m.inputX||0,z=m.inputForward||0;
  const dir=(z>.08?'前進':z<-.08?'後退':'')+(x>.08?' 右へ':x<-.08?' 左へ':'');
  const tracked=!!out?.valid;
@@ -59332,15 +59436,15 @@ function diagnosticView(out=null,age=0){
  const recent=performance.now()-diagnostic.lastEventAt<2200;
  const why=recent?(failureText[diagnostic.lastReason]||diagnostic.lastReason):out?.diagnostic?.reason==='FOOT_MISSING'?'膝の動きで判定します・足先は補助':out?.diagnostic?.reason==='KNEE_MISSING'?'膝まで映してください':!out?.valid?'体の認識待ち':out?.status||'キック待機';
  const ball=state.ownsBall?'ボールあり':'ボールなし';
- $('bodyDiagReason').textContent=`v0.9.2 · ${ball} · ${why}`;
+ $('bodyDiagReason').textContent=`v0.9.3 · ${ball} · ${why}`;
  if(performance.now()-lastDiagnosticAt>=220||recent&&diagnosticLog.at(-1)?.detected!==diagnostic.detected){
   diagnosticLog.push({ms:Math.round(performance.now()),phase:state.phase,ownsBall:state.ownsBall,mode:recognizer.kickLevel,valid:!!out?.valid,feet:out?.feet||[false,false],stage:out?.stage||'WAIT',reason:out?.diagnostic?.reason||null,score:Math.round((out?.diagnostic?.score||0)*100),detected:diagnostic.detected,launched:diagnostic.launched,lastGameResult:diagnostic.lastReason,inferenceMs:Math.round(inferenceCost),frameAgeMs:Math.round(age),moveX:Math.round(x*100)/100,moveForward:Math.round(z*100)/100,speed:Math.round((m.speed||0)*100)/100,movementSource:m.source||'none',gaitSteps:gait.totalSteps||0,kneeSignals:gait.signals||null,kneeThreshold:gait.threshold||null,bodyYaw:gait.yaw||0,steeringMode:gait.mode||null});
   if(diagnosticLog.length>240)diagnosticLog.shift();lastDiagnosticAt=performance.now();
  }
 }
 function saveDiagnostic(){
- const data={version:'0.9.2',scope:'State only. No images, video, audio, body landmarks or identity data.',time:new Date().toISOString(),camera:method,capture:{width:video.videoWidth,height:video.videoHeight,cropped:false},display:window.FEDisplay?.state()||null,framing:lastOutput?.framing?{requiredReady:lastOutput.framing.requiredReady,missing:lastOutput.framing.missing,policy:lastOutput.framing.policy}:null,profile:recognizer.profile,kickLevel:recognizer.kickLevel,counters:{...diagnostic},events:diagnosticLog};
- const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='FIRST_ELEVEN_v0.9.2_diagnostic.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ const data={version:'0.9.3',scope:'State only. No images, video, audio, body landmarks or identity data.',time:new Date().toISOString(),camera:method,capture:{width:video.videoWidth,height:video.videoHeight,cropped:false},display:window.FEDisplay?.state()||null,framing:lastOutput?.framing?{requiredReady:lastOutput.framing.requiredReady,missing:lastOutput.framing.missing,policy:lastOutput.framing.policy}:null,profile:recognizer.profile,kickLevel:recognizer.kickLevel,counters:{...diagnostic},events:diagnosticLog};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='FIRST_ELEVEN_v0.9.3_diagnostic.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
 }
 function receivePose(lm,world,time,cost=0){
  if(!running||!ready)return;
@@ -59357,7 +59461,7 @@ function receivePose(lm,world,time,cost=0){
  if(out.valid)lastTracked=now;
  if(active){
   API.setBodyFrame(out);
-  for(const action of out.actions){const ok=API.bodyAction(action.type,action.value,action);if(['kick','trap','feint','header'].includes(action.type)){
+  for(const action of out.actions){const ok=API.bodyAction(action.type,action.value,action);if(['kick','feint','header'].includes(action.type)){
    diagnostic.detected++;if(ok)diagnostic.launched++;else if(API.state().lastBodyResult?.reason!=='BUFFERED')diagnostic.rejected++;lastResultSerial=API.state().lastBodyResult?.serial||lastResultSerial;
    diagnostic.lastReason=API.state().lastBodyResult?.reason||(ok?'SHOT':'REJECTED');diagnostic.lastEventAt=now;
    $('bodyLiveStatus').textContent=ok?'KICK ✓ '+(failureText[diagnostic.lastReason]||'発射成功'):(failureText[diagnostic.lastReason]||'動作検出・未発射');feedbackUntil=now+1800;
@@ -59396,7 +59500,7 @@ function checkHealth(){
  const now=performance.now(),state=API.state();
  if(enabled&&state.phase==='play'){
   if(now-lastReceived>recognizer.parameters().tracking.inputTTL||now-lastTracked>recognizer.parameters().tracking.inputTTL)API.clearBodyInput(false);
-  if(now-lastReceived>1400||now-lastTracked>1400){setStatus('認識待機・試合とボール追視は継続／映ると操作復帰','warning');diagnosticView(null,now-lastReceived);}
+  if(now-lastReceived>1400||now-lastTracked>1400){window.FESelfView?.setTracking(false);setStatus('認識待機・試合とボール追視は継続／映ると操作復帰','warning');diagnosticView(null,now-lastReceived);}
  }
  if(busy&&now-busyAt>9000)fail(new Error('認識処理の応答がありません。タッチ操作へ切り替えました。カメラは再接続できます。'));
 }
@@ -59417,7 +59521,7 @@ function drawPreviews(lm){
  const w=video.videoWidth||640,h=video.videoHeight||480;
  const area=preview.parentElement.getBoundingClientRect(),scale=Math.min(area.width/w,area.height/h),vw=w*scale,vh=h*scale;
  const reach=$('bodyReachGuide');reach.style.left=((area.width-vw)/2+vw*.04)+'px';reach.style.top=((area.height-vh)/2+vh*.025)+'px';reach.style.width=vw*.92+'px';reach.style.height=vh*.95+'px';
- $('bodyCaptureInfo').textContent=video.videoWidth?`v0.9.2 · 撮影 ${w}×${h} · 膝より下は不要`:'v0.9.2 · 膝までモード';
+ $('bodyCaptureInfo').textContent=video.videoWidth?`v0.9.3 · 撮影 ${w}×${h} · 膝より下は不要`:'v0.9.3 · 膝までモード';
  const guide=$('bodyFrameGuide');guide.style.inset='auto';guide.style.left=((area.width-vw)/2+vw*.29)+'px';guide.style.top=((area.height-vh)/2+vh*.05)+'px';guide.style.width=vw*.42+'px';
  // The bottom marker follows *detected knees*, not an imaginary full-body foot line.
  const bottom=lastOutput?.framing?.knees?.every(Boolean)?Math.min(.995,Math.max(lm[25].y,lm[26].y)+.012):.89;
@@ -59427,10 +59531,8 @@ function drawPreviews(lm){
 
  if(preview.width!==w){preview.width=w;}if(preview.height!==h){preview.height=h;}
  const ctx=preview.getContext('2d');ctx.clearRect(0,0,w,h);drawSkeleton(ctx,lm,w,h);drawPointer(ctx,w,h,false);
- if(!mini)return;
- const cw=256,ch=Math.round(cw*h/w);if(miniCanvas.width!==cw)miniCanvas.width=cw;if(miniCanvas.height!==ch)miniCanvas.height=ch;
- const c=miniCanvas.getContext('2d');c.clearRect(0,0,cw,ch);
- if(video.readyState>=2){c.save();if($('bodyMirror').checked){c.translate(cw,0);c.scale(-1,1);}c.drawImage(video,0,0,cw,ch);c.restore();}drawSkeleton(c,lm,cw,ch,$('bodyMirror').checked);drawPointer(c,cw,ch,$('bodyMirror').checked);
+ // Live self-view uses the same MediaStream directly, independent of inference FPS.
+ window.FESelfView?.setTracking(!!lastOutput?.valid);
 }
 function recalibrate(){requestSetup(API.state().phase==='menu'?'start':'resume');}
 function onOptions(){labels();resetRange();if(running){API.pause();enabled=false;clearCountdown();recognizer=new window.FEBodyRecognizer(readOptions());lastOutput=null;API.clearBodyInput();$('bodyScreen').hidden=false;}}
@@ -59452,7 +59554,6 @@ $('bodyBegin').addEventListener('click',begin);
 $('bodyClose').addEventListener('click',()=>{stop();API.notify('カメラOFF・タッチ操作を選択しました',2);});
 $('bodyStop').addEventListener('click',()=>{stop();API.notify('カメラOFF・タッチ操作へ切り替えました',2);});
 $('bodyRecalibrate').addEventListener('click',recalibrate);
-$('bodyMiniToggle').addEventListener('click',()=>{mini=!mini;miniCanvas.hidden=!mini;$('bodyMiniToggle').textContent=mini?'映像を隠す':'映像を表示';});
 for(const id of['bodyProfile','bodyFoot','bodyMirror','bodySensitivity','bodyPointSensitivity','bodyPointInvert','bodyKickLevel','bodyMoveMode','bodySteerInvert'])$(id).addEventListener('change',onOptions);
 $('bodyAutoTrack').addEventListener('change',()=>API.setBodyAssist($('bodyAutoTrack').checked));
 $('bodyLowQuality').addEventListener('change',()=>{if($('bodyLowQuality').checked)API.setQuality('low');});
@@ -59475,7 +59576,7 @@ if(window.__FE_ENABLE_TEST__){window.__FE_BODY_TEST__={recognizer:()=>recognizer
  range:()=>rangeCheck?.snapshot(),getDiagnostic:()=>({counters:{...diagnostic},events:structuredClone(diagnosticLog)}),setEnabled(v){enabled=v;},setLastTracked(v){lastTracked=v;},setLastReceived(v){lastReceived=v;},fail,orientation:()=>dispatchEvent(new Event('orientationchange')),getState:()=>window.FEBodyControl.state()};}
 $('cameraReconnect').addEventListener('click',()=>{$('cameraWarning').hidden=true;requestSetup('resume');});
 $('cameraDismiss').addEventListener('click',()=>{$('cameraWarning').hidden=true;});
-miniCanvas.hidden=true;$('bodyMiniToggle').textContent='映像を表示';labels();selectMode('touch');
+labels();selectMode('touch');
 })();
 
 </script>
@@ -59513,7 +59614,6 @@ miniCanvas.hidden=true;$('bodyMiniToggle').textContent='映像を表示';labels(
  $('orientationDismiss').addEventListener('click',()=>{dismissed=true;sync();});
  $('orientationApply').addEventListener('click',applyLock);
  $('bodyDetailsToggle').addEventListener('click',()=>{const open=$('bodyLive').classList.toggle('expanded');$('bodyDetailsToggle').textContent=open?'閉じる':'詳細';$('bodyDetailsToggle').setAttribute('aria-expanded',String(open));});
- $('bodyMiniToggle').addEventListener('click',()=>{if(!$('bodyMiniCanvas').hidden){$('bodyLive').classList.add('expanded');$('bodyDetailsToggle').textContent='閉じる';$('bodyDetailsToggle').setAttribute('aria-expanded','true');}});
  $('inputMode').addEventListener('change',()=>{dismissed=false;sync();});
  new MutationObserver(sync).observe(document.body,{attributes:true,attributeFilter:['class']});
  for(const el of [$('menu'),$('bodyScreen')])new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['hidden']});
@@ -59534,7 +59634,7 @@ function sync(){const p=C.get();for(const [id,g,k,m]of fields){$(id).value=Strin
 function apply(patch){const p=C.set(patch);window.FEBodyControl?.setTuning(p);try{localStorage.setItem(key,JSON.stringify(p));}catch(e){}sync();}
 for(const [id,g,k,m]of fields)$(id).addEventListener('input',e=>apply({[g]:{[k]:Number(e.target.value)*m}}));
 $('motionReset').addEventListener('click',()=>apply(C.reset()));
-$('motionExport').addEventListener('click',()=>{const data={version:'0.9.2',parameters:C.get()},url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='football-motion-parameters.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
+$('motionExport').addEventListener('click',()=>{const data={version:'0.9.3',parameters:C.get()},url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='football-motion-parameters.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);});
 sync();
 })();
 
